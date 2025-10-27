@@ -1,0 +1,101 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "4.2.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.Account": {
+      "version": "9.2.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "9.2.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.Identity": {
+      "version": "9.2.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.TenantManagement": {
+      "version": "9.2.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "9.2.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "9.2.1",
+      "isInstalled": true
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "9.2.1",
+      "isInstalled": true
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "PaperBellStore.Application": {
+      "path": "src/PaperBellStore.Application/PaperBellStore.Application.abppkg",
+      "folder": "src"
+    },
+    "PaperBellStore.Application.Tests": {
+      "path": "test/PaperBellStore.Application.Tests/PaperBellStore.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "PaperBellStore.Domain.Shared": {
+      "path": "src/PaperBellStore.Domain.Shared/PaperBellStore.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "PaperBellStore.Application.Contracts": {
+      "path": "src/PaperBellStore.Application.Contracts/PaperBellStore.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "PaperBellStore.HttpApi": {
+      "path": "src/PaperBellStore.HttpApi/PaperBellStore.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "PaperBellStore.HttpApi.Client": {
+      "path": "src/PaperBellStore.HttpApi.Client/PaperBellStore.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "PaperBellStore.EntityFrameworkCore.Tests": {
+      "path": "test/PaperBellStore.EntityFrameworkCore.Tests/PaperBellStore.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "PaperBellStore.EntityFrameworkCore": {
+      "path": "src/PaperBellStore.EntityFrameworkCore/PaperBellStore.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "PaperBellStore.TestBase": {
+      "path": "test/PaperBellStore.TestBase/PaperBellStore.TestBase.abppkg",
+      "folder": "test"
+    },
+    "PaperBellStore.Domain.Tests": {
+      "path": "test/PaperBellStore.Domain.Tests/PaperBellStore.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "PaperBellStore.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/PaperBellStore.HttpApi.Client.ConsoleTestApp/PaperBellStore.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "PaperBellStore.DbMigrator": {
+      "path": "src/PaperBellStore.DbMigrator/PaperBellStore.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "PaperBellStore.Blazor": {
+      "path": "src/PaperBellStore.Blazor/PaperBellStore.Blazor.abppkg",
+      "folder": "src"
+    },
+    "PaperBellStore.Domain": {
+      "path": "src/PaperBellStore.Domain/PaperBellStore.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}
