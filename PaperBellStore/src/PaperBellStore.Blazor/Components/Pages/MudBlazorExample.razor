@@ -1,0 +1,92 @@
+@page "/mud-blazor-example"
+@inherits PaperBellStoreComponentBase
+@using MudBlazor
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 mb-3">
+            <h3>MudBlazor 组件使用示例</h3>
+            <p>此页面演示了如何在保留 LeptonXLite 主题的基础上使用 MudBlazor 组件。</p>
+        </div>
+    </div>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="5">
+                <MudCardContent>
+                    <div class="d-flex flex-column gap-3">
+                        <MudText Typo="Typo.h5">按钮示例</MudText>
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton Variant="Variant.Filled" Color="@MudBlazor.Color.Primary">主要按钮</MudButton>
+                            <MudButton Variant="Variant.Text" Color="@MudBlazor.Color.Secondary">次要按钮</MudButton>
+                        </MudStack>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="5">
+                <MudCardContent>
+                    <div class="d-flex flex-column gap-3">
+                        <MudText Typo="Typo.h5">输入框示例</MudText>
+                        <MudStack Spacing="2">
+                            <MudTextField @bind-Value="@textValue" Label="文本输入" Variant="Variant.Outlined" />
+                            <MudButton OnClick="ShowText" Color="@MudBlazor.Color.Primary">显示文本</MudButton>
+                        </MudStack>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="5">
+                <MudCardContent>
+                    <div class="d-flex flex-column gap-3">
+                        <MudText Typo="Typo.h5">对话框示例</MudText>
+                        <MudButton OnClick="ShowDialog" Color="@MudBlazor.Color.Info">打开对话框</MudButton>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="mt-4" Elevation="3" Style="padding: 20px;">
+        <MudText Typo="Typo.h6" Class="mb-3">📌 使用说明</MudText>
+        <MudText>
+            • 这个页面展示了 MudBlazor 组件与 LeptonXLite 主题的混合使用<br />
+            • ABP 框架的布局和导航保持不变<br />
+            • 可以在任何页面中使用 MudBlazor 组件
+        </MudText>
+    </MudPaper>
+</div>
+
+@code {
+    private string textValue = "";
+
+    private void ShowText()
+    {
+        _snackbar.Add($"您输入的是: {textValue}", Severity.Success);
+    }
+
+    private async Task ShowDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            ["Title"] = "示例对话框",
+            ["Message"] = "这是一个 MudBlazor 对话框示例！"
+        };
+
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true
+        };
+
+        await _dialogService.ShowAsync<SimpleDialog>("示例对话框", parameters, options);
+    }
+}
+
+@inject IDialogService _dialogService
+@inject ISnackbar _snackbar

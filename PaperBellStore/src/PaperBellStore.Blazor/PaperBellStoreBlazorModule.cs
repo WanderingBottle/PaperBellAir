@@ -3,6 +3,7 @@ using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
+using MudBlazor.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -140,7 +141,7 @@ public class PaperBellStoreBlazorModule : AbpModule
             {
                 options.DisableTransportSecurityRequirement = true;
             });
-            
+
             Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
@@ -159,7 +160,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         ConfigureRouter(context);
         ConfigureMenu(context);
     }
-    
+
     private void ConfigureAuthentication(ServiceConfigurationContext context)
     {
         context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
@@ -248,6 +249,9 @@ public class PaperBellStoreBlazorModule : AbpModule
         context.Services
             .AddBootstrap5Providers()
             .AddFontAwesomeIcons();
+
+        // 添加 MudBlazor 服务
+        context.Services.AddMudServices();
     }
 
     private void ConfigureMenu(ServiceConfigurationContext context)
@@ -257,7 +261,7 @@ public class PaperBellStoreBlazorModule : AbpModule
             options.MenuContributors.Add(new PaperBellStoreMenuContributor());
         });
     }
-    
+
 
     private void ConfigureRouter(ServiceConfigurationContext context)
     {

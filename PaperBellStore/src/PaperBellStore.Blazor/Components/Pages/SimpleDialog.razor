@@ -1,0 +1,29 @@
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">示例对话框</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>
+            这是一个使用 MudBlazor 创建的对话框示例。<br />
+            您可以在对话框中使用各种 MudBlazor 组件。
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">取消</MudButton>
+        <MudButton Color="@MudBlazor.Color.Primary" Variant="Variant.Filled" OnClick="Ok">确定</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private void Cancel()
+    {
+        // 对话框将通过按钮的默认行为关闭
+    }
+
+    private void Ok()
+    {
+        // 对话框将通过按钮的默认行为关闭
+    }
+}
