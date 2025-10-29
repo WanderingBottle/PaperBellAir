@@ -12,7 +12,7 @@
 @inject Volo.Abp.Settings.ISettingProvider SettingProvider
 
 @{
-	Layout=ThemeManager.CurrentTheme.GetAccountLayout();
+	Layout = ThemeManager.CurrentTheme.GetAccountLayout();
 }
 
 @section scripts
@@ -22,80 +22,143 @@
 	</abp-script-bundle>
 }
 
-@if(Model.ShowRequireMigrateSeedMessage)
+@section styles
 {
-	<div class="alert alert-danger">
-		<h4 class="alert-heading">@L["RequireMigrateSeedTitle"]</h4>
-		<p>@L["RequireMigrateSeedMessage"]</p>
-	</div>
+	<link rel="stylesheet" href="/login-styles.css" />
 }
 
-<div class="card mt-3 shadow-sm rounded">
-	<div class="card-body p-5">
-		@* <h4>@L["Login"]</h4> *@
-		<h4>测试一下看看</h4>
-		@if(await SettingProvider.IsTrueAsync(AccountSettingNames.IsSelfRegistrationEnabled))
-		{
-			<strong>
-				@L["AreYouANewUser"]
-				<a href="@Url.Page("./Register" , new { returnUrl = Model.ReturnUrl , returnUrlHash = Model.ReturnUrlHash })" class="text-decoration-none">@L["Register"]</a>
-			</strong>
-		}
-		@if(Model.EnableLocalLogin)
-		{
-			<form method="post" class="mt-4">
-				<div class="mb-3">
-					<label asp-for="LoginInput.UserNameOrEmailAddress" class="form-label"></label>
-					<input asp-for="LoginInput.UserNameOrEmailAddress" class="form-control" />
-					<span asp-validation-for="LoginInput.UserNameOrEmailAddress" class="text-danger"></span>
-				</div>
+<div class="login-container">
+	@if (Model.ShowRequireMigrateSeedMessage)
+	{
+		<div class="alert alert-danger">
+			<h4 class="alert-heading">@L["RequireMigrateSeedTitle"]</h4>
+			<p>@L["RequireMigrateSeedMessage"]</p>
+		</div>
+	}
 
-				<div class="mb-3">
-					<label asp-for="LoginInput.Password" class="form-label"></label>
-					<div class="input-group">
-						<input type="password" class="form-control" autocomplete="new-password" maxlength="@IdentityUserConsts.MaxPasswordLength" asp-for="LoginInput.Password" />
-						<button class="btn btn-secondary" type="button" id="PasswordVisibilityButton"><i class="fa fa-eye-slash" aria-hidden="true"></i></button>
+	<div class="login-card">
+		<div class="login-content">
+			@* 左侧装饰区域 *@
+			<div class="login-decoration">
+				<div class="decoration-shapes">
+					<div class="shape-circle"></div>
+					<div class="shape-circle"></div>
+					<div class="shape-circle"></div>
+					<div class="shape-circle"></div>
+				</div>
+				<svg class="building-icon" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+					<defs>
+						<linearGradient id="buildingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+							<stop offset="0%" style="stop-color:#9c6bec;stop-opacity:1" />
+							<stop offset="100%" style="stop-color:#7c4dc9;stop-opacity:1" />
+						</linearGradient>
+					</defs>
+					@* 建筑主体 *@
+					<rect x="30" y="60" width="120" height="130" fill="url(#buildingGradient)" rx="5" />
+					@* 窗户 *@
+					<rect x="50" y="80" width="20" height="20" fill="white" rx="2" />
+					<rect x="110" y="80" width="20" height="20" fill="white" rx="2" />
+					<rect x="50" y="120" width="20" height="20" fill="white" rx="2" />
+					<rect x="110" y="120" width="20" height="20" fill="white" rx="2" />
+					<rect x="80" y="120" width="20" height="20" fill="white" rx="2" />
+					@* 大门 *@
+					<rect x="70" y="150" width="30" height="40" fill="#7c4dc9" rx="2" />
+					<circle cx="92" cy="170" r="3" fill="white" />
+				</svg>
+				<div class="decoration-text">现代化办公</div>
+			</div>
+
+			@* 右侧登录表单区域 *@
+			<div class="login-form-section">
+				@if (await SettingProvider.IsTrueAsync(AccountSettingNames.IsSelfRegistrationEnabled))
+				{
+					<div style="margin-bottom: 20px; text-align: right;">
+						<strong style="font-size: 14px; color: #666;">
+							@L["AreYouANewUser"]
+							<a href="@Url.Page("./Register", new { returnUrl = Model.ReturnUrl, returnUrlHash = Model.ReturnUrlHash })"
+								style="color: #9c6bec; text-decoration: none;">@L["Register"]</a>
+						</strong>
 					</div>
-					<span asp-validation-for="LoginInput.Password"></span>
+				}
+
+				<h1 class="login-title">登录</h1>
+				<div class="welcome-text">
+					欢迎来到Cecilia! <span class="welcome-icon">👋</span>
 				</div>
-				<abp-row>
-					<abp-column>
-						<abp-input asp-for="LoginInput.RememberMe" class="mb-4" />
-					</abp-column>
-					<abp-column class="text-end">
-						<a href="@Url.Page("./ForgotPassword" , new { returnUrl = Model.ReturnUrl , returnUrlHash = Model.ReturnUrlHash })">@L["ForgotPassword"]</a>
-					</abp-column>
-				</abp-row>
-				<div class="d-grid gap-2">
-					<abp-button type="submit" button-type="Primary" name="Action" value="Login" class="btn-lg mt-3">@L["Login"]</abp-button>
-					@if(Model.ShowCancelButton)
-					{
-						<abp-button type="submit" button-type="Secondary" formnovalidate="formnovalidate" name="Action" value="Cancel" class="btn-lg mt-3">@L["Cancel"]</abp-button>
-					}
-				</div>
-			</form>
-		}
 
-		@if(Model.VisibleExternalProviders.Any())
-		{
-			<div class="mt-2">
-				<h5>@L["OrLoginWith"]</h5>
-				<form asp-page="./Login" asp-page-handler="ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" asp-route-returnUrlHash="@Model.ReturnUrlHash" method="post">
-					@foreach(var provider in Model.VisibleExternalProviders)
-					{
-						<button type="submit" class="btn btn-primary m-1" name="provider" value="@provider.AuthenticationScheme" title="@L["LogInUsingYourProviderAccount" , provider.DisplayName]">@provider.DisplayName</button>
-					}
-				</form>
+				@if (Model.EnableLocalLogin)
+				{
+					<form method="post" class="login-form">
+						<div class="form-group">
+							<label asp-for="LoginInput.UserNameOrEmailAddress" class="form-label">用户名</label>
+							<input asp-for="LoginInput.UserNameOrEmailAddress" class="form-control-custom"
+								placeholder="admin@cecilia.com" />
+							<span asp-validation-for="LoginInput.UserNameOrEmailAddress" class="text-danger"></span>
+						</div>
+
+						<div class="form-group">
+							<label asp-for="LoginInput.Password" class="form-label">密码</label>
+							<div class="password-input-group">
+								<input type="password" class="form-control-custom" autocomplete="new-password"
+									maxlength="@IdentityUserConsts.MaxPasswordLength" asp-for="LoginInput.Password"
+									placeholder="••••••••" />
+								<button type="button" class="password-toggle" id="PasswordVisibilityButton">
+									<i class="fa fa-eye" aria-hidden="true"></i>
+								</button>
+							</div>
+							<span asp-validation-for="LoginInput.Password" class="text-danger"></span>
+						</div>
+
+						<div class="remember-forgot">
+							<div class="remember-me">
+								<input asp-for="LoginInput.RememberMe" type="checkbox" />
+								<label asp-for="LoginInput.RememberMe"
+									style="margin: 0; font-size: 14px; color: #666; cursor: pointer;">记住账号密码</label>
+							</div>
+							<a href="@Url.Page("./ForgotPassword", new { returnUrl = Model.ReturnUrl, returnUrlHash = Model.ReturnUrlHash })"
+								class="forgot-password">@L["ForgotPassword"]</a>
+						</div>
+
+						<button type="submit" name="Action" value="Login" class="login-button">@L["Login"]</button>
+
+						@if (Model.ShowCancelButton)
+						{
+							<abp-button type="submit" button-type="Secondary" formnovalidate="formnovalidate" name="Action"
+								value="Cancel" class="btn-lg mt-3"
+								style="width: 100%; margin-top: 15px;">@L["Cancel"]</abp-button>
+						}
+					</form>
+				}
+
+				@if (Model.VisibleExternalProviders.Any())
+				{
+					<div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #e0e0e0;">
+						<h5 style="font-size: 14px; color: #666; margin-bottom: 15px;">@L["OrLoginWith"]</h5>
+						<form asp-page="./Login" asp-page-handler="ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl"
+							asp-route-returnUrlHash="@Model.ReturnUrlHash" method="post">
+							@foreach (var provider in Model.VisibleExternalProviders)
+							{
+								<button type="submit"
+									style="background: #f5f5f5; border: 1px solid #e0e0e0; padding: 10px 20px; border-radius: 8px; margin: 5px; color: #333; font-size: 14px; cursor: pointer;"
+									name="provider" value="@provider.AuthenticationScheme"
+									title="@L["LogInUsingYourProviderAccount", provider.DisplayName]">@provider.DisplayName</button>
+							}
+						</form>
+					</div>
+				}
+
+				@if (!Model.EnableLocalLogin && !Model.VisibleExternalProviders.Any())
+				{
+					<div class="alert alert-danger">
+						<strong>@L["InvalidLoginRequest"]</strong>
+						@L["ThereAreNoLoginSchemesConfiguredForThisClient"]
+					</div>
+				}
 			</div>
-		}
+		</div>
+	</div>
 
-		@if(!Model.EnableLocalLogin&&!Model.VisibleExternalProviders.Any())
-		{
-			<div class="alert alert-warning">
-				<strong>@L["InvalidLoginRequest"]</strong>
-				@L["ThereAreNoLoginSchemesConfiguredForThisClient"]
-			</div>
-		}
-
+	<div class="login-footer">
+		<p>CopyRight © 2024 Cecilia All Rights Reserved</p>
 	</div>
 </div>
