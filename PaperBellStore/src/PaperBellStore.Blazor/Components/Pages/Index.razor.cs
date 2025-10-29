@@ -10,11 +10,12 @@ public partial class Index
 
     protected override void OnInitialized()
     {
-        // 如果用户未登录,直接重定向到登录页面
+        // 如果用户未认证，直接重定向到登录页面
         if (!CurrentUser.IsAuthenticated)
         {
-            Navigation.NavigateTo("/Account/Login", forceLoad: true);
+            Navigation.NavigateTo("/Account/Login", true);
         }
+
         base.OnInitialized();
     }
 
