@@ -12,7 +12,7 @@
 @inject Volo.Abp.Settings.ISettingProvider SettingProvider
 
 @{
-	Layout = ThemeManager.CurrentTheme.GetAccountLayout();
+	Layout=ThemeManager.CurrentTheme.GetAccountLayout();
 }
 
 @section scripts
@@ -28,7 +28,7 @@
 }
 
 <div class="login-container">
-	@if (Model.ShowRequireMigrateSeedMessage)
+	@if(Model.ShowRequireMigrateSeedMessage)
 	{
 		<div class="alert alert-danger">
 			<h4 class="alert-heading">@L["RequireMigrateSeedTitle"]</h4>
@@ -65,43 +65,43 @@
 					<rect x="70" y="150" width="30" height="40" fill="#7c4dc9" rx="2" />
 					<circle cx="92" cy="170" r="3" fill="white" />
 				</svg>
-				<div class="decoration-text">现代化办公</div>
+				<div class="decoration-text">Paper Bell</div>
 			</div>
 
 			@* 右侧登录表单区域 *@
 			<div class="login-form-section">
-				@if (await SettingProvider.IsTrueAsync(AccountSettingNames.IsSelfRegistrationEnabled))
+				@if(await SettingProvider.IsTrueAsync(AccountSettingNames.IsSelfRegistrationEnabled))
 				{
 					<div style="margin-bottom: 20px; text-align: right;">
 						<strong style="font-size: 14px; color: #666;">
 							@L["AreYouANewUser"]
-							<a href="@Url.Page("./Register", new { returnUrl = Model.ReturnUrl, returnUrlHash = Model.ReturnUrlHash })"
-								style="color: #9c6bec; text-decoration: none;">@L["Register"]</a>
+							<a href="@Url.Page("./Register" , new { returnUrl = Model.ReturnUrl , returnUrlHash = Model.ReturnUrlHash })"
+							   style="color: #9c6bec; text-decoration: none;">@L["Register"]</a>
 						</strong>
 					</div>
 				}
 
-				<h1 class="login-title">登录</h1>
+				<h1 class="login-title">@L["Login"]</h1>
 				<div class="welcome-text">
-					欢迎来到Cecilia! <span class="welcome-icon">👋</span>
+					@L["WelcometoPaperBell"] <span class="welcome-icon">👋</span>
 				</div>
 
-				@if (Model.EnableLocalLogin)
+				@if(Model.EnableLocalLogin)
 				{
 					<form method="post" class="login-form">
 						<div class="form-group">
-							<label asp-for="LoginInput.UserNameOrEmailAddress" class="form-label">用户名</label>
+							<label asp-for="LoginInput.UserNameOrEmailAddress" class="form-label">@L["UserName"]</label>
 							<input asp-for="LoginInput.UserNameOrEmailAddress" class="form-control-custom"
-								placeholder="admin@cecilia.com" />
+								   placeholder=@L["UserAccount"] />
 							<span asp-validation-for="LoginInput.UserNameOrEmailAddress" class="text-danger"></span>
 						</div>
 
 						<div class="form-group">
-							<label asp-for="LoginInput.Password" class="form-label">密码</label>
+							<label asp-for="LoginInput.Password" class="form-label">@L["Password"]</label>
 							<div class="password-input-group">
 								<input type="password" class="form-control-custom" autocomplete="new-password"
-									maxlength="@IdentityUserConsts.MaxPasswordLength" asp-for="LoginInput.Password"
-									placeholder="••••••••" />
+									   maxlength="@IdentityUserConsts.MaxPasswordLength" asp-for="LoginInput.Password"
+									   placeholder="••••••••" />
 								<button type="button" class="password-toggle" id="PasswordVisibilityButton">
 									<i class="fa fa-eye" aria-hidden="true"></i>
 								</button>
@@ -113,41 +113,45 @@
 							<div class="remember-me">
 								<input asp-for="LoginInput.RememberMe" type="checkbox" />
 								<label asp-for="LoginInput.RememberMe"
-									style="margin: 0; font-size: 14px; color: #666; cursor: pointer;">记住账号密码</label>
+									   style="margin: 0; font-size: 14px; color: #666; cursor: pointer;">
+									@L["Rememberyouraccountandpassword"]
+								</label>
 							</div>
-							<a href="@Url.Page("./ForgotPassword", new { returnUrl = Model.ReturnUrl, returnUrlHash = Model.ReturnUrlHash })"
-								class="forgot-password">@L["ForgotPassword"]</a>
+							<a href="@Url.Page("./ForgotPassword" , new { returnUrl = Model.ReturnUrl , returnUrlHash = Model.ReturnUrlHash })"
+							   class="forgot-password">@L["ForgotPassword"]</a>
 						</div>
 
 						<button type="submit" name="Action" value="Login" class="login-button">@L["Login"]</button>
 
-						@if (Model.ShowCancelButton)
+						@if(Model.ShowCancelButton)
 						{
 							<abp-button type="submit" button-type="Secondary" formnovalidate="formnovalidate" name="Action"
-								value="Cancel" class="btn-lg mt-3"
-								style="width: 100%; margin-top: 15px;">@L["Cancel"]</abp-button>
+										value="Cancel" class="btn-lg mt-3"
+										style="width: 100%; margin-top: 15px;">@L["Cancel"]</abp-button>
 						}
 					</form>
 				}
 
-				@if (Model.VisibleExternalProviders.Any())
+				@if(Model.VisibleExternalProviders.Any())
 				{
 					<div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #e0e0e0;">
 						<h5 style="font-size: 14px; color: #666; margin-bottom: 15px;">@L["OrLoginWith"]</h5>
 						<form asp-page="./Login" asp-page-handler="ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl"
-							asp-route-returnUrlHash="@Model.ReturnUrlHash" method="post">
-							@foreach (var provider in Model.VisibleExternalProviders)
+							  asp-route-returnUrlHash="@Model.ReturnUrlHash" method="post">
+							@foreach(var provider in Model.VisibleExternalProviders)
 							{
 								<button type="submit"
-									style="background: #f5f5f5; border: 1px solid #e0e0e0; padding: 10px 20px; border-radius: 8px; margin: 5px; color: #333; font-size: 14px; cursor: pointer;"
-									name="provider" value="@provider.AuthenticationScheme"
-									title="@L["LogInUsingYourProviderAccount", provider.DisplayName]">@provider.DisplayName</button>
+										style="background: #f5f5f5; border: 1px solid #e0e0e0; padding: 10px 20px; border-radius: 8px; margin: 5px; color: #333; font-size: 14px; cursor: pointer;"
+										name="provider" value="@provider.AuthenticationScheme"
+										title="@L["LogInUsingYourProviderAccount" , provider.DisplayName]">
+									@provider.DisplayName
+								</button>
 							}
 						</form>
 					</div>
 				}
 
-				@if (!Model.EnableLocalLogin && !Model.VisibleExternalProviders.Any())
+				@if(!Model.EnableLocalLogin&&!Model.VisibleExternalProviders.Any())
 				{
 					<div class="alert alert-danger">
 						<strong>@L["InvalidLoginRequest"]</strong>
@@ -159,6 +163,6 @@
 	</div>
 
 	<div class="login-footer">
-		<p>CopyRight © 2024 Cecilia All Rights Reserved</p>
+		<p>CopyRight © 2024 PaperBell All Rights Reserved</p>
 	</div>
 </div>
