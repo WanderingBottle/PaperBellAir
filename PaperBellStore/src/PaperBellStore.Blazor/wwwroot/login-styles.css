@@ -1,8 +1,19 @@
+/* 覆盖ABP框架默认布局样式 */
+.abp-account-layout .abp-card,
+.abp-account-layout .container,
+.abp-account-layout .row {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 /* 登录页面自定义样式 */
 .login-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 10px 15px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -13,21 +24,25 @@
   border-radius: 20px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  min-height: 600px;
-  flex: 1;
+  min-height: auto;
+  height: auto;
+  flex: 0 1 auto;
   margin: auto 0;
+  max-width: 100%;
+  width: 100%;
 }
 
 .login-content {
   display: flex;
-  min-height: 600px;
+  min-height: auto;
+  height: auto;
 }
 
 /* 左侧装饰区域 */
 .login-decoration {
   flex: 1;
   background: linear-gradient(135deg, #f8f9ff 0%, #fff5f8 100%);
-  padding: 60px 40px;
+  padding: 40px 30px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -93,16 +108,16 @@
 }
 
 .building-icon {
-  width: 200px;
-  height: 200px;
-  margin-bottom: 30px;
+  width: 150px;
+  height: 150px;
+  margin-bottom: 20px;
   position: relative;
   z-index: 1;
   filter: drop-shadow(0 10px 20px rgba(156, 107, 236, 0.3));
 }
 
 .decoration-text {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 500;
   color: #333;
   text-align: center;
@@ -113,7 +128,7 @@
 /* 右侧登录表单区域 */
 .login-form-section {
   flex: 1;
-  padding: 60px 50px;
+  padding: 40px 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -121,16 +136,16 @@
 }
 
 .login-title {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 700;
   color: #333;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .welcome-text {
-  font-size: 16px;
+  font-size: 15px;
   color: #666;
-  margin-bottom: 40px;
+  margin-bottom: 25px;
   display: flex;
   align-items: center;
 }
@@ -141,11 +156,11 @@
 }
 
 .login-form {
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .form-label {
@@ -158,7 +173,7 @@
 
 .form-control-custom {
   width: 100%;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border: 2px solid #e0e0e0;
   border-radius: 10px;
   font-size: 15px;
@@ -179,7 +194,7 @@
 
 .password-toggle {
   position: absolute;
-  right: 16px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -198,7 +213,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 .remember-me {
@@ -226,12 +241,12 @@
 
 .login-button {
   width: 100%;
-  padding: 16px;
+  padding: 14px;
   background: linear-gradient(135deg, #9c6bec 0%, #7c4dc9 100%);
   color: white;
   border: none;
   border-radius: 10px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -250,8 +265,8 @@
 /* 底部版权信息 */
 .login-footer {
   text-align: center;
-  padding: 20px;
-  margin-top: auto;
+  padding: 15px;
+  margin-top: 10px;
   color: #999;
   font-size: 14px;
 }
@@ -270,17 +285,51 @@
   }
 
   .login-decoration {
-    padding: 40px 20px;
-    min-height: 300px;
+    padding: 30px 20px;
+    min-height: auto;
   }
 
   .login-form-section {
-    padding: 40px 30px;
+    padding: 30px 25px;
   }
 
   .building-icon {
     width: 150px;
     height: 150px;
+  }
+
+  .login-container {
+    padding: 10px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .login-card {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-decoration {
+    padding: 25px 15px;
+  }
+
+  .login-form-section {
+    padding: 25px 20px;
+  }
+
+  .building-icon {
+    width: 120px;
+    height: 120px;
+  }
+
+  .decoration-text {
+    font-size: 18px;
+  }
+
+  .login-title {
+    font-size: 24px;
   }
 }
 
