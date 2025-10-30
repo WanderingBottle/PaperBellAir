@@ -13,8 +13,6 @@
 		<PackageReference Include="Volo.Abp.Identity.Domain" Version="9.2.1" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\..\..\src\PaperBellStore.Application\PaperBellStore.Application.csproj" />
-		<ProjectReference Include="..\..\..\src\PaperBellStore.Domain\PaperBellStore.Domain.csproj" />
 		<ProjectReference Include="..\ProjectManage.Application.Contracts\ProjectManage.Application.Contracts.csproj" />
 		<ProjectReference Include="..\ProjectManage.Domain\ProjectManage.Domain.csproj" />
 	</ItemGroup>

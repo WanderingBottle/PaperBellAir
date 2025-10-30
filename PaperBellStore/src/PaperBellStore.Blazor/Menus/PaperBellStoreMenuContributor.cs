@@ -23,7 +23,7 @@ public class PaperBellStoreMenuContributor : IMenuContributor
     private Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
         var l = context.GetLocalizer<PaperBellStoreResource>();
-        
+
         context.Menu.Items.Insert(
             0,
             new ApplicationMenuItem(
@@ -35,10 +35,21 @@ public class PaperBellStoreMenuContributor : IMenuContributor
             )
         );
 
+        context.Menu.Items.Insert(
+            1,
+            new ApplicationMenuItem(
+                "ProjectManagement",
+                l["Menu:ProjectManagement"],
+                "/projects",
+                icon: "fas fa-project-diagram",
+                order: 2
+            )
+        );
+
         //Administration
         var administration = context.Menu.GetAdministration();
         administration.Order = 6;
-    
+
         if (MultiTenancyConsts.IsEnabled)
         {
             administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);

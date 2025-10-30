@@ -54,6 +54,7 @@ using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.Studio.Client.AspNetCore;
 using ProjectManage.Application;
 using ProjectManage.Localization;
+using ProjectManage;
 
 namespace PaperBellStore.Blazor;
 
@@ -90,7 +91,8 @@ public class PaperBellStoreBlazorModule : AbpModule
                 typeof(PaperBellStoreApplicationModule).Assembly ,
                 typeof(PaperBellStoreApplicationContractsModule).Assembly ,
                 typeof(PaperBellStoreBlazorModule).Assembly ,
-                typeof(ProjectManageResource).Assembly
+                typeof(ProjectManageResource).Assembly ,
+                typeof(ProjectManageDomainSharedModule).Assembly
             );
         });
 

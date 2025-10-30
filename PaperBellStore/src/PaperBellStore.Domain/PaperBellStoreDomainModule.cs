@@ -1,39 +1,42 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using PaperBellStore.Localization;
+
 using PaperBellStore.MultiTenancy;
-using Volo.Abp.Localization;
-using Volo.Abp.Modularity;
-using Volo.Abp.MultiTenancy;
-using Volo.Abp.PermissionManagement.Identity;
-using Volo.Abp.SettingManagement;
-using Volo.Abp.BlobStoring.Database;
-using Volo.Abp.Caching;
-using Volo.Abp.OpenIddict;
-using Volo.Abp.PermissionManagement.OpenIddict;
+
+using ProjectManage.Domain;
+
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.BlobStoring.Database;
+using Volo.Abp.Caching;
 using Volo.Abp.Emailing;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
+using Volo.Abp.Modularity;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp.OpenIddict;
+using Volo.Abp.PermissionManagement.Identity;
+using Volo.Abp.PermissionManagement.OpenIddict;
+using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 
 namespace PaperBellStore;
 
 [DependsOn(
-    typeof(PaperBellStoreDomainSharedModule),
-    typeof(AbpAuditLoggingDomainModule),
-    typeof(AbpCachingModule),
-    typeof(AbpBackgroundJobsDomainModule),
-    typeof(AbpFeatureManagementDomainModule),
-    typeof(AbpPermissionManagementDomainIdentityModule),
-    typeof(AbpPermissionManagementDomainOpenIddictModule),
-    typeof(AbpSettingManagementDomainModule),
-    typeof(AbpEmailingModule),
-    typeof(AbpIdentityDomainModule),
-    typeof(AbpOpenIddictDomainModule),
-    typeof(AbpTenantManagementDomainModule),
-    typeof(BlobStoringDatabaseDomainModule)
+    typeof(PaperBellStoreDomainSharedModule) ,
+    typeof(AbpAuditLoggingDomainModule) ,
+    typeof(AbpCachingModule) ,
+    typeof(AbpBackgroundJobsDomainModule) ,
+    typeof(AbpFeatureManagementDomainModule) ,
+    typeof(AbpPermissionManagementDomainIdentityModule) ,
+    typeof(AbpPermissionManagementDomainOpenIddictModule) ,
+    typeof(AbpSettingManagementDomainModule) ,
+    typeof(AbpEmailingModule) ,
+    typeof(AbpIdentityDomainModule) ,
+    typeof(AbpOpenIddictDomainModule) ,
+    typeof(AbpTenantManagementDomainModule) ,
+    typeof(BlobStoringDatabaseDomainModule) ,
+    typeof(ProjectManageDomainModule)
     )]
 public class PaperBellStoreDomainModule : AbpModule
 {
@@ -41,12 +44,12 @@ public class PaperBellStoreDomainModule : AbpModule
     {
         Configure<AbpMultiTenancyOptions>(options =>
         {
-            options.IsEnabled = MultiTenancyConsts.IsEnabled;
+            options.IsEnabled=MultiTenancyConsts.IsEnabled;
         });
 
 
 #if DEBUG
-        context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, NullEmailSender>());
+        context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender , NullEmailSender>());
 #endif
     }
 }

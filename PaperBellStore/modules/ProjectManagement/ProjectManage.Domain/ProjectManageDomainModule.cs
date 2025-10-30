@@ -1,12 +1,9 @@
-﻿using PaperBellStore;
-
-using Volo.Abp.Modularity;
+﻿using Volo.Abp.Modularity;
 
 namespace ProjectManage.Domain
 {
     [DependsOn(
-        typeof(ProjectManageDomainSharedModule) ,
-        typeof(PaperBellStoreDomainModule))]
+        typeof(ProjectManageDomainSharedModule))]
     public class ProjectManageDomainModule : AbpModule
     {
         public override void ConfigureServices(ServiceConfigurationContext context)

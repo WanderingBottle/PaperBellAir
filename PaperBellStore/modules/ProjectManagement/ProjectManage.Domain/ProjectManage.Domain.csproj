@@ -8,10 +8,10 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Volo.Abp.Ddd.Domain" Version="9.2.1" />
+		<PackageReference Include="Volo.Abp.PermissionManagement.Domain" Version="9.2.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\..\src\PaperBellStore.Domain\PaperBellStore.Domain.csproj" />
 		<ProjectReference Include="..\ProjectManage.Domain.Shared\ProjectManage.Domain.Shared.csproj" />
 	</ItemGroup>
 

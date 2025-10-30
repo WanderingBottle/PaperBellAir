@@ -1,6 +1,4 @@
-﻿using PaperBellStore;
-
-using ProjectManage.Application.Contracts;
+﻿using ProjectManage.Application.Contracts;
 using ProjectManage.Domain;
 
 using Volo.Abp.AutoMapper;
@@ -11,8 +9,7 @@ namespace ProjectManage.Application
 {
     [DependsOn(typeof(ProjectManageDomainModule) ,
         typeof(ProjectManageApplicationContractsModule) ,
-        typeof(AbpIdentityDomainModule) ,
-        typeof(PaperBellStoreApplicationModule))]
+        typeof(AbpIdentityDomainModule))]
     public class ProjectManageApplicationModule : AbpModule
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
