@@ -9,6 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\modules\ProjectManagement\ProjectManage.Domain.Shared\ProjectManage.Domain.Shared.csproj" />
+    <ProjectReference Include="..\..\modules\ProjectManagement\ProjectManage.Domain\ProjectManage.Domain.csproj" />
     <ProjectReference Include="..\PaperBellStore.Domain\PaperBellStore.Domain.csproj" />
   </ItemGroup>
 

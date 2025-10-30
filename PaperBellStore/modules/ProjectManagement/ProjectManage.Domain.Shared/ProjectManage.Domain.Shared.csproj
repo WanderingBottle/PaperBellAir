@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="..\..\..\common.props" />
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>ProjectManage</RootNamespace>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove="Localization\ProjectManage\en.json" />
+		<None Remove="Localization\ProjectManage\zh-Hans.json" />
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Localization\ProjectManage\en.json" />
+		<EmbeddedResource Include="Localization\ProjectManage\zh-Hans.json" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Volo.Abp.Core" Version="9.2.1" />
+		<PackageReference Include="Volo.Abp.Localization.Abstractions" Version="9.2.1" />
+	</ItemGroup>
+
+
+</Project>

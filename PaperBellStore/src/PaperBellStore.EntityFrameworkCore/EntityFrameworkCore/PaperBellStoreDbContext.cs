@@ -14,6 +14,8 @@ using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using ProjectManage.Projects;
+using ProjectManage.Domain.Shared;
 
 namespace PaperBellStore.EntityFrameworkCore;
 
@@ -57,6 +59,9 @@ public class PaperBellStoreDbContext :
 
     #endregion
 
+    public DbSet<PbpProject> Projects { get; set; }
+
+
     public PaperBellStoreDbContext(DbContextOptions<PaperBellStoreDbContext> options)
         : base(options)
     {
@@ -78,7 +83,7 @@ public class PaperBellStoreDbContext :
         builder.ConfigureOpenIddict();
         builder.ConfigureTenantManagement();
         builder.ConfigureBlobStoring();
-        
+
         /* Configure your own tables/entities inside here */
 
         //builder.Entity<YourEntity>(b =>
@@ -87,5 +92,17 @@ public class PaperBellStoreDbContext :
         //    b.ConfigureByConvention(); //auto configure for the base class props
         //    //...
         //});
+
+        // 配置项目管理实体
+        builder.Entity<PbpProject>(b =>
+        {
+            b.ToTable(ProjectManageConsts.DbTablePrefix+"Projects" , ProjectManageConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(128);
+            b.Property(x => x.Description).HasMaxLength(2048);
+
+            b.HasIndex(x => x.Name);
+        });
     }
 }

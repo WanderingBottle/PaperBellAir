@@ -1,0 +1,11 @@
+{
+    "culture": "en",
+    "texts": {
+        "Permission:ProjectManagement": "Project Management",
+        "Permission:ProjectManagement.Create": "Create Project",
+        "Permission:ProjectManagement.Edit": "Edit Project",
+        "Permission:ProjectManagement.Delete": "Delete Project",
+        "Permission:ProjectManagement.View": "View Project",
+        "Menu:ProjectManagement": "Project Management"
+    }
+}

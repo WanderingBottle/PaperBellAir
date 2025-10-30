@@ -27,6 +27,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\modules\ProjectManagement\ProjectManage.Application\ProjectManage.Application.csproj" />
+		<ProjectReference Include="..\..\modules\ProjectManagement\ProjectManage.Domain.Shared\ProjectManage.Domain.Shared.csproj" />
 		<ProjectReference Include="..\PaperBellStore.Application\PaperBellStore.Application.csproj" />
 		<ProjectReference Include="..\PaperBellStore.HttpApi\PaperBellStore.HttpApi.csproj" />
 		<ProjectReference Include="..\PaperBellStore.EntityFrameworkCore\PaperBellStore.EntityFrameworkCore.csproj" />
