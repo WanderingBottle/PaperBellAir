@@ -26,8 +26,8 @@
   --lpx-logo: url("/images/logo/leptonxlite/logo-building.svg");
 }
 
-/* �Զ��������Ͷ�������ɫΪ���۵���ɫ */
-/* Logo�������� - ����F12�����߹��߷��ֵ�Ԫ�� */
+/* 自定义背景和顶部栏颜色为浅绿色 */
+/* Logo容器样式 - 基于F12开发者工具发现的元素 */
 .lpx-logo-container {
   background-color: #e8f5e9 !important;
   background: #e8f5e9 !important;
@@ -72,7 +72,7 @@
   line-height: 1; /* 使用line-height: 1，让flexbox的align-items来对齐 */
 }
 
-/* ������˵� - ����F12�����߹��߷��ֵ�Ԫ�� */
+/* 导航菜单 - 基于F12开发者工具发现的元素 */
 .lpx-nav-menu,
 ul#desktop-sidebar.lpx-nav-menu,
 #desktop-sidebar,
@@ -82,7 +82,7 @@ ul#desktop-sidebar.lpx-nav-menu,
   background: #e8f5e9 !important;
 }
 
-/* ����������ʽ */
+/* 侧边栏样式 */
 .lpx-sidebar,
 .lpx-sidebar-wrapper,
 .lpx-layout-sidebar,
@@ -93,7 +93,7 @@ ul#desktop-sidebar.lpx-nav-menu,
   background: #e8f5e9 !important;
 }
 
-/* ������/�����������ʽ - ����F12�����߹��߷��ֵ�Ԫ�� */
+/* 顶部栏/导航栏样式 - 基于F12开发者工具发现的元素 */
 .lpx-topbar,
 div.lpx-topbar,
 [class*="topbar"],
@@ -103,7 +103,7 @@ div.lpx-topbar,
   color: #333333 !important;
 }
 
-/* �������ı���������ɫ */
+/* 顶部栏的文本和图标使用颜色 */
 .lpx-topbar,
 .lpx-topbar *,
 div.lpx-topbar,
@@ -124,7 +124,7 @@ div.lpx-topbar * {
   background: #e8f5e9 !important;
 }
 
-/* Ʒ��/Logo ���� */
+/* 品牌/Logo 区域 */
 .lpx-brand,
 .lpx-brand-wrapper {
   background-color: #e8f5e9 !important;
@@ -166,7 +166,7 @@ div.lpx-topbar * {
     "Helvetica Neue", Arial, sans-serif;
 }
 
-/* ��Կ��ܵ���ɫģʽ */
+/* 针对可能的暗色模式 */
 .lpx-sidebar.dark,
 .lpx-sidebar[data-bs-theme="dark"],
 [data-bs-theme="dark"] .lpx-sidebar,
@@ -188,7 +188,7 @@ div.lpx-topbar * {
   background: #e8f5e9 !important;
 }
 
-/* �˵������� - ����F12�����߹��߷��ֵ�Ԫ�� */
+/* 菜单项样式 - 基于F12开发者工具发现的元素 */
 .lpx-menu-item-link,
 .lpx-menu-item,
 a.lpx-menu-item-link,
@@ -213,7 +213,7 @@ a.lpx-menu-item-link.lpx-menu-item.selected {
   color: #000000 !important;
 }
 
-/* ȷ���˵����ڵ���ɫ�����µĿɶ��� */
+/* 确保菜单项内的颜色在暗色下的可读性 */
 .lpx-sidebar .nav-link,
 .lpx-sidebar .navbar-nav .nav-link,
 .lpx-nav-menu .nav-link,
@@ -235,7 +235,7 @@ a.lpx-menu-item-link.lpx-menu-item.selected {
   color: #000000 !important;
 }
 
-/* ������������ɫ���� */
+/* 顶部栏和导航栏的颜色设置 */
 .lpx-topbar,
 .lpx-header,
 .lpx-navbar {
@@ -250,7 +250,7 @@ a.lpx-menu-item-link.lpx-menu-item.selected {
   color: #333333 !important;
 }
 
-/* ȷ�������������ı�Ԫ�ض�ʹ����ɫ���� */
+/* 确保顶部栏内的文本元素都使用深色文字 */
 .lpx-topbar *:not([class*="icon"]):not([class*="btn"]) {
   color: #333333 !important;
 }
