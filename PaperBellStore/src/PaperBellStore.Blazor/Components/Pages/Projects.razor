@@ -15,8 +15,8 @@
 	<MudText Typo="Typo.h5" GutterBottom="true">项目管理</MudText>
 
 	<MudStack Spacing="2" Class="mb-4">
-		<MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-			<MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+		<MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween" AlignItems="AlignItems.End">
+			<MudStack Row="true" Spacing="2" AlignItems="AlignItems.End">
 				@if (_searchMode == SearchMode.Fuzzy)
 				{
 					<MudTextField @bind-Value="_search" Placeholder="搜索项目（匹配名称和描述）..." Adornment="Adornment.Start"
