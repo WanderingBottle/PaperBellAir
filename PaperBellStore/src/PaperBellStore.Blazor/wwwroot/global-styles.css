@@ -1,76 +1,76 @@
 #blazor-error-ui {
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
+  background: lightyellow;
+  bottom: 0;
+  box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+  display: none;
+  left: 0;
+  padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+#blazor-error-ui .dismiss {
+  cursor: pointer;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.5rem;
+}
 
 :root {
-    --lpx-logo: url("/images/logo/leptonxlite/logo-light.png");
-    --lpx-logo-icon: url("/images/logo/leptonxlite/logo-light-thumbnail.png");
+  --lpx-logo: url("/images/logo/leptonxlite/logo-light.png");
+  --lpx-logo-icon: url("/images/logo/leptonxlite/logo-light-thumbnail.png");
 }
 
-    :root .abp-account-layout .lpx-brand-logo {
-        --lpx-logo: url("/images/logo/leptonxlite/logo-dark.png");
-    }
+:root .abp-account-layout .lpx-brand-logo {
+  --lpx-logo: url("/images/logo/leptonxlite/logo-dark.png");
+}
 
-/* ×Ô¶¨Òå²à±ßÀ¸ºÍ¶¥²¿À¸ÑÕÉ«Îª»¤ÑÛµ­ÂÌÉ« */
-/* LogoÈÝÆ÷ÇøÓò - ¸ù¾ÝF12¿ª·¢Õß¹¤¾ß·¢ÏÖµÄÔªËØ */
+/* ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«Îªï¿½ï¿½ï¿½Ûµï¿½ï¿½ï¿½É« */
+/* Logoï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½F12ï¿½ï¿½ï¿½ï¿½ï¿½ß¹ï¿½ï¿½ß·ï¿½ï¿½Öµï¿½Ôªï¿½ï¿½ */
 .lpx-logo-container {
-    background-color: #e8f5e9 !important;
-    background: #e8f5e9 !important;
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
 }
 
-/* ²à±ßÀ¸²Ëµ¥ - ¸ù¾ÝF12¿ª·¢Õß¹¤¾ß·¢ÏÖµÄÔªËØ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½ - ï¿½ï¿½ï¿½ï¿½F12ï¿½ï¿½ï¿½ï¿½ï¿½ß¹ï¿½ï¿½ß·ï¿½ï¿½Öµï¿½Ôªï¿½ï¿½ */
 .lpx-nav-menu,
 ul#desktop-sidebar.lpx-nav-menu,
 #desktop-sidebar,
 .lpx-sidebar ul,
 .lpx-sidebar .lpx-nav-menu {
-    background-color: #e8f5e9 !important;
-    background: #e8f5e9 !important;
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
 }
 
-/* ²à±ßÀ¸Ïà¹ØÑùÊ½ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½ */
 .lpx-sidebar,
 .lpx-sidebar-wrapper,
 .lpx-layout-sidebar,
 .abp-layout-sidebar,
 .sidebar,
 .main-sidebar {
-    background-color: #e8f5e9 !important;
-    background: #e8f5e9 !important;
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
 }
 
-/* ¶¥²¿À¸/µ¼º½À¸Ïà¹ØÑùÊ½ - ¸ù¾ÝF12¿ª·¢Õß¹¤¾ß·¢ÏÖµÄÔªËØ */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½ - ï¿½ï¿½ï¿½ï¿½F12ï¿½ï¿½ï¿½ï¿½ï¿½ß¹ï¿½ï¿½ß·ï¿½ï¿½Öµï¿½Ôªï¿½ï¿½ */
 .lpx-topbar,
 div.lpx-topbar,
 [class*="topbar"],
 [class*="lpx-topbar"] {
-    background-color: #e8f5e9 !important;
-    background: #e8f5e9 !important;
-    color: #333333 !important;
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
+  color: #333333 !important;
 }
 
-    /* ¶¥À¸µÄÎÄ±¾ºÍÁ´½ÓÑÕÉ« */
-    .lpx-topbar,
-    .lpx-topbar *,
-    div.lpx-topbar,
-    div.lpx-topbar * {
-        color: #333333 !important;
-    }
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É« */
+.lpx-topbar,
+.lpx-topbar *,
+div.lpx-topbar,
+div.lpx-topbar * {
+  color: #333333 !important;
+}
 
 .lpx-header,
 .lpx-navbar,
@@ -81,18 +81,18 @@ div.lpx-topbar,
 .navbar,
 .topbar,
 .main-topbar {
-    background-color: #e8f5e9 !important;
-    background: #e8f5e9 !important;
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
 }
 
-/* Æ·ÅÆ/Logo ÇøÓò */
+/* Æ·ï¿½ï¿½/Logo ï¿½ï¿½ï¿½ï¿½ */
 .lpx-brand,
 .lpx-brand-wrapper {
-    background-color: #e8f5e9 !important;
-    background: #e8f5e9 !important;
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
 }
 
-/* Õë¶Ô¿ÉÄÜµÄÉîÉ«Ä£Ê½ */
+/* ï¿½ï¿½Ô¿ï¿½ï¿½Üµï¿½ï¿½ï¿½É«Ä£Ê½ */
 .lpx-sidebar.dark,
 .lpx-sidebar[data-bs-theme="dark"],
 [data-bs-theme="dark"] .lpx-sidebar,
@@ -100,81 +100,96 @@ div.lpx-topbar,
 [data-bs-theme="dark"] .lpx-logo-container,
 [data-bs-theme="dark"] .lpx-nav-menu,
 [data-bs-theme="dark"] .lpx-menu-item-link {
-    background-color: #e8f5e9 !important;
-    background: #e8f5e9 !important;
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
 }
 
 [data-bs-theme="dark"] .lpx-topbar,
 [data-bs-theme="dark"] .lpx-header,
 [data-bs-theme="dark"] .lpx-navbar,
-[data-bs-theme="dark"] .lpx-layout-header {
-    background-color: #e8f5e9 !important;
-    background: #e8f5e9 !important;
+[data-bs-theme="dark"] .lpx-layout-header,
+[data-bs-theme="dark"] .lpx-content-container,
+[data-bs-theme="dark"] .lpx-content {
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
 }
 
-/* ²Ëµ¥ÏîÁ´½Ó - ¸ù¾ÝF12¿ª·¢Õß¹¤¾ß·¢ÏÖµÄÔªËØ */
+/* ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½F12ï¿½ï¿½ï¿½ï¿½ï¿½ß¹ï¿½ï¿½ß·ï¿½ï¿½Öµï¿½Ôªï¿½ï¿½ */
 .lpx-menu-item-link,
 .lpx-menu-item,
 a.lpx-menu-item-link,
 a.lpx-menu-item-link.lpx-menu-item {
-    background-color: #e8f5e9 !important;
-    background: #e8f5e9 !important;
-    color: #333333 !important;
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
+  color: #333333 !important;
 }
 
-    .lpx-menu-item-link:hover,
-    .lpx-menu-item:hover,
-    a.lpx-menu-item-link:hover {
-        background-color: rgba(0, 0, 0, 0.05) !important;
-        color: #000000 !important;
-    }
+.lpx-menu-item-link:hover,
+.lpx-menu-item:hover,
+a.lpx-menu-item-link:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: #000000 !important;
+}
 
-    .lpx-menu-item-link.selected,
-    .lpx-menu-item.selected,
-    a.lpx-menu-item-link.selected,
-    a.lpx-menu-item-link.lpx-menu-item.selected {
-        background-color: rgba(0, 0, 0, 0.1) !important;
-        color: #000000 !important;
-    }
+.lpx-menu-item-link.selected,
+.lpx-menu-item.selected,
+a.lpx-menu-item-link.selected,
+a.lpx-menu-item-link.lpx-menu-item.selected {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  color: #000000 !important;
+}
 
-/* È·±£²Ëµ¥ÏîÔÚµ­ÂÌÉ«±³¾°ÏÂµÄ¿É¶ÁÐÔ */
+/* È·ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ï¿½ÂµÄ¿É¶ï¿½ï¿½ï¿½ */
 .lpx-sidebar .nav-link,
 .lpx-sidebar .navbar-nav .nav-link,
 .lpx-nav-menu .nav-link,
 .lpx-nav-menu .lpx-menu-item-link {
-    color: #333333 !important;
+  color: #333333 !important;
 }
 
-    .lpx-sidebar .nav-link:hover,
-    .lpx-sidebar .navbar-nav .nav-link:hover,
-    .lpx-nav-menu .nav-link:hover {
-        background-color: rgba(0, 0, 0, 0.05) !important;
-        color: #000000 !important;
-    }
+.lpx-sidebar .nav-link:hover,
+.lpx-sidebar .navbar-nav .nav-link:hover,
+.lpx-nav-menu .nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: #000000 !important;
+}
 
-    .lpx-sidebar .nav-link.active,
-    .lpx-sidebar .navbar-nav .nav-link.active,
-    .lpx-nav-menu .nav-link.active {
-        background-color: rgba(0, 0, 0, 0.1) !important;
-        color: #000000 !important;
-    }
+.lpx-sidebar .nav-link.active,
+.lpx-sidebar .navbar-nav .nav-link.active,
+.lpx-nav-menu .nav-link.active {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  color: #000000 !important;
+}
 
-/* ¶¥²¿À¸ÎÄ×ÖÑÕÉ«µ÷Õû */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ */
 .lpx-topbar,
 .lpx-header,
 .lpx-navbar {
-    color: #333333 !important;
+  color: #333333 !important;
 }
 
-    .lpx-topbar a,
-    .lpx-topbar span,
-    .lpx-topbar div,
-    .lpx-header a,
-    .lpx-navbar a {
-        color: #333333 !important;
-    }
+.lpx-topbar a,
+.lpx-topbar span,
+.lpx-topbar div,
+.lpx-header a,
+.lpx-navbar a {
+  color: #333333 !important;
+}
 
-    /* È·±£¶¥À¸ÄÚËùÓÐÎÄ±¾ÔªËØ¶¼Ê¹ÓÃÉîÉ«ÎÄ×Ö */
-    .lpx-topbar *:not([class*="icon"]):not([class*="btn"]) {
-        color: #333333 !important;
-    }
+/* È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ï¿½Ôªï¿½Ø¶ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½É«ï¿½ï¿½ï¿½ï¿½ */
+.lpx-topbar *:not([class*="icon"]):not([class*="btn"]) {
+  color: #333333 !important;
+}
+
+/* Main content area - based on F12 developer tools */
+.lpx-content-container,
+div.lpx-content-container,
+[class*="content-container"],
+.lpx-content,
+.content-container,
+.main-content,
+.lpx-body,
+.body-content {
+  background-color: #e8f5e9 !important;
+  background: #e8f5e9 !important;
+}
