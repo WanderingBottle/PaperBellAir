@@ -32,11 +32,15 @@
   background-color: #e8f5e9 !important;
   background: #e8f5e9 !important;
   position: relative;
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important; /* 居中显示 */
   height: auto;
   min-height: 64px; /* 增大容器高度以容纳更大的图标 */
   padding: 0px !important; /* 修复：设置 padding 为 0px 解决首页显示问题 */
+  gap: 8px !important; /* 图标和文字之间的间距 */
+  width: auto !important; /* 只占据内容宽度，不占据全宽 */
+  margin: 0 !important;
 }
 
 /* 增大logo图标一倍 - 针对logo元素本身 */
@@ -53,23 +57,65 @@
   background-position: center center !important;
   flex-shrink: 0 !important;
   display: inline-block !important;
+  margin-right: 0 !important; /* 移除右边距，使用gap控制间距 */
 }
 
-/* 在品牌logo后面添加PaperBell文本 */
+/* 图标不显示文字 - 移除PaperBell文本 */
 .lpx-logo-container::after {
-  content: "PaperBell";
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 16px;
-  font-size: 22px; /* 增大字体 */
-  font-weight: 600;
-  color: #333333;
-  white-space: nowrap;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  height: 64px; /* 与图标高度一致 */
-  line-height: 1; /* 使用line-height: 1，让flexbox的align-items来对齐 */
+  content: none;
+  display: none;
+}
+
+/* 品牌文字样式 - 确保图标和文字靠在一起并居中 */
+.lpx-logo-container > span,
+.lpx-brand > span,
+.lpx-brand-wrapper > span,
+.lpx-logo-container .navbar-brand,
+.lpx-brand .navbar-brand {
+  margin-left: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: #333333 !important;
+}
+
+/* 修复品牌名称元素的 margin - 针对 lpx-brand-name.lpx-login-name.mx-auto */
+.lpx-brand-name,
+.lpx-login-name,
+.lpx-brand-name.lpx-login-name,
+div.lpx-brand-name.lpx-login-name.mx-auto,
+.lpx-logo-container .lpx-brand-name,
+.lpx-brand .lpx-brand-name,
+.lpx-brand-wrapper .lpx-brand-name {
+  margin: 0 !important; /* 移除所有 margin，特别是 mx-auto 产生的左右 margin */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: 26px !important; /* 根据开发者工具显示的字体大小 */
+  font-weight: 400 !important;
+  color: #161616 !important; /* 根据开发者工具显示的颜色 */
+  font-family: Inter, sans-serif !important;
+}
+
+/* 确保顶部栏内的品牌区域绝对居中 */
+.lpx-topbar .lpx-brand,
+.lpx-topbar .lpx-brand-wrapper,
+.lpx-topbar .lpx-logo-container,
+.lpx-header .lpx-brand,
+.lpx-header .lpx-brand-wrapper,
+.lpx-header .lpx-logo-container,
+.abp-account-layout .lpx-topbar .lpx-brand,
+.abp-account-layout .lpx-topbar .lpx-brand-wrapper,
+.abp-account-layout .lpx-topbar .lpx-logo-container {
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 10 !important;
+  width: auto !important; /* 只占据内容宽度 */
+  min-width: auto !important;
+  max-width: none !important;
 }
 
 /* 导航菜单 - 基于F12开发者工具发现的元素 */
@@ -101,6 +147,10 @@ div.lpx-topbar,
   background-color: #e8f5e9 !important;
   background: #e8f5e9 !important;
   color: #333333 !important;
+  display: flex !important;
+  justify-content: center !important; /* 整体居中显示 */
+  align-items: center !important;
+  position: relative !important;
 }
 
 /* 顶部栏的文本和图标使用颜色 */
@@ -122,6 +172,10 @@ div.lpx-topbar * {
 .main-topbar {
   background-color: #e8f5e9 !important;
   background: #e8f5e9 !important;
+  display: flex !important;
+  justify-content: center !important; /* 整体居中显示 */
+  align-items: center !important;
+  position: relative !important;
 }
 
 /* 品牌/Logo 区域 */
@@ -131,7 +185,11 @@ div.lpx-topbar * {
   background: #e8f5e9 !important;
   display: flex !important;
   align-items: center !important;
+  justify-content: center !important; /* 居中显示 */
   min-height: 64px !important;
+  gap: 8px !important; /* 图标和文字之间的间距 */
+  width: auto !important; /* 只占据内容宽度 */
+  margin: 0 !important;
 }
 
 /* 增大品牌区域的logo */
@@ -147,23 +205,14 @@ div.lpx-topbar * {
   background-repeat: no-repeat !important;
   background-position: center center !important;
   flex-shrink: 0 !important;
+  margin-right: 0 !important; /* 移除右边距，使用gap控制间距 */
 }
 
-/* 在品牌区域添加PaperBell文本 */
+/* 图标不显示文字 - 移除PaperBell文本 */
 .lpx-brand::after,
 .lpx-brand-wrapper::after {
-  content: "PaperBell";
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 16px;
-  font-size: 22px; /* 增大字体 */
-  font-weight: 600;
-  color: #333333;
-  height: 64px;
-  line-height: 1; /* 使用line-height: 1，让flexbox的align-items来对齐 */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  content: none;
+  display: none;
 }
 
 /* 针对可能的暗色模式 */
