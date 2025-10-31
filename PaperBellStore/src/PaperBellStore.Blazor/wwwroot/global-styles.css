@@ -10,17 +10,171 @@
     z-index: 1000;
 }
 
-#blazor-error-ui .dismiss {
-    cursor: pointer;
-    position: absolute;
-    right: 0.75rem;
-    top: 0.5rem;
-}
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
 
 :root {
-    --lpx-logo: url('/images/logo/leptonxlite/logo-light.png');
-    --lpx-logo-icon: url('/images/logo/leptonxlite/logo-light-thumbnail.png');
+    --lpx-logo: url("/images/logo/leptonxlite/logo-light.png");
+    --lpx-logo-icon: url("/images/logo/leptonxlite/logo-light-thumbnail.png");
 }
-:root .abp-account-layout .lpx-brand-logo{
-    --lpx-logo: url('/images/logo/leptonxlite/logo-dark.png');
+
+    :root .abp-account-layout .lpx-brand-logo {
+        --lpx-logo: url("/images/logo/leptonxlite/logo-dark.png");
+    }
+
+/* 自定义侧边栏和顶部栏颜色为护眼淡绿色 */
+/* Logo容器区域 - 根据F12开发者工具发现的元素 */
+.lpx-logo-container {
+    background-color: #e8f5e9 !important;
+    background: #e8f5e9 !important;
 }
+
+/* 侧边栏菜单 - 根据F12开发者工具发现的元素 */
+.lpx-nav-menu,
+ul#desktop-sidebar.lpx-nav-menu,
+#desktop-sidebar,
+.lpx-sidebar ul,
+.lpx-sidebar .lpx-nav-menu {
+    background-color: #e8f5e9 !important;
+    background: #e8f5e9 !important;
+}
+
+/* 侧边栏相关样式 */
+.lpx-sidebar,
+.lpx-sidebar-wrapper,
+.lpx-layout-sidebar,
+.abp-layout-sidebar,
+.sidebar,
+.main-sidebar {
+    background-color: #e8f5e9 !important;
+    background: #e8f5e9 !important;
+}
+
+/* 顶部栏/导航栏相关样式 - 根据F12开发者工具发现的元素 */
+.lpx-topbar,
+div.lpx-topbar,
+[class*="topbar"],
+[class*="lpx-topbar"] {
+    background-color: #e8f5e9 !important;
+    background: #e8f5e9 !important;
+    color: #333333 !important;
+}
+
+    /* 顶栏的文本和链接颜色 */
+    .lpx-topbar,
+    .lpx-topbar *,
+    div.lpx-topbar,
+    div.lpx-topbar * {
+        color: #333333 !important;
+    }
+
+.lpx-header,
+.lpx-navbar,
+.lpx-navbar-brand,
+.lpx-layout-header,
+.abp-layout-header,
+.main-header,
+.navbar,
+.topbar,
+.main-topbar {
+    background-color: #e8f5e9 !important;
+    background: #e8f5e9 !important;
+}
+
+/* 品牌/Logo 区域 */
+.lpx-brand,
+.lpx-brand-wrapper {
+    background-color: #e8f5e9 !important;
+    background: #e8f5e9 !important;
+}
+
+/* 针对可能的深色模式 */
+.lpx-sidebar.dark,
+.lpx-sidebar[data-bs-theme="dark"],
+[data-bs-theme="dark"] .lpx-sidebar,
+[data-bs-theme="dark"] .lpx-sidebar-wrapper,
+[data-bs-theme="dark"] .lpx-logo-container,
+[data-bs-theme="dark"] .lpx-nav-menu,
+[data-bs-theme="dark"] .lpx-menu-item-link {
+    background-color: #e8f5e9 !important;
+    background: #e8f5e9 !important;
+}
+
+[data-bs-theme="dark"] .lpx-topbar,
+[data-bs-theme="dark"] .lpx-header,
+[data-bs-theme="dark"] .lpx-navbar,
+[data-bs-theme="dark"] .lpx-layout-header {
+    background-color: #e8f5e9 !important;
+    background: #e8f5e9 !important;
+}
+
+/* 菜单项链接 - 根据F12开发者工具发现的元素 */
+.lpx-menu-item-link,
+.lpx-menu-item,
+a.lpx-menu-item-link,
+a.lpx-menu-item-link.lpx-menu-item {
+    background-color: #e8f5e9 !important;
+    background: #e8f5e9 !important;
+    color: #333333 !important;
+}
+
+    .lpx-menu-item-link:hover,
+    .lpx-menu-item:hover,
+    a.lpx-menu-item-link:hover {
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        color: #000000 !important;
+    }
+
+    .lpx-menu-item-link.selected,
+    .lpx-menu-item.selected,
+    a.lpx-menu-item-link.selected,
+    a.lpx-menu-item-link.lpx-menu-item.selected {
+        background-color: rgba(0, 0, 0, 0.1) !important;
+        color: #000000 !important;
+    }
+
+/* 确保菜单项在淡绿色背景下的可读性 */
+.lpx-sidebar .nav-link,
+.lpx-sidebar .navbar-nav .nav-link,
+.lpx-nav-menu .nav-link,
+.lpx-nav-menu .lpx-menu-item-link {
+    color: #333333 !important;
+}
+
+    .lpx-sidebar .nav-link:hover,
+    .lpx-sidebar .navbar-nav .nav-link:hover,
+    .lpx-nav-menu .nav-link:hover {
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        color: #000000 !important;
+    }
+
+    .lpx-sidebar .nav-link.active,
+    .lpx-sidebar .navbar-nav .nav-link.active,
+    .lpx-nav-menu .nav-link.active {
+        background-color: rgba(0, 0, 0, 0.1) !important;
+        color: #000000 !important;
+    }
+
+/* 顶部栏文字颜色调整 */
+.lpx-topbar,
+.lpx-header,
+.lpx-navbar {
+    color: #333333 !important;
+}
+
+    .lpx-topbar a,
+    .lpx-topbar span,
+    .lpx-topbar div,
+    .lpx-header a,
+    .lpx-navbar a {
+        color: #333333 !important;
+    }
+
+    /* 确保顶栏内所有文本元素都使用深色文字 */
+    .lpx-topbar *:not([class*="icon"]):not([class*="btn"]) {
+        color: #333333 !important;
+    }
