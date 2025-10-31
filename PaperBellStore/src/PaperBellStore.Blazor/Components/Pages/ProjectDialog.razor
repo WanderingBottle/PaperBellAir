@@ -1,0 +1,83 @@
+@using ProjectManage.Projects
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_model.Name" Label="项目名称" Required="true" Immediate="true"
+                For="@(() => _model.Name)" />
+            <MudTextField @bind-Value="_model.Description" Label="描述" For="@(() => _model.Description)"
+                Immediate="true" />
+            <MudDatePicker T="DateTime?" @bind-Date="_startDate" Label="开始日期" Required="true" />
+            <MudDatePicker T="DateTime?" @bind-Date="_endDate" Label="结束日期" />
+            <MudSelect T="ProjectStatus" Label="状态" @bind-Value="_model.Status">
+                <MudSelectItem Value="ProjectStatus.Planning">规划中</MudSelectItem>
+                <MudSelectItem Value="ProjectStatus.InProgress">进行中</MudSelectItem>
+                <MudSelectItem Value="ProjectStatus.OnHold">暂停</MudSelectItem>
+                <MudSelectItem Value="ProjectStatus.Completed">已完成</MudSelectItem>
+                <MudSelectItem Value="ProjectStatus.Cancelled">已取消</MudSelectItem>
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnSave">保存</MudButton>
+        <MudButton OnClick="Cancel" Color="MudBlazor.Color.Secondary">取消</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public CreateUpdateProjectDto Model { get; set; }
+    [Parameter] public DateTime? StartDate { get; set; }
+    [Parameter] public DateTime? EndDate { get; set; }
+    [Parameter] public bool IsEdit { get; set; } = false;
+    [Parameter] public Guid? ProjectId { get; set; }
+
+    private MudForm _form;
+    private CreateUpdateProjectDto _model;
+    private DateTime? _startDate;
+    private DateTime? _endDate;
+
+    protected override void OnParametersSet()
+    {
+        _model = Model ?? new CreateUpdateProjectDto();
+        _startDate = StartDate;
+        _endDate = EndDate;
+    }
+
+    private async Task OnSave()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        if (!_startDate.HasValue)
+        {
+            return;
+        }
+
+        _model.StartDate = _startDate.Value;
+        _model.EndDate = _endDate;
+
+        var result = new ProjectDialogResult
+        {
+            Model = _model,
+            StartDate = _startDate.Value,
+            EndDate = _endDate
+        };
+        MudDialog.Close(DialogResult.Ok(result));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public class ProjectDialogResult
+    {
+        public CreateUpdateProjectDto Model { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+    }
+}

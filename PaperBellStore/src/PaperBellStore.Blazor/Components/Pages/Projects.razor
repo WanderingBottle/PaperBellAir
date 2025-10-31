@@ -2,162 +2,170 @@
 @using ProjectManage.Projects
 @using Volo.Abp.Application.Dtos
 @using System.Threading
+@using MudBlazor
 @inject IProjectAppService ProjectAppService
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@rendermode InteractiveServer
+
 
 <MudPaper Class="pa-4">
-    <MudText Typo="Typo.h5" GutterBottom="true">项目管理</MudText>
-    <MudTextField @bind-Value="_search" Placeholder="搜索项目..." Adornment="Adornment.Start" Immediate="true"
-        OnBlur="OnSearchChanged" />
-    <MudButton Color="MudBlazor.Color.Primary" Variant="Variant.Filled" OnClick="ShowAddDialog">新增项目</MudButton>
-    <MudTable Items="_projects" ServerData="LoadServerData" Filterable="false" Hover="true" Bordered="true"
-        Striped="true" Class="mt-2">
-        <HeaderContent>
-            <MudTh>项目名称</MudTh>
-            <MudTh>描述</MudTh>
-            <MudTh>状态</MudTh>
-            <MudTh>开始</MudTh>
-            <MudTh>结束</MudTh>
-            <MudTh>负责人</MudTh>
-            <MudTh>操作</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="项目名称">@context.Name</MudTd>
-            <MudTd DataLabel="描述">@context.Description</MudTd>
-            <MudTd DataLabel="状态">@context.Status.ToString()</MudTd>
-            <MudTd DataLabel="开始">@context.StartDate.ToShortDateString()</MudTd>
-            <MudTd DataLabel="结束">@context.EndDate?.ToShortDateString()</MudTd>
-            <MudTd DataLabel="负责人">@context.OwnerName</MudTd>
-            <MudTd DataLabel="操作">
-                <MudButton Variant="Variant.Text" OnClick="@(() => ShowEditDialog(context))">编辑</MudButton>
-                <MudButton Variant="Variant.Text" Color="MudBlazor.Color.Error" OnClick="@(() => Delete(context.Id))">删除
-                </MudButton>
-            </MudTd>
-        </RowTemplate>
-        <PagerContent>
-            <MudTablePager />
-        </PagerContent>
-    </MudTable>
+	<MudText Typo="Typo.h5" GutterBottom="true">项目管理</MudText>
+	<MudTextField @bind-Value="_search" Placeholder="搜索项目..." Adornment="Adornment.Start" Immediate="true"
+		OnBlur="OnSearchChanged" />
+	<MudButton Color="MudBlazor.Color.Primary" Variant="Variant.Filled" OnClick="ShowAddDialogAsync">新增项目</MudButton>
+	<MudTable @ref="_table" Items="_projects" ServerData="LoadServerData" Filterable="false" Hover="true"
+		Bordered="true" Striped="true" Class="mt-2">
+		<HeaderContent>
+			<MudTh>项目名称</MudTh>
+			<MudTh>描述</MudTh>
+			<MudTh>状态</MudTh>
+			<MudTh>开始</MudTh>
+			<MudTh>结束</MudTh>
+			<MudTh>负责人</MudTh>
+			<MudTh>操作</MudTh>
+		</HeaderContent>
+		<RowTemplate>
+			<MudTd DataLabel="项目名称">@context.Name</MudTd>
+			<MudTd DataLabel="描述">@context.Description</MudTd>
+			<MudTd DataLabel="状态">@context.Status.ToString()</MudTd>
+			<MudTd DataLabel="开始">@context.StartDate.ToShortDateString()</MudTd>
+			<MudTd DataLabel="结束">@context.EndDate?.ToShortDateString()</MudTd>
+			<MudTd DataLabel="负责人">@context.OwnerName</MudTd>
+			<MudTd DataLabel="操作">
+				<MudButton Variant="Variant.Text" OnClick="@(() => ShowEditDialogAsync(context))">编辑</MudButton>
+				<MudButton Variant="Variant.Text" Color="MudBlazor.Color.Error" OnClick="@(() => Delete(context.Id))">
+					删除
+				</MudButton>
+			</MudTd>
+		</RowTemplate>
+		<PagerContent>
+			<MudTablePager />
+		</PagerContent>
+	</MudTable>
 </MudPaper>
 
-<MudDialog @bind-IsOpen="_dialogOpen">
-    <DialogContent>
-        <MudForm @ref="_form">
-            <MudTextField @bind-Value="_editing.Name" Label="项目名称" Required="true" Immediate="true"
-                For="@(() => _editing.Name)" />
-            <MudTextField @bind-Value="_editing.Description" Label="描述" For="@(() => _editing.Description)"
-                Immediate="true" />
-            <MudDatePicker T="DateTime?" @bind-Date="_startDate" Label="开始日期" Required="true" />
-            <MudDatePicker T="DateTime?" @bind-Date="_endDate" Label="结束日期" />
-            <MudSelect T="ProjectStatus" Label="状态" @bind-Value="_editing.Status">
-                <MudSelectItem Value="ProjectStatus.Planning">规划中</MudSelectItem>
-                <MudSelectItem Value="ProjectStatus.InProgress">进行中</MudSelectItem>
-                <MudSelectItem Value="ProjectStatus.OnHold">暂停</MudSelectItem>
-                <MudSelectItem Value="ProjectStatus.Completed">已完成</MudSelectItem>
-                <MudSelectItem Value="ProjectStatus.Cancelled">已取消</MudSelectItem>
-            </MudSelect>
-        </MudForm>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Submit">保存</MudButton>
-        <MudButton OnClick="CancelDialog" Color="MudBlazor.Color.Secondary">取消</MudButton>
-    </DialogActions>
-</MudDialog>
-
 @code {
-    private List<ProjectDto> _projects = new();
-    private MudForm _form;
-    private CreateUpdateProjectDto _editing = new();
-    private DateTime? _startDate;
-    private DateTime? _endDate;
-    private Guid _editingId;
-    private bool _dialogOpen = false;
-    private string _search = string.Empty;
-    private int _totalCount = 0;
+	private MudTable<ProjectDto> _table;
+	private List<ProjectDto> _projects = new();
+	private string _search = string.Empty;
+	private int _totalCount = 0;
 
-    private async void OnSearchChanged()
-    {
-        await Refresh();
-    }
+	private async void OnSearchChanged()
+	{
+		await Refresh();
+	}
 
-    private async Task<TableData<ProjectDto>> LoadServerData(TableState state, CancellationToken cancellationToken)
-    {
-        var req = new GetProjectListDto
-        {
-            Filter = _search,
-            SkipCount = state.Page * state.PageSize,
-            MaxResultCount = state.PageSize,
-            Sorting = "CreationTime DESC"
-        };
-        var result = await ProjectAppService.GetListAsync(req);
-        _projects = result.Items.ToList();
-        _totalCount = (int)result.TotalCount;
-        return new TableData<ProjectDto> { Items = _projects, TotalItems = _totalCount };
-    }
+	private async Task<TableData<ProjectDto>> LoadServerData(TableState state, CancellationToken cancellationToken)
+	{
+		var req = new GetProjectListDto
+		{
+			Filter = _search,
+			SkipCount = state.Page * state.PageSize,
+			MaxResultCount = state.PageSize,
+			Sorting = "CreationTime DESC"
+		};
+		var result = await ProjectAppService.GetListAsync(req);
+		_projects = result.Items.ToList();
+		_totalCount = (int)result.TotalCount;
+		return new TableData<ProjectDto> { Items = _projects, TotalItems = _totalCount };
+	}
 
-    private void ShowAddDialog()
-    {
-        _editing = new CreateUpdateProjectDto { StartDate = DateTime.Now };
-        _startDate = _editing.StartDate;
-        _endDate = _editing.EndDate;
-        _editingId = Guid.Empty;
-        _dialogOpen = true;
-    }
+	private async Task ShowAddDialogAsync()
+	{
+		var editing = new CreateUpdateProjectDto { StartDate = DateTime.Now };
+		var parameters = new DialogParameters
+		{
+			[nameof(ProjectDialog.Model)] = editing,
+			[nameof(ProjectDialog.StartDate)] = editing.StartDate,
+			[nameof(ProjectDialog.EndDate)] = editing.EndDate,
+			[nameof(ProjectDialog.IsEdit)] = false
+		};
 
-    private void ShowEditDialog(ProjectDto dto)
-    {
-        _editing = new CreateUpdateProjectDto
-        {
-            Name = dto.Name,
-            Description = dto.Description,
-            StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
-            Status = dto.Status,
-            OwnerId = dto.OwnerId
-        };
-        _startDate = dto.StartDate;
-        _endDate = dto.EndDate;
-        _editingId = dto.Id;
-        _dialogOpen = true;
-    }
+		var options = new DialogOptions
+		{
+			CloseOnEscapeKey = true,
+			MaxWidth = MaxWidth.Medium,
+			FullWidth = true
+		};
 
-    private async Task Submit()
-    {
-        await _form.Validate();
-        if (!_form.IsValid) return;
+		var dialog = await DialogService.ShowAsync<ProjectDialog>("新增项目", parameters, options);
+		var result = await dialog.Result;
 
-        if (!_startDate.HasValue)
-        {
-            Snackbar.Add("请选择开始日期", Severity.Warning);
-            return;
-        }
-        _editing.StartDate = _startDate.Value;
-        _editing.EndDate = _endDate;
+		if (result != null && !result.Canceled && result.Data != null)
+		{
+			if (result.Data is ProjectDialog.ProjectDialogResult dialogResult)
+			{
+				dialogResult.Model.StartDate = dialogResult.StartDate;
+				dialogResult.Model.EndDate = dialogResult.EndDate;
+				await ProjectAppService.CreateAsync(dialogResult.Model);
+				Snackbar.Add("创建成功", Severity.Success);
+				await Refresh();
+			}
+		}
+	}
 
-        if (_editingId == Guid.Empty)
-        {
-            await ProjectAppService.CreateAsync(_editing);
-            Snackbar.Add("创建成功", Severity.Success);
-        }
-        else
-        {
-            await ProjectAppService.UpdateAsync(_editingId, _editing);
-            Snackbar.Add("更新成功", Severity.Success);
-        }
-        _dialogOpen = false;
-        await Refresh();
-    }
+	private async Task ShowEditDialogAsync(ProjectDto dto)
+	{
+		var editing = new CreateUpdateProjectDto
+		{
+			Name = dto.Name,
+			Description = dto.Description,
+			StartDate = dto.StartDate,
+			EndDate = dto.EndDate,
+			Status = dto.Status,
+			OwnerId = dto.OwnerId
+		};
 
-    private async Task Delete(Guid id)
-    {
-        bool confirmed = await Task.FromResult(true); // TODO: 实现二次确认弹窗
-        if (confirmed)
-        {
-            await ProjectAppService.DeleteAsync(id);
-            Snackbar.Add("删除成功", Severity.Success);
-            await Refresh();
-        }
-    }
-    private void CancelDialog() => _dialogOpen = false;
-    private async Task Refresh() => await InvokeAsync(StateHasChanged);
+		var parameters = new DialogParameters
+		{
+			[nameof(ProjectDialog.Model)] = editing,
+			[nameof(ProjectDialog.StartDate)] = dto.StartDate,
+			[nameof(ProjectDialog.EndDate)] = dto.EndDate,
+			[nameof(ProjectDialog.IsEdit)] = true,
+			[nameof(ProjectDialog.ProjectId)] = dto.Id
+		};
+
+		var options = new DialogOptions
+		{
+			CloseOnEscapeKey = true,
+			MaxWidth = MaxWidth.Medium,
+			FullWidth = true
+		};
+
+		var dialog = await DialogService.ShowAsync<ProjectDialog>("编辑项目", parameters, options);
+		var result = await dialog.Result;
+
+		if (result != null && !result.Canceled && result.Data != null)
+		{
+			if (result.Data is ProjectDialog.ProjectDialogResult dialogResult)
+			{
+				dialogResult.Model.StartDate = dialogResult.StartDate;
+				dialogResult.Model.EndDate = dialogResult.EndDate;
+				await ProjectAppService.UpdateAsync(dto.Id, dialogResult.Model);
+				Snackbar.Add("更新成功", Severity.Success);
+				await Refresh();
+			}
+		}
+	}
+
+	private async Task Delete(Guid id)
+	{
+		bool confirmed = await Task.FromResult(true); // TODO: 实现二次确认弹窗
+		if (confirmed)
+		{
+			await ProjectAppService.DeleteAsync(id);
+			Snackbar.Add("删除成功", Severity.Success);
+			await Refresh();
+		}
+	}
+
+	private async Task Refresh()
+	{
+		if (_table != null)
+		{
+			await _table.ReloadServerData();
+		}
+		await InvokeAsync(StateHasChanged);
+	}
 }
