@@ -1,0 +1,32 @@
+@using MudBlazor
+
+<MudDialog>
+	<DialogContent>
+		<MudText Typo="Typo.body1">
+			@ContentText
+		</MudText>
+	</DialogContent>
+	<DialogActions>
+		<MudButton OnClick="Cancel" Color="MudBlazor.Color.Secondary">取消</MudButton>
+		<MudButton OnClick="Submit" Color="@ButtonColor">@ButtonText</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	[CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+	[Parameter] public string ContentText { get; set; }
+	[Parameter] public string ButtonText { get; set; } = "确定";
+	[Parameter] public MudBlazor.Color ButtonColor { get; set; } = MudBlazor.Color.Primary;
+
+	private void Submit()
+	{
+		MudDialog.Close(DialogResult.Ok(true));
+	}
+
+	private void Cancel()
+	{
+		MudDialog.Cancel();
+	}
+}
+
