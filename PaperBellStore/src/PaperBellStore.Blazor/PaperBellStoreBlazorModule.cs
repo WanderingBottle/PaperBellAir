@@ -59,20 +59,20 @@ using ProjectManage;
 namespace PaperBellStore.Blazor;
 
 [DependsOn(
-    typeof(PaperBellStoreApplicationModule) ,
-    typeof(AbpStudioClientAspNetCoreModule) ,
-    typeof(PaperBellStoreEntityFrameworkCoreModule) ,
-    typeof(PaperBellStoreHttpApiModule) ,
-    typeof(AbpAutofacModule) ,
-    typeof(AbpSwashbuckleModule) ,
-    typeof(AbpIdentityBlazorServerModule) ,
-    typeof(AbpTenantManagementBlazorServerModule) ,
-    typeof(AbpAccountWebOpenIddictModule) ,
-    typeof(AbpAspNetCoreComponentsServerLeptonXLiteThemeModule) ,
-    typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule) ,
-    typeof(AbpAspNetCoreSerilogModule) ,
-    typeof(AbpFeatureManagementBlazorServerModule) ,
-    typeof(AbpSettingManagementBlazorServerModule) ,
+    typeof(PaperBellStoreApplicationModule),
+    typeof(AbpStudioClientAspNetCoreModule),
+    typeof(PaperBellStoreEntityFrameworkCoreModule),
+    typeof(PaperBellStoreHttpApiModule),
+    typeof(AbpAutofacModule),
+    typeof(AbpSwashbuckleModule),
+    typeof(AbpIdentityBlazorServerModule),
+    typeof(AbpTenantManagementBlazorServerModule),
+    typeof(AbpAccountWebOpenIddictModule),
+    typeof(AbpAspNetCoreComponentsServerLeptonXLiteThemeModule),
+    typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
+    typeof(AbpAspNetCoreSerilogModule),
+    typeof(AbpFeatureManagementBlazorServerModule),
+    typeof(AbpSettingManagementBlazorServerModule),
     typeof(ProjectManageApplicationModule)
    )]
 public class PaperBellStoreBlazorModule : AbpModule
@@ -85,13 +85,13 @@ public class PaperBellStoreBlazorModule : AbpModule
         context.Services.PreConfigure<AbpMvcDataAnnotationsLocalizationOptions>(options =>
         {
             options.AddAssemblyResource(
-                typeof(PaperBellStoreResource) ,
-                typeof(PaperBellStoreDomainModule).Assembly ,
-                typeof(PaperBellStoreDomainSharedModule).Assembly ,
-                typeof(PaperBellStoreApplicationModule).Assembly ,
-                typeof(PaperBellStoreApplicationContractsModule).Assembly ,
-                typeof(PaperBellStoreBlazorModule).Assembly ,
-                typeof(ProjectManageResource).Assembly ,
+                typeof(PaperBellStoreResource),
+                typeof(PaperBellStoreDomainModule).Assembly,
+                typeof(PaperBellStoreDomainSharedModule).Assembly,
+                typeof(PaperBellStoreApplicationModule).Assembly,
+                typeof(PaperBellStoreApplicationContractsModule).Assembly,
+                typeof(PaperBellStoreBlazorModule).Assembly,
+                typeof(ProjectManageResource).Assembly,
                 typeof(ProjectManageDomainSharedModule).Assembly
             );
         });
@@ -106,23 +106,23 @@ public class PaperBellStoreBlazorModule : AbpModule
             });
         });
 
-        if(!hostingEnvironment.IsDevelopment())
+        if (!hostingEnvironment.IsDevelopment())
         {
             PreConfigure<AbpOpenIddictAspNetCoreOptions>(options =>
             {
-                options.AddDevelopmentEncryptionAndSigningCertificate=false;
+                options.AddDevelopmentEncryptionAndSigningCertificate = false;
             });
 
             PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
             {
-                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx" , configuration["AuthServer:CertificatePassPhrase"]!);
+                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
                 serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
             });
         }
 
         PreConfigure<AbpAspNetCoreComponentsWebOptions>(options =>
         {
-            options.IsBlazorWebApp=true;
+            options.IsBlazorWebApp = true;
         });
     }
 
@@ -135,22 +135,22 @@ public class PaperBellStoreBlazorModule : AbpModule
         context.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
-        if(!configuration.GetValue<bool>("App:DisablePII"))
+        if (!configuration.GetValue<bool>("App:DisablePII"))
         {
-            Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII=true;
-            Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact=true;
+            Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
+            Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
         }
 
-        if(!configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata"))
+        if (!configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata"))
         {
             Configure<OpenIddictServerAspNetCoreOptions>(options =>
             {
-                options.DisableTransportSecurityRequirement=true;
+                options.DisableTransportSecurityRequirement = true;
             });
 
             Configure<ForwardedHeadersOptions>(options =>
             {
-                options.ForwardedHeaders=ForwardedHeaders.XForwardedProto;
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
             });
         }
 
@@ -172,7 +172,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
         context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
         {
-            options.IsDynamicClaimsEnabled=true;
+            options.IsDynamicClaimsEnabled = true;
         });
     }
 
@@ -180,8 +180,8 @@ public class PaperBellStoreBlazorModule : AbpModule
     {
         Configure<AppUrlOptions>(options =>
         {
-            options.Applications["MVC"].RootUrl=configuration["App:SelfUrl"];
-            options.RedirectAllowedUrls.AddRange(configuration["App:RedirectAllowedUrls"]?.Split(',')??Array.Empty<string>());
+            options.Applications["MVC"].RootUrl = configuration["App:SelfUrl"];
+            options.RedirectAllowedUrls.AddRange(configuration["App:RedirectAllowedUrls"]?.Split(',') ?? Array.Empty<string>());
         });
     }
 
@@ -191,7 +191,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         {
             // MVC UI
             options.StyleBundles.Configure(
-                LeptonXLiteThemeBundles.Styles.Global ,
+                LeptonXLiteThemeBundles.Styles.Global,
                 bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
@@ -199,7 +199,7 @@ public class PaperBellStoreBlazorModule : AbpModule
             );
 
             options.ScriptBundles.Configure(
-                LeptonXLiteThemeBundles.Scripts.Global ,
+                LeptonXLiteThemeBundles.Scripts.Global,
                 bundle =>
                 {
                     bundle.AddFiles("/global-scripts.js");
@@ -208,7 +208,7 @@ public class PaperBellStoreBlazorModule : AbpModule
 
             // Blazor UI
             options.StyleBundles.Configure(
-                BlazorLeptonXLiteThemeBundles.Styles.Global ,
+                BlazorLeptonXLiteThemeBundles.Styles.Global,
                 bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
@@ -224,15 +224,17 @@ public class PaperBellStoreBlazorModule : AbpModule
 
     private void ConfigureVirtualFileSystem(IWebHostEnvironment hostingEnvironment)
     {
-        if(hostingEnvironment.IsDevelopment())
+        if (hostingEnvironment.IsDevelopment())
         {
             Configure<AbpVirtualFileSystemOptions>(options =>
             {
-                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath , $"..{Path.DirectorySeparatorChar}PaperBellStore.Domain.Shared"));
-                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath , $"..{Path.DirectorySeparatorChar}PaperBellStore.Domain"));
-                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath , $"..{Path.DirectorySeparatorChar}PaperBellStore.Application.Contracts"));
-                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath , $"..{Path.DirectorySeparatorChar}PaperBellStore.Application"));
+                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}PaperBellStore.Domain.Shared"));
+                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}PaperBellStore.Domain"));
+                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}PaperBellStore.Application.Contracts"));
+                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}PaperBellStore.Application"));
                 options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreBlazorModule>(hostingEnvironment.ContentRootPath);
+                // 添加子模块的虚拟文件系统配置
+                options.FileSets.ReplaceEmbeddedByPhysical<ProjectManageDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}modules{Path.DirectorySeparatorChar}ProjectManagement{Path.DirectorySeparatorChar}ProjectManage.Domain.Shared"));
             });
         }
     }
@@ -242,8 +244,8 @@ public class PaperBellStoreBlazorModule : AbpModule
         services.AddAbpSwaggerGen(
             options =>
             {
-                options.SwaggerDoc("v1" , new OpenApiInfo { Title="PaperBellStore API" , Version="v1" });
-                options.DocInclusionPredicate((docName , description) => true);
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "PaperBellStore API", Version = "v1" });
+                options.DocInclusionPredicate((docName, description) => true);
                 options.CustomSchemaIds(type => type.FullName);
             }
         );
@@ -273,7 +275,7 @@ public class PaperBellStoreBlazorModule : AbpModule
     {
         Configure<AbpRouterOptions>(options =>
         {
-            options.AppAssembly=typeof(PaperBellStoreBlazorModule).Assembly;
+            options.AppAssembly = typeof(PaperBellStoreBlazorModule).Assembly;
         });
     }
 
@@ -300,14 +302,14 @@ public class PaperBellStoreBlazorModule : AbpModule
 
         app.UseForwardedHeaders();
 
-        if(env.IsDevelopment())
+        if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
 
         app.UseAbpRequestLocalization();
 
-        if(!env.IsDevelopment())
+        if (!env.IsDevelopment())
         {
             app.UseErrorPage();
             app.UseHsts();
@@ -322,7 +324,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         app.UseAuthentication();
         app.UseAbpOpenIddictValidation();
 
-        if(MultiTenancyConsts.IsEnabled)
+        if (MultiTenancyConsts.IsEnabled)
         {
             app.UseMultiTenancy();
         }
@@ -333,7 +335,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json" , "PaperBellStore API");
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "PaperBellStore API");
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
