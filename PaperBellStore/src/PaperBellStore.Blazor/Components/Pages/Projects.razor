@@ -10,8 +10,7 @@
 @inject IDialogService DialogService
 @rendermode InteractiveServer
 
-
-<MudPaper Class="pa-4">
+<div class="pa-4">
 	<MudText Typo="Typo.h5" GutterBottom="true">项目管理</MudText>
 
 	<MudStack Spacing="2" Class="mb-4">
@@ -143,7 +142,7 @@
 			<MudDataGridPager T="ProjectDto" />
 		</PagerContent>
 	</MudDataGrid>
-</MudPaper>
+</div>
 
 @code {
 	private MudDataGrid<ProjectDto> _dataGrid;
