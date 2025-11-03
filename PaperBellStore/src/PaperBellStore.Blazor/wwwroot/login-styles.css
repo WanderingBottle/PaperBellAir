@@ -8,6 +8,20 @@
   padding: 0 !important;
 }
 
+/* 品牌logo样式 - 增大品牌图片 */
+.abp-account-layout .lpx-brand-logo {
+  transform: scale(1.5) !important;
+  transform-origin: center top !important;
+  margin-bottom: 30px !important;
+  display: block !important;
+}
+
+.abp-account-layout .lpx-brand-logo img {
+  transform: scale(1.5) !important;
+  transform-origin: center top !important;
+  display: block !important;
+}
+
 /* 登录页面自定义样式 */
 .login-container {
   max-width: 100%;

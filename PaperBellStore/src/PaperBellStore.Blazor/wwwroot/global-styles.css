@@ -1,27 +1,68 @@
 #blazor-error-ui {
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
+  background: lightyellow;
+  bottom: 0;
+  box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+  display: none;
+  left: 0;
+  padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+#blazor-error-ui .dismiss {
+  cursor: pointer;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.5rem;
+}
 
 :root {
-    --lpx-logo: url("/images/logo/leptonxlite/logo-light.jpg");
-    --lpx-logo-icon: url("/images/logo/leptonxlite/logo-light-thumbnail.jpg");
+  --lpx-logo: url("/images/logo/leptonxlite/logo-light.jpg");
+  --lpx-logo-icon: url("/images/logo/leptonxlite/logo-light-thumbnail.jpg");
 }
 
-    :root .abp-account-layout .lpx-brand-logo {
-        --lpx-logo: url("/images/logo/leptonxlite/logo-dark.jpg");
-    }
+:root .abp-account-layout .lpx-brand-logo {
+  --lpx-logo: url("/images/logo/leptonxlite/logo-dark.jpg");
+}
+
+/* 菜单部分logo样式 - 增大菜单中的品牌图片 */
+/* 针对菜单logo容器 - lpx-logo-container */
+.lpx-logo-container {
+  height: 80px !important;
+  min-height: 80px !important;
+  padding: 15px 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+/* 针对菜单logo容器内的logo元素 */
+.lpx-logo-container .lpx-brand-logo,
+.lpx-logo-container [class*="brand-logo"] {
+  min-width: 200px !important;
+  width: auto !important;
+  height: 50px !important;
+  min-height: 50px !important;
+  max-height: 50px !important;
+  background-size: auto 50px !important;
+  background-repeat: no-repeat !important;
+  background-position: left center !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  display: block !important;
+}
+
+/* 针对菜单logo容器内的img标签 */
+.lpx-logo-container img {
+  min-width: 200px !important;
+  width: auto !important;
+  height: 50px !important;
+  max-height: 50px !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  display: block !important;
+}
