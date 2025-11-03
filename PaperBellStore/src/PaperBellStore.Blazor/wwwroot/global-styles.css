@@ -18,51 +18,34 @@
 }
 
 :root {
+  /* 登录页品牌logo - 使用 --lpx-logo */
   --lpx-logo: url("/images/logo/leptonxlite/logo-light.jpg");
+
+  /* 菜单栏图标 - 使用 --lpx-logo-icon（可以配置不同的图片） */
   --lpx-logo-icon: url("/images/logo/leptonxlite/logo-light-thumbnail.jpg");
 }
 
+/* 登录页品牌logo配置 - 只影响登录页 */
 :root .abp-account-layout .lpx-brand-logo {
   --lpx-logo: url("/images/logo/leptonxlite/logo-dark.jpg");
 }
 
-/* 菜单部分logo样式 - 增大菜单中的品牌图片 */
-/* 针对菜单logo容器 - lpx-logo-container */
-.lpx-logo-container {
-  height: 80px !important;
-  min-height: 80px !important;
-  padding: 15px 20px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  text-align: left !important;
+/* 菜单栏图标配置 - 只影响菜单栏（应用主布局，非登录页） */
+/* 菜单栏使用独立的图标，与登录页logo分开配置 */
+.abp-application-layout .lpx-brand-logo-icon,
+.abp-application-layout .lpx-logo-container .lpx-brand-logo {
+  /* 菜单栏图标 - 可以配置与登录页不同的图片 */
+  /* 当前使用 logo-dark-thumbnail.jpg，如需更换，修改下面的路径 */
+  --lpx-logo-icon: url("/images/logo/leptonxlite/logo-dark-thumbnail.jpg");
 }
 
-/* 针对菜单logo容器内的logo元素 */
-.lpx-logo-container .lpx-brand-logo,
-.lpx-logo-container [class*="brand-logo"] {
-  min-width: 200px !important;
-  width: auto !important;
-  height: 50px !important;
-  min-height: 50px !important;
-  max-height: 50px !important;
-  background-size: auto 50px !important;
-  background-repeat: no-repeat !important;
-  background-position: left center !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-  display: block !important;
+/* 当侧边栏折叠/隐藏时，隐藏品牌logo - 临时注释掉，先恢复显示 */
+/*
+.lpx-sidebar-collapsed .lpx-logo-container .lpx-brand-logo,
+.lpx-sidebar-collapsed .lpx-logo-container [class*="brand-logo"],
+[class*="collapsed"] .lpx-logo-container .lpx-brand-logo,
+.lpx-sidebar-collapsed .lpx-logo-container img,
+[class*="collapsed"] .lpx-logo-container img {
+  display: none !important;
 }
-
-/* 针对菜单logo容器内的img标签 */
-.lpx-logo-container img {
-  min-width: 200px !important;
-  width: auto !important;
-  height: 50px !important;
-  max-height: 50px !important;
-  max-width: 100% !important;
-  object-fit: contain !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-  display: block !important;
-}
+*/
