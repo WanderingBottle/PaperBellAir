@@ -7,6 +7,7 @@
         "Permission:ProjectManagement.Delete": "删除项目",
         "Permission:ProjectManagement.View": "查看项目",
         "Menu:ProjectManagement": "项目管理",
-        "Menu:ProjectManagement.Projects": "项目列表"
+        "Menu:ProjectManagement.Projects": "项目列表",
+        "Menu:ProjectManagement.Owners": "负责人列表"
     }
 }

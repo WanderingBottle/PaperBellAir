@@ -1,0 +1,64 @@
+@using ProjectManage.Owners
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_model.Name" Label="负责人名称" Required="true" Immediate="true"
+                For="@(() => _model.Name)" />
+            <MudTextField @bind-Value="_model.Description" Label="描述" For="@(() => _model.Description)"
+                Immediate="true" />
+            <MudTextField @bind-Value="_model.Email" Label="邮箱" For="@(() => _model.Email)" Immediate="true"
+                InputType="InputType.Email" />
+            <MudTextField @bind-Value="_model.Phone" Label="电话" For="@(() => _model.Phone)" Immediate="true" />
+            <MudSelect T="OwnerDepartment" Label="部门" @bind-Value="_model.Department">
+                <MudSelectItem Value="OwnerDepartment.ResearchAndDevelopment">研发部</MudSelectItem>
+                <MudSelectItem Value="OwnerDepartment.Implementation">实施部</MudSelectItem>
+                <MudSelectItem Value="OwnerDepartment.Project">项目部</MudSelectItem>
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnSave">保存</MudButton>
+        <MudButton OnClick="Cancel" Color="MudBlazor.Color.Secondary">取消</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public CreateUpdateOwnerDto Model { get; set; }
+    [Parameter] public bool IsEdit { get; set; } = false;
+    [Parameter] public Guid? OwnerId { get; set; }
+
+    private MudForm _form;
+    private CreateUpdateOwnerDto _model;
+
+    protected override void OnParametersSet()
+    {
+        _model = Model ?? new CreateUpdateOwnerDto();
+    }
+
+    private async Task OnSave()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        var result = new OwnerDialogResult
+        {
+            Model = _model
+        };
+        MudDialog.Close(DialogResult.Ok(result));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public class OwnerDialogResult
+    {
+        public CreateUpdateOwnerDto Model { get; set; }
+    }
+}

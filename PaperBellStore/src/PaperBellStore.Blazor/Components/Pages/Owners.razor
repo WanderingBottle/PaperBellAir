@@ -1,0 +1,593 @@
+@page "/owners"
+@using Microsoft.Extensions.Localization
+@using ProjectManage.Owners
+@using ProjectManage.Localization
+@using PaperBellStore.Localization
+@using Volo.Abp.Application.Dtos
+@using System.Threading
+@using System.Linq
+@using MudBlazor
+@using MudBlazor.Extensions
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.JSInterop
+@using Volo.Abp.Localization
+@using Volo.Abp.UI.Navigation
+@using PaperBellStore.Blazor.Menus
+@inject IOwnerAppService OwnerAppService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IStringLocalizer<ProjectManageResource> ProjectL
+@inject IStringLocalizer<PaperBellStoreResource> L
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject IMenuManager MenuManager
+@implements IAsyncDisposable
+@rendermode InteractiveServer
+
+<!-- 面包屑导航 - 将被 JavaScript 移动到顶栏，使用原生样式 -->
+<ul id="owner-breadcrumb" class="lpx-breadcrumb" style="display: none;">
+	@if (_homeMenu != null)
+	{
+		<li class="lpx-breadcrumb-item">
+			<a href="@(_homeMenu.Url ?? "/")">
+				@if (!string.IsNullOrEmpty(_homeMenu.Icon))
+				{
+					<i class="@_homeMenu.Icon"></i>
+				}
+			</a>
+		</li>
+	}
+	@if (_projectManagementMenu != null)
+	{
+		<li class="lpx-breadcrumb-item">
+			<span>@_projectManagementMenu.DisplayName</span>
+		</li>
+	}
+	@if (_ownersMenu != null)
+	{
+		<li class="lpx-breadcrumb-item">
+			<span>@_ownersMenu.DisplayName</span>
+		</li>
+	}
+</ul>
+
+<div class="pa-4">
+	<MudText Typo="Typo.h5" GutterBottom="true">负责人列表</MudText>
+
+	<MudStack Spacing="2" Class="mb-4">
+		<MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween" AlignItems="AlignItems.End">
+			<MudStack Row="true" Spacing="2" AlignItems="AlignItems.End">
+				@if (_searchMode == SearchMode.Fuzzy)
+				{
+					<MudTextField @bind-Value="_search" Placeholder="搜索负责人（匹配名称、描述、邮箱、电话）..." Adornment="Adornment.Start"
+						AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false" Class="search-field"
+						Style="min-width: 300px;" />
+				}
+				<MudSelect Value="_searchMode" ValueChanged="@((SearchMode mode) => OnSearchModeChanged(mode))"
+					Label="查询模式" Dense="true" Style="min-width: 120px;">
+					<MudSelectItem Value="@SearchMode.Fuzzy">模糊查询</MudSelectItem>
+					<MudSelectItem Value="@SearchMode.Exact">精确查询</MudSelectItem>
+				</MudSelect>
+				<MudButton Color="MudBlazor.Color.Info" Variant="Variant.Outlined" OnClick="OnSearchChanged"
+					StartIcon="@Icons.Material.Filled.Search">
+					搜索
+				</MudButton>
+				<MudButton Color="MudBlazor.Color.Default" Variant="Variant.Text" OnClick="ClearSearch"
+					StartIcon="@Icons.Material.Filled.Clear">
+					清除
+				</MudButton>
+			</MudStack>
+			<MudStack Row="true" Spacing="2">
+				<MudButton Color="MudBlazor.Color.Info" Variant="Variant.Outlined" OnClick="RefreshData"
+					StartIcon="@Icons.Material.Filled.Refresh">
+					刷新
+				</MudButton>
+				<MudButton Color="MudBlazor.Color.Primary" Variant="Variant.Filled" OnClick="ShowAddDialogAsync"
+					StartIcon="@Icons.Material.Filled.Add">
+					新增负责人
+				</MudButton>
+			</MudStack>
+		</MudStack>
+
+		@if (_searchMode == SearchMode.Exact)
+		{
+			<MudPaper Elevation="1" Class="pa-4">
+				<MudText Typo="Typo.subtitle2" GutterBottom="true">精确查询条件</MudText>
+				<MudGrid>
+					<MudItem xs="12" sm="6" md="4">
+						<MudTextField @bind-Value="_exactSearch.Name" Label="负责人名称" Variant="Variant.Outlined"
+							Dense="true" />
+					</MudItem>
+					<MudItem xs="12" sm="6" md="4">
+						<MudTextField @bind-Value="_exactSearch.Description" Label="描述" Variant="Variant.Outlined"
+							Dense="true" />
+					</MudItem>
+					<MudItem xs="12" sm="6" md="4">
+						<MudTextField @bind-Value="_exactSearch.Email" Label="邮箱" Variant="Variant.Outlined"
+							Dense="true" />
+					</MudItem>
+					<MudItem xs="12" sm="6" md="4">
+						<MudTextField @bind-Value="_exactSearch.Phone" Label="电话" Variant="Variant.Outlined"
+							Dense="true" />
+					</MudItem>
+					<MudItem xs="12" sm="6" md="4">
+						<MudSelect @bind-Value="_exactSearch.Department" Label="部门" Variant="Variant.Outlined" Dense="true"
+							Clearable="true">
+							<MudSelectItem Value="@((OwnerDepartment?)null)">全部</MudSelectItem>
+							<MudSelectItem Value="@((OwnerDepartment?)OwnerDepartment.ResearchAndDevelopment)">研发部</MudSelectItem>
+							<MudSelectItem Value="@((OwnerDepartment?)OwnerDepartment.Implementation)">实施部</MudSelectItem>
+							<MudSelectItem Value="@((OwnerDepartment?)OwnerDepartment.Project)">项目部</MudSelectItem>
+						</MudSelect>
+					</MudItem>
+				</MudGrid>
+			</MudPaper>
+		}
+	</MudStack>
+
+	<MudDataGrid T="OwnerDto" @ref="_dataGrid" ServerData="@LoadServerData"
+		FilterMode="@MudBlazor.DataGridFilterMode.Simple" SortMode="@MudBlazor.SortMode.Multiple" Hover="true"
+		Bordered="true" Striped="true" Elevation="2" Class="mt-2">
+		<Columns>
+			<PropertyColumn Property="@(x => x.Name)" Title="负责人名称" Sortable="true" Filterable="true" />
+			<PropertyColumn Property="@(x => x.Description)" Title="描述" Sortable="true" Filterable="true">
+				<CellTemplate>
+					@(string.IsNullOrEmpty(context.Item.Description) ? "-" : context.Item.Description)
+				</CellTemplate>
+			</PropertyColumn>
+			<PropertyColumn Property="@(x => x.Email)" Title="邮箱" Sortable="true" Filterable="true">
+				<CellTemplate>
+					@(string.IsNullOrEmpty(context.Item.Email) ? "-" : context.Item.Email)
+				</CellTemplate>
+			</PropertyColumn>
+			<PropertyColumn Property="@(x => x.Phone)" Title="电话" Sortable="true" Filterable="true">
+				<CellTemplate>
+					@(string.IsNullOrEmpty(context.Item.Phone) ? "-" : context.Item.Phone)
+				</CellTemplate>
+			</PropertyColumn>
+			<TemplateColumn Title="部门" Sortable="true" SortBy="@(x => x.Department.ToString())">
+				<CellTemplate>
+					<MudChip Size="MudBlazor.Size.Small" Color="@GetDepartmentColor(context.Item.Department)">
+						@GetDepartmentText(context.Item.Department)
+					</MudChip>
+				</CellTemplate>
+			</TemplateColumn>
+			<TemplateColumn Title="操作" Sortable="false" Filterable="false">
+				<CellTemplate>
+					<MudStack Row="true" Spacing="1">
+						<MudButton Variant="Variant.Text" Size="MudBlazor.Size.Small" Color="MudBlazor.Color.Primary"
+							OnClick="@(() => ShowEditDialogAsync(context.Item))"
+							StartIcon="@Icons.Material.Filled.Edit">
+							编辑
+						</MudButton>
+						<MudButton Variant="Variant.Text" Size="MudBlazor.Size.Small" Color="MudBlazor.Color.Error"
+							OnClick="@(() => ShowDeleteConfirmDialog(context.Item))"
+							StartIcon="@Icons.Material.Filled.Delete">
+							删除
+						</MudButton>
+					</MudStack>
+				</CellTemplate>
+			</TemplateColumn>
+		</Columns>
+		<PagerContent>
+			<MudDataGridPager T="OwnerDto" />
+		</PagerContent>
+	</MudDataGrid>
+</div>
+
+@code {
+	private MudDataGrid<OwnerDto> _dataGrid;
+	private List<OwnerDto> _owners = new();
+	private string _search = string.Empty;
+	private SearchMode _searchMode = SearchMode.Fuzzy;
+	private ExactSearchModel _exactSearch = new();
+	private ApplicationMenuItem _homeMenu;
+	private ApplicationMenuItem _projectManagementMenu;
+	private ApplicationMenuItem _ownersMenu;
+
+	private enum SearchMode
+	{
+		Fuzzy, // 模糊查询
+		Exact // 精确查询
+	}
+
+	private class ExactSearchModel
+	{
+		public string Name { get; set; }
+		public string Description { get; set; }
+		public string Email { get; set; }
+		public string Phone { get; set; }
+		public OwnerDepartment? Department { get; set; }
+	}
+
+	private async Task OnSearchModeChanged(SearchMode mode)
+	{
+		_searchMode = mode;
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task OnSearchChanged()
+	{
+		await RefreshData();
+	}
+
+	private async Task ClearSearch()
+	{
+		if (_searchMode == SearchMode.Fuzzy)
+		{
+			_search = string.Empty;
+		}
+		else
+		{
+			_exactSearch = new ExactSearchModel();
+		}
+		await RefreshData();
+	}
+
+	private async Task<MudBlazor.GridData<OwnerDto>> LoadServerData(MudBlazor.GridState<OwnerDto> state)
+	{
+		var req = new GetOwnerListDto
+		{
+			SkipCount = state.Page * state.PageSize,
+			MaxResultCount = state.PageSize,
+			Sorting = BuildSorting(state)
+		};
+
+		// 根据查询模式设置查询条件
+		if (_searchMode == SearchMode.Fuzzy)
+		{
+			// 模糊查询：使用Filter字段匹配Name、Description、Email和Phone
+			req.Filter = string.IsNullOrWhiteSpace(_search) ? null : _search;
+		}
+		else
+		{
+			// 精确查询：设置各个字段的精确查询条件
+			req.Name = string.IsNullOrWhiteSpace(_exactSearch.Name) ? null : _exactSearch.Name;
+			req.Description = string.IsNullOrWhiteSpace(_exactSearch.Description) ? null : _exactSearch.Description;
+			req.Email = string.IsNullOrWhiteSpace(_exactSearch.Email) ? null : _exactSearch.Email;
+			req.Phone = string.IsNullOrWhiteSpace(_exactSearch.Phone) ? null : _exactSearch.Phone;
+			req.Department = _exactSearch.Department;
+		}
+
+		var result = await OwnerAppService.GetListAsync(req);
+		_owners = result.Items.ToList();
+
+		return new MudBlazor.GridData<OwnerDto>
+		{
+			Items = _owners,
+			TotalItems = (int)result.TotalCount
+		};
+	}
+
+	private string BuildSorting(MudBlazor.GridState<OwnerDto> state)
+	{
+		if (state.SortDefinitions == null || !state.SortDefinitions.Any())
+		{
+			return "CreationTime DESC";
+		}
+
+		var sortParts = state.SortDefinitions.Select(s =>
+		$"{s.SortBy} {(s.Descending ? "DESC" : "ASC")}"
+		);
+
+		return string.Join(", ", sortParts);
+	}
+
+	private async Task ShowAddDialogAsync()
+	{
+		var editing = new CreateUpdateOwnerDto { Department = OwnerDepartment.ResearchAndDevelopment };
+		var parameters = new DialogParameters
+		{
+			[nameof(OwnerDialog.Model)] = editing,
+			[nameof(OwnerDialog.IsEdit)] = false
+		};
+
+		var options = new DialogOptions
+		{
+			CloseOnEscapeKey = true,
+			MaxWidth = MaxWidth.Medium,
+			FullWidth = true
+		};
+
+		var dialog = await DialogService.ShowAsync<OwnerDialog>("新增负责人", parameters, options);
+		var result = await dialog.Result;
+
+		if (result != null && !result.Canceled && result.Data != null)
+		{
+			if (result.Data is OwnerDialog.OwnerDialogResult dialogResult)
+			{
+				await OwnerAppService.CreateAsync(dialogResult.Model);
+				Snackbar.Add("创建成功", Severity.Success);
+				await RefreshData();
+			}
+		}
+	}
+
+	private async Task ShowEditDialogAsync(OwnerDto dto)
+	{
+		var editing = new CreateUpdateOwnerDto
+		{
+			Name = dto.Name,
+			Description = dto.Description,
+			Email = dto.Email,
+			Phone = dto.Phone,
+			Department = dto.Department
+		};
+
+		var parameters = new DialogParameters
+		{
+			[nameof(OwnerDialog.Model)] = editing,
+			[nameof(OwnerDialog.IsEdit)] = true,
+			[nameof(OwnerDialog.OwnerId)] = dto.Id
+		};
+
+		var options = new DialogOptions
+		{
+			CloseOnEscapeKey = true,
+			MaxWidth = MaxWidth.Medium,
+			FullWidth = true
+		};
+
+		var dialog = await DialogService.ShowAsync<OwnerDialog>("编辑负责人", parameters, options);
+		var result = await dialog.Result;
+
+		if (result != null && !result.Canceled && result.Data != null)
+		{
+			if (result.Data is OwnerDialog.OwnerDialogResult dialogResult)
+			{
+				await OwnerAppService.UpdateAsync(dto.Id, dialogResult.Model);
+				Snackbar.Add("更新成功", Severity.Success);
+				await RefreshData();
+			}
+		}
+	}
+
+	private async Task ShowDeleteConfirmDialog(OwnerDto owner)
+	{
+		var parameters = new DialogParameters
+		{
+			[nameof(SimpleDialog.ContentText)] = $"确定要删除负责人 '{owner.Name}' 吗？此操作无法撤销。",
+			[nameof(SimpleDialog.ButtonText)] = "删除",
+			[nameof(SimpleDialog.ButtonColor)] = MudBlazor.Color.Error
+		};
+
+		var options = new DialogOptions
+		{
+			CloseOnEscapeKey = true,
+			MaxWidth = MaxWidth.Small,
+			FullWidth = true
+		};
+
+		var dialog = await DialogService.ShowAsync<SimpleDialog>("确认删除", parameters, options);
+		var result = await dialog.Result;
+
+		if (result != null && !result.Canceled)
+		{
+			await Delete(owner.Id);
+		}
+	}
+
+	private async Task Delete(Guid id)
+	{
+		try
+		{
+			await OwnerAppService.DeleteAsync(id);
+			Snackbar.Add("删除成功", Severity.Success);
+			await RefreshData();
+		}
+		catch (Exception ex)
+		{
+			Snackbar.Add($"删除失败: {ex.Message}", Severity.Error);
+		}
+	}
+
+	private async Task RefreshData()
+	{
+		if (_dataGrid != null)
+		{
+			await _dataGrid.ReloadServerData();
+		}
+		await InvokeAsync(StateHasChanged);
+	}
+
+	private MudBlazor.Color GetDepartmentColor(OwnerDepartment department)
+	{
+		return department switch
+		{
+			OwnerDepartment.ResearchAndDevelopment => MudBlazor.Color.Info,
+			OwnerDepartment.Implementation => MudBlazor.Color.Success,
+			OwnerDepartment.Project => MudBlazor.Color.Warning,
+			_ => MudBlazor.Color.Default
+		};
+	}
+
+	private string GetDepartmentText(OwnerDepartment department)
+	{
+		return department switch
+		{
+			OwnerDepartment.ResearchAndDevelopment => "研发部",
+			OwnerDepartment.Implementation => "实施部",
+			OwnerDepartment.Project => "项目部",
+			_ => department.ToString()
+		};
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		// 从菜单配置中自动获取菜单项信息（包括图标）
+		var menu = await MenuManager.GetAsync(StandardMenus.Main);
+
+		// 获取首页菜单
+		_homeMenu = menu.Items.FirstOrDefault(x => x.Name == PaperBellStoreMenus.Home);
+
+		// 获取项目管理父菜单
+		_projectManagementMenu = menu.Items.FirstOrDefault(x => x.Name == "ProjectManagement");
+
+		// 获取负责人列表子菜单
+		if (_projectManagementMenu != null)
+		{
+			_ownersMenu = _projectManagementMenu.Items.FirstOrDefault(x => x.Name == "ProjectManagement.Owners");
+		}
+
+		// 监听导航事件，当离开当前页面时移除面包屑
+		Navigation.LocationChanged += OnLocationChanged;
+
+		await base.OnInitializedAsync();
+	}
+
+	private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+	{
+		// 如果导航到其他页面（不是负责人列表页面），移除面包屑
+		if (!e.Location.Contains("/owners"))
+		{
+			_ = Task.Run(async () =>
+			{
+				await Task.Delay(100); // 等待一下确保页面切换完成
+				await JSRuntime.InvokeVoidAsync("eval", @"
+(function() {
+try {
+const breadcrumb = document.getElementById('owner-breadcrumb-topbar');
+if (breadcrumb) {
+breadcrumb.remove();
+}
+} catch (error) {
+console.error('Error removing breadcrumb:', error);
+}
+})();
+");
+			});
+		}
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			// 等待 DOM 完全渲染后移动面包屑到顶栏
+			await Task.Delay(200);
+
+			// 直接注入并执行脚本，而不是依赖全局脚本文件
+			await JSRuntime.InvokeVoidAsync("eval", @"
+(function() {
+try {
+const breadcrumb = document.getElementById('owner-breadcrumb');
+if (!breadcrumb) {
+return;
+}
+
+// 查找顶栏容器
+let topBar = null;
+const wrapper = document.querySelector('.lpx-wrapper') || document.querySelector('[class*=""lpx-wrapper""]');
+if (wrapper) {
+topBar = wrapper.querySelector('.lpx-header') ||
+wrapper.querySelector('[class*=""lpx-header""]') ||
+wrapper.querySelector('.lpx-topbar') ||
+wrapper.querySelector('[class*=""header""]');
+}
+
+if (!topBar) {
+topBar = document.querySelector('.lpx-header') ||
+document.querySelector('.lpx-topbar') ||
+document.querySelector('.lpx-navbar') ||
+document.querySelector('[class*=""lpx-header""]') ||
+document.querySelector('.navbar') ||
+document.querySelector('.header');
+}
+
+if (topBar) {
+// 只移除我们自己的面包屑，不影响其他页面的原生面包屑
+const existingCloned = document.getElementById('owner-breadcrumb-topbar');
+if (existingCloned) {
+existingCloned.remove();
+}
+
+// 克隆面包屑元素（深度克隆以包含所有子元素）
+const clonedBreadcrumb = breadcrumb.cloneNode(true);
+clonedBreadcrumb.id = 'owner-breadcrumb-topbar';
+
+// 移除克隆元素和所有子元素的内联样式，确保使用原生CSS样式
+clonedBreadcrumb.removeAttribute('style');
+const allItems = clonedBreadcrumb.querySelectorAll('*');
+allItems.forEach(item => {
+item.removeAttribute('style');
+});
+
+// 查找原生面包屑的位置，插入到相同位置
+const nativeBreadcrumb = topBar.querySelector('.lpx-breadcrumb');
+
+if (nativeBreadcrumb && nativeBreadcrumb.id !== 'owner-breadcrumb-topbar') {
+// 如果存在原生面包屑，插入到它之前或之后（根据实际情况）
+// 通常我们的面包屑应该替换原生面包屑的位置
+nativeBreadcrumb.parentNode.insertBefore(clonedBreadcrumb, nativeBreadcrumb);
+// 或者插入到原生面包屑之后
+// nativeBreadcrumb.parentNode.insertBefore(clonedBreadcrumb, nativeBreadcrumb.nextSibling);
+} else {
+// 如果没有原生面包屑，查找合适的插入位置
+const topBarInner = topBar.querySelector('.lpx-header-inner') ||
+topBar.querySelector('[class*=""header-inner""]') ||
+topBar.querySelector('.navbar-collapse');
+
+const logo = topBar.querySelector('.lpx-logo') ||
+topBar.querySelector('[class*=""logo""]') ||
+topBar.querySelector('.navbar-brand');
+
+const nav = topBar.querySelector('.lpx-nav') ||
+topBar.querySelector('[class*=""nav""]') ||
+topBar.querySelector('.navbar-nav');
+
+if (topBarInner) {
+const insertTarget = topBarInner.firstChild;
+if (insertTarget) {
+topBarInner.insertBefore(clonedBreadcrumb, insertTarget);
+} else {
+topBarInner.appendChild(clonedBreadcrumb);
+}
+} else if (logo && logo.parentElement === topBar) {
+topBar.insertBefore(clonedBreadcrumb, logo.nextSibling);
+} else if (nav && nav.parentElement === topBar) {
+topBar.insertBefore(clonedBreadcrumb, nav);
+} else {
+topBar.insertBefore(clonedBreadcrumb, topBar.firstChild);
+}
+}
+
+// 隐藏原始面包屑
+breadcrumb.style.display = 'none';
+}
+} catch (error) {
+console.error('Error moving breadcrumb to top bar:', error);
+}
+})();
+");
+		}
+		await base.OnAfterRenderAsync(firstRender);
+	}
+
+	public async ValueTask DisposeAsync()
+	{
+		// 取消订阅导航事件
+		Navigation.LocationChanged -= OnLocationChanged;
+
+		// 移除面包屑
+		try
+		{
+			await JSRuntime.InvokeVoidAsync("eval", @"
+(function() {
+try {
+const breadcrumb = document.getElementById('owner-breadcrumb-topbar');
+if (breadcrumb) {
+breadcrumb.remove();
+}
+} catch (error) {
+console.error('Error removing breadcrumb:', error);
+}
+})();
+");
+		}
+		catch
+		{
+			// 忽略错误，可能页面已经卸载
+		}
+	}
+}
+

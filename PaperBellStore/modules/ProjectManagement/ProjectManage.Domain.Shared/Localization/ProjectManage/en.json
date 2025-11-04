@@ -7,6 +7,7 @@
         "Permission:ProjectManagement.Delete": "Delete Project",
         "Permission:ProjectManagement.View": "View Project",
         "Menu:ProjectManagement": "Project Management",
-        "Menu:ProjectManagement.Projects": "Projects"
+        "Menu:ProjectManagement.Projects": "Projects",
+        "Menu:ProjectManagement.Owners": "Owners"
     }
 }

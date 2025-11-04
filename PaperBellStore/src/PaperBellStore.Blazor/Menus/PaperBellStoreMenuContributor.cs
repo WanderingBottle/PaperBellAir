@@ -58,6 +58,17 @@ public class PaperBellStoreMenuContributor : IMenuContributor
             )
         );
 
+        // 添加子菜单项：负责人列表
+        projectManagementMenu.AddItem(
+            new ApplicationMenuItem(
+                "ProjectManagement.Owners",
+                projectL["Menu:ProjectManagement.Owners"],
+                "/owners",
+                icon: "fas fa-users",
+                order: 2
+            )
+        );
+
         context.Menu.Items.Insert(1, projectManagementMenu);
 
         //Administration
