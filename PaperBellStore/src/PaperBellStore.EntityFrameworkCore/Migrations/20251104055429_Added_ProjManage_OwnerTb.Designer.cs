@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PaperBellStore.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace PaperBellStore.Migrations
 {
     [DbContext(typeof(PaperBellStoreDbContext))]
-    partial class PaperBellStoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251104055429_Added_ProjManage_OwnerTb")]
+    partial class Added_ProjManage_OwnerTb
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -183,8 +186,6 @@ namespace PaperBellStore.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
-
-                    b.HasIndex("OwnerId");
 
                     b.ToTable("PmProjects", (string)null);
                 });
@@ -2014,16 +2015,6 @@ namespace PaperBellStore.Migrations
                     b.ToTable("AbpTenantConnectionStrings", (string)null);
                 });
 
-            modelBuilder.Entity("ProjectManage.Projects.PbpProject", b =>
-                {
-                    b.HasOne("ProjectManage.Owners.PbpOwner", "Owner")
-                        .WithMany("Projects")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Owner");
-                });
-
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>
                 {
                     b.HasOne("Volo.Abp.AuditLogging.AuditLog", null)
@@ -2173,11 +2164,6 @@ namespace PaperBellStore.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("ProjectManage.Owners.PbpOwner", b =>
-                {
-                    b.Navigation("Projects");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>

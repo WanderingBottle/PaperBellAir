@@ -1,4 +1,5 @@
 ﻿using Volo.Abp.Domain.Entities.Auditing;
+using ProjectManage.Owners;
 
 namespace ProjectManage.Projects
 {
@@ -17,14 +18,17 @@ namespace ProjectManage.Projects
         public Guid? OwnerId { get; set; }
         public Guid? TenantId { get; set; }
 
+        // 导航属性
+        public virtual PbpOwner Owner { get; set; }
+
         protected PbpProject() { }
 
-        public PbpProject(Guid id , string name , string descrption = null)
+        public PbpProject(Guid id, string name, string descrption = null)
             : base(id)
         {
-            this.Name=name;
-            this.Description=descrption;
-            this.Status=ProjectStatus.Planning;
+            this.Name = name;
+            this.Description = descrption;
+            this.Status = ProjectStatus.Planning;
         }
     }
 }

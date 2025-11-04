@@ -98,19 +98,25 @@ public class PaperBellStoreDbContext :
         // 配置项目实体
         builder.Entity<PbpProject>(b =>
         {
-            b.ToTable(ProjectManageConsts.DbTablePrefix+"Projects" , ProjectManageConsts.DbSchema);
+            b.ToTable(ProjectManageConsts.DbTablePrefix + "Projects", ProjectManageConsts.DbSchema);
             b.ConfigureByConvention();
 
             b.Property(x => x.Name).IsRequired().HasMaxLength(128);
             b.Property(x => x.Description).HasMaxLength(2048);
 
             b.HasIndex(x => x.Name);
+
+            // 配置与负责人的关联关系
+            b.HasOne(x => x.Owner)
+                .WithMany(x => x.Projects)
+                .HasForeignKey(x => x.OwnerId)
+                .OnDelete(DeleteBehavior.SetNull); // 当负责人删除时，项目的外键设为null
         });
 
         // 配置负责人实体
         builder.Entity<PbpOwner>(b =>
         {
-            b.ToTable(ProjectManageConsts.DbTablePrefix+"Owners" , ProjectManageConsts.DbSchema);
+            b.ToTable(ProjectManageConsts.DbTablePrefix + "Owners", ProjectManageConsts.DbSchema);
             b.ConfigureByConvention();
 
             b.Property(x => x.Name).IsRequired().HasMaxLength(128);
