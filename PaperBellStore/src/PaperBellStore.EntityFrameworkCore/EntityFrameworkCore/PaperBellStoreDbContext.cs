@@ -15,6 +15,7 @@ using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using ProjectManage.Projects;
+using ProjectManage.Owners;
 using ProjectManage.Domain.Shared;
 
 namespace PaperBellStore.EntityFrameworkCore;
@@ -60,6 +61,7 @@ public class PaperBellStoreDbContext :
     #endregion
 
     public DbSet<PbpProject> Projects { get; set; }
+    public DbSet<PbpOwner> Owners { get; set; }
 
 
     public PaperBellStoreDbContext(DbContextOptions<PaperBellStoreDbContext> options)
@@ -93,7 +95,7 @@ public class PaperBellStoreDbContext :
         //    //...
         //});
 
-        // ÅäÖÃÏîÄ¿¹ÜÀíÊµÌå
+        // é…ç½®é¡¹ç›®å®ä½“
         builder.Entity<PbpProject>(b =>
         {
             b.ToTable(ProjectManageConsts.DbTablePrefix+"Projects" , ProjectManageConsts.DbSchema);
@@ -103,6 +105,23 @@ public class PaperBellStoreDbContext :
             b.Property(x => x.Description).HasMaxLength(2048);
 
             b.HasIndex(x => x.Name);
+        });
+
+        // é…ç½®è´Ÿè´£äººå®ä½“
+        builder.Entity<PbpOwner>(b =>
+        {
+            b.ToTable(ProjectManageConsts.DbTablePrefix+"Owners" , ProjectManageConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(128);
+            b.Property(x => x.Description).HasMaxLength(2048);
+            b.Property(x => x.Email).HasMaxLength(256);
+            b.Property(x => x.Phone).HasMaxLength(32);
+            b.Property(x => x.Department).IsRequired();
+
+            b.HasIndex(x => x.Name);
+            b.HasIndex(x => x.Email);
+            b.HasIndex(x => x.Department);
         });
     }
 }
