@@ -9,6 +9,11 @@ namespace ProjectManage.Projects
     /// </summary>
     public class ProjectDto : FullAuditedEntityDto<Guid>
     {
+        /// <summary>
+        /// 项目编码
+        /// </summary>
+        public string Code { get; set; }
+
         public string Name { get; set; }
         public string Description { get; set; }
         public DateTime StartDate { get; set; }

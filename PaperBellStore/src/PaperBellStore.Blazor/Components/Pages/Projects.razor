@@ -60,7 +60,7 @@
 			<MudStack Row="true" Spacing="2" AlignItems="AlignItems.End">
 				@if (_searchMode == SearchMode.Fuzzy)
 				{
-					<MudTextField @bind-Value="_search" Placeholder="搜索项目（匹配名称和描述）..." Adornment="Adornment.Start"
+					<MudTextField @bind-Value="_search" Placeholder="搜索项目（匹配编码、名称和描述）..." Adornment="Adornment.Start"
 						AdornmentIcon="@Icons.Material.Filled.Search" Immediate="false" Class="search-field"
 						Style="min-width: 300px;" />
 				}
@@ -95,6 +95,10 @@
 			<MudPaper Elevation="1" Class="pa-4">
 				<MudText Typo="Typo.subtitle2" GutterBottom="true">精确查询条件</MudText>
 				<MudGrid>
+					<MudItem xs="12" sm="6" md="4">
+						<MudTextField @bind-Value="_exactSearch.Code" Label="项目编码" Variant="Variant.Outlined"
+							Dense="true" />
+					</MudItem>
 					<MudItem xs="12" sm="6" md="4">
 						<MudTextField @bind-Value="_exactSearch.Name" Label="项目名称" Variant="Variant.Outlined"
 							Dense="true" />
@@ -143,6 +147,7 @@
 		FilterMode="@MudBlazor.DataGridFilterMode.Simple" SortMode="@MudBlazor.SortMode.Multiple" Hover="true"
 		Bordered="true" Striped="true" Elevation="2" Class="mt-2">
 		<Columns>
+			<PropertyColumn Property="@(x => x.Code)" Title="项目编码" Sortable="true" Filterable="true" />
 			<PropertyColumn Property="@(x => x.Name)" Title="项目名称" Sortable="true" Filterable="true" />
 			<PropertyColumn Property="@(x => x.Description)" Title="描述" Sortable="true" Filterable="true" />
 			<TemplateColumn Title="状态" Sortable="true" SortBy="@(x => x.Status.ToString())">
@@ -204,6 +209,7 @@
 
 	private class ExactSearchModel
 	{
+		public string Code { get; set; }
 		public string Name { get; set; }
 		public string Description { get; set; }
 		public ProjectStatus? Status { get; set; }
@@ -250,12 +256,13 @@
 		// 根据查询模式设置查询条件
 		if (_searchMode == SearchMode.Fuzzy)
 		{
-			// 模糊查询：使用Filter字段匹配Name和Description
+			// 模糊查询：使用Filter字段匹配Code、Name和Description
 			req.Filter = string.IsNullOrWhiteSpace(_search) ? null : _search;
 		}
 		else
 		{
 			// 精确查询：设置各个字段的精确查询条件
+			req.Code = string.IsNullOrWhiteSpace(_exactSearch.Code) ? null : _exactSearch.Code;
 			req.Name = string.IsNullOrWhiteSpace(_exactSearch.Name) ? null : _exactSearch.Name;
 			req.Description = string.IsNullOrWhiteSpace(_exactSearch.Description) ? null : _exactSearch.Description;
 			req.Status = _exactSearch.Status;

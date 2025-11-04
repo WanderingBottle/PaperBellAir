@@ -9,6 +9,11 @@ namespace ProjectManage.Owners
     /// </summary>
     public class OwnerDto : FullAuditedEntityDto<Guid>
     {
+        /// <summary>
+        /// 负责人编码
+        /// </summary>
+        public string Code { get; set; }
+
         public string Name { get; set; }
         public string Description { get; set; }
         public string Email { get; set; }

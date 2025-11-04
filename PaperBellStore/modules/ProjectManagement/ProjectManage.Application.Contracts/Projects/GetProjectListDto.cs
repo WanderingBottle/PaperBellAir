@@ -10,9 +10,14 @@ namespace ProjectManage.Projects
     public class GetProjectListDto : PagedAndSortedResultRequestDto
     {
         /// <summary>
-        /// 模糊查询：用于匹配Name和Description
+        /// 模糊查询：用于匹配Code、Name和Description
         /// </summary>
         public string Filter { get; set; }
+
+        /// <summary>
+        /// 精确查询：项目编码
+        /// </summary>
+        public string Code { get; set; }
 
         /// <summary>
         /// 精确查询：项目名称

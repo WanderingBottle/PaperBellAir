@@ -10,6 +10,11 @@ namespace ProjectManage.Owners
     /// </summary>
     public class PbpOwner : FullAuditedAggregateRoot<Guid>
     {
+        /// <summary>
+        /// 负责人编码，唯一标识
+        /// </summary>
+        public string Code { get; set; }
+
         public string Name { get; set; }
         public string Description { get; set; }
         public string Email { get; set; }

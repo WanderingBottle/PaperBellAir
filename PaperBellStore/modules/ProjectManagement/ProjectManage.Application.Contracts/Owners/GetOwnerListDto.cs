@@ -10,9 +10,14 @@ namespace ProjectManage.Owners
     public class GetOwnerListDto : PagedAndSortedResultRequestDto
     {
         /// <summary>
-        /// 模糊查询：用于匹配Name和Description
+        /// 模糊查询：用于匹配Code、Name、Description、Email和Phone
         /// </summary>
         public string Filter { get; set; }
+
+        /// <summary>
+        /// 精确查询：负责人编码
+        /// </summary>
+        public string Code { get; set; }
 
         /// <summary>
         /// 精确查询：负责人名称

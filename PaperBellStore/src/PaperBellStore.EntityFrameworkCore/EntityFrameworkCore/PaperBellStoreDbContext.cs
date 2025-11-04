@@ -101,8 +101,12 @@ public class PaperBellStoreDbContext :
             b.ToTable(ProjectManageConsts.DbTablePrefix + "Projects", ProjectManageConsts.DbSchema);
             b.ConfigureByConvention();
 
+            b.Property(x => x.Code).IsRequired().HasMaxLength(32);
             b.Property(x => x.Name).IsRequired().HasMaxLength(128);
             b.Property(x => x.Description).HasMaxLength(2048);
+
+            // Code 唯一索引（考虑多租户）
+            b.HasIndex(x => new { x.Code, x.TenantId }).IsUnique();
 
             b.HasIndex(x => x.Name);
 
@@ -119,11 +123,15 @@ public class PaperBellStoreDbContext :
             b.ToTable(ProjectManageConsts.DbTablePrefix + "Owners", ProjectManageConsts.DbSchema);
             b.ConfigureByConvention();
 
+            b.Property(x => x.Code).IsRequired().HasMaxLength(32);
             b.Property(x => x.Name).IsRequired().HasMaxLength(128);
             b.Property(x => x.Description).HasMaxLength(2048);
             b.Property(x => x.Email).HasMaxLength(256);
             b.Property(x => x.Phone).HasMaxLength(32);
             b.Property(x => x.Department).IsRequired();
+
+            // Code 唯一索引（考虑多租户）
+            b.HasIndex(x => new { x.Code, x.TenantId }).IsUnique();
 
             b.HasIndex(x => x.Name);
             b.HasIndex(x => x.Email);
