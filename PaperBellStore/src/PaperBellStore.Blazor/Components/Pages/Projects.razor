@@ -37,17 +37,11 @@
 				}
 			</a>
 		</li>
-		<li class="lpx-breadcrumb-item">
-			<span>/</span>
-		</li>
 	}
 	@if (_projectManagementMenu != null)
 	{
 		<li class="lpx-breadcrumb-item">
 			<span>@_projectManagementMenu.DisplayName</span>
-		</li>
-		<li class="lpx-breadcrumb-item">
-			<span>/</span>
 		</li>
 	}
 	@if (_projectsMenu != null)
@@ -59,7 +53,7 @@
 </ul>
 
 <div class="pa-4">
-	<MudText Typo="Typo.h5" GutterBottom="true">项目管理</MudText>
+	<MudText Typo="Typo.h5" GutterBottom="true">项目列表</MudText>
 
 	<MudStack Spacing="2" Class="mb-4">
 		<MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween" AlignItems="AlignItems.End">
