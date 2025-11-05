@@ -83,6 +83,18 @@
 					StartIcon="@Icons.Material.Filled.Refresh">
 					刷新
 				</MudButton>
+				<MudButton Color="MudBlazor.Color.Success" Variant="Variant.Outlined" OnClick="ExportToExcelAsync"
+					StartIcon="@Icons.Material.Filled.FileDownload">
+					导出Excel
+				</MudButton>
+				<MudButton Color="MudBlazor.Color.Info" Variant="Variant.Outlined" OnClick="DownloadTemplateAsync"
+					StartIcon="@Icons.Material.Filled.Download">
+					下载模板
+				</MudButton>
+				<MudButton Color="MudBlazor.Color.Warning" Variant="Variant.Outlined" OnClick="ShowImportDialogAsync"
+					StartIcon="@Icons.Material.Filled.FileUpload">
+					导入Excel
+				</MudButton>
 				<MudButton Color="MudBlazor.Color.Primary" Variant="Variant.Filled" OnClick="ShowAddDialogAsync"
 					StartIcon="@Icons.Material.Filled.Add">
 					新增项目
@@ -421,6 +433,69 @@
 			await _dataGrid.ReloadServerData();
 		}
 		await InvokeAsync(StateHasChanged);
+	}
+
+	private async Task ExportToExcelAsync()
+	{
+		try
+		{
+			var fileBytes = await ProjectAppService.ExportToExcelAsync();
+			var fileName = $"项目数据_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+
+			await JSRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileBytes));
+			Snackbar.Add("导出成功", Severity.Success);
+		}
+		catch (Exception ex)
+		{
+			Snackbar.Add($"导出失败: {ex.Message}", Severity.Error);
+		}
+	}
+
+	private async Task ShowImportDialogAsync()
+	{
+		var parameters = new DialogParameters
+		{
+			[nameof(ImportExcelDialog.OnImport)] = new EventCallback<byte[]>(this, ImportFromExcelAsync)
+		};
+
+		var options = new DialogOptions
+		{
+			CloseOnEscapeKey = true,
+			MaxWidth = MaxWidth.Medium,
+			FullWidth = true
+		};
+
+		await DialogService.ShowAsync<ImportExcelDialog>("导入Excel", parameters, options);
+	}
+
+	private async Task ImportFromExcelAsync(byte[] fileContent)
+	{
+		try
+		{
+			await ProjectAppService.ImportFromExcelAsync(fileContent);
+			Snackbar.Add("导入成功", Severity.Success);
+			await RefreshData();
+		}
+		catch (Exception ex)
+		{
+			Snackbar.Add($"导入失败: {ex.Message}", Severity.Error);
+		}
+	}
+
+	private async Task DownloadTemplateAsync()
+	{
+		try
+		{
+			var fileBytes = await ProjectAppService.ExportTemplateAsync();
+			var fileName = $"项目导入模板.xlsx";
+
+			await JSRuntime.InvokeVoidAsync("downloadFile", fileName, Convert.ToBase64String(fileBytes));
+			Snackbar.Add("模板下载成功", Severity.Success);
+		}
+		catch (Exception ex)
+		{
+			Snackbar.Add($"模板下载失败: {ex.Message}", Severity.Error);
+		}
 	}
 
 	private MudBlazor.Color GetStatusColor(ProjectStatus status)

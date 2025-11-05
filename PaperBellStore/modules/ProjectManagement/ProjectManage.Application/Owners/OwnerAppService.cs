@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
-
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using ProjectManage.Permissions;
 
 using Volo.Abp.Application.Services;
@@ -157,6 +158,204 @@ namespace ProjectManage.Owners
             }
 
             return queryable;
+        }
+
+        [Authorize(ProjectManagePermissions.View)]
+        public async Task<byte[]> ExportToExcelAsync()
+        {
+            var workbook = new XSSFWorkbook();
+            var tenantId = _currentTenant.Id;
+
+            // 获取所有负责人数据
+            var queryable = await Repository.GetQueryableAsync();
+            var owners = queryable
+                .Where(x => x.TenantId == tenantId)
+                .ToList();
+
+            // 创建负责人Sheet
+            var ownerSheet = workbook.CreateSheet("负责人");
+            var ownerHeaderRow = ownerSheet.CreateRow(0);
+            ownerHeaderRow.CreateCell(0).SetCellValue("负责人编码");
+            ownerHeaderRow.CreateCell(1).SetCellValue("负责人名称");
+            ownerHeaderRow.CreateCell(2).SetCellValue("描述");
+            ownerHeaderRow.CreateCell(3).SetCellValue("邮箱");
+            ownerHeaderRow.CreateCell(4).SetCellValue("电话");
+            ownerHeaderRow.CreateCell(5).SetCellValue("部门");
+
+            var ownerRowIndex = 1;
+            foreach (var owner in owners)
+            {
+                var row = ownerSheet.CreateRow(ownerRowIndex++);
+                row.CreateCell(0).SetCellValue(owner.Code ?? "");
+                row.CreateCell(1).SetCellValue(owner.Name ?? "");
+                row.CreateCell(2).SetCellValue(owner.Description ?? "");
+                row.CreateCell(3).SetCellValue(owner.Email ?? "");
+                row.CreateCell(4).SetCellValue(owner.Phone ?? "");
+                row.CreateCell(5).SetCellValue(GetDepartmentText(owner.Department));
+            }
+
+            // 自动调整列宽
+            for (int i = 0; i < 6; i++)
+            {
+                ownerSheet.AutoSizeColumn(i);
+            }
+
+            // 转换为字节数组
+            using var stream = new MemoryStream();
+            workbook.Write(stream, true);
+            return stream.ToArray();
+        }
+
+        [Authorize(ProjectManagePermissions.Create)]
+        public async Task ImportFromExcelAsync(byte[] fileContent)
+        {
+            using var stream = new MemoryStream(fileContent);
+            var workbook = new XSSFWorkbook(stream);
+
+            var tenantId = _currentTenant.Id;
+
+            // 导入负责人数据
+            var ownerSheet = workbook.GetSheetAt(0); // 使用第一个sheet
+            if (ownerSheet == null)
+            {
+                throw new Exception("Excel文件中未找到工作表");
+            }
+
+            var ownerQueryable = await Repository.GetQueryableAsync();
+
+            for (int i = 1; i <= ownerSheet.LastRowNum; i++)
+            {
+                var row = ownerSheet.GetRow(i);
+                if (row == null) continue;
+
+                var code = GetCellValue(row.GetCell(0));
+                var name = GetCellValue(row.GetCell(1));
+                if (string.IsNullOrWhiteSpace(name))
+                    continue;
+
+                var description = GetCellValue(row.GetCell(2));
+                var email = GetCellValue(row.GetCell(3));
+                var phone = GetCellValue(row.GetCell(4));
+                var departmentText = GetCellValue(row.GetCell(5));
+
+                // 查找或创建负责人
+                PbpOwner owner = null;
+
+                if (!string.IsNullOrWhiteSpace(code))
+                {
+                    owner = ownerQueryable.FirstOrDefault(x => x.TenantId == tenantId && x.Code == code);
+                }
+
+                if (owner == null)
+                {
+                    // 创建新负责人
+                    var createDto = new CreateUpdateOwnerDto
+                    {
+                        Name = name,
+                        Description = description,
+                        Email = email,
+                        Phone = phone,
+                        Department = ParseDepartment(departmentText)
+                    };
+
+                    owner = await MapToEntityAsync(createDto);
+                    owner.Code = string.IsNullOrWhiteSpace(code) ? await GenerateUniqueCodeAsync() : code;
+                    owner.TenantId = tenantId;
+                    await Repository.InsertAsync(owner);
+                }
+                else
+                {
+                    // 更新现有负责人
+                    owner.Name = name;
+                    owner.Description = description;
+                    owner.Email = email;
+                    owner.Phone = phone;
+                    owner.Department = ParseDepartment(departmentText);
+                    if (string.IsNullOrWhiteSpace(owner.Code) && !string.IsNullOrWhiteSpace(code))
+                    {
+                        owner.Code = code;
+                    }
+                    await Repository.UpdateAsync(owner);
+                }
+            }
+        }
+
+        private string GetCellValue(ICell cell)
+        {
+            if (cell == null) return "";
+
+            return cell.CellType switch
+            {
+                CellType.String => cell.StringCellValue,
+                CellType.Numeric => cell.NumericCellValue.ToString(),
+                CellType.Boolean => cell.BooleanCellValue.ToString(),
+                CellType.Formula => cell.StringCellValue,
+                _ => ""
+            };
+        }
+
+        private OwnerDepartment ParseDepartment(string departmentText)
+        {
+            if (string.IsNullOrWhiteSpace(departmentText))
+                return OwnerDepartment.ResearchAndDevelopment;
+
+            return departmentText switch
+            {
+                "研发部" => OwnerDepartment.ResearchAndDevelopment,
+                "实施部" => OwnerDepartment.Implementation,
+                "项目部" => OwnerDepartment.Project,
+                _ => Enum.TryParse<OwnerDepartment>(departmentText, out var dept) ? dept : OwnerDepartment.ResearchAndDevelopment
+            };
+        }
+
+        private string GetDepartmentText(OwnerDepartment department)
+        {
+            return department switch
+            {
+                OwnerDepartment.ResearchAndDevelopment => "研发部",
+                OwnerDepartment.Implementation => "实施部",
+                OwnerDepartment.Project => "项目部",
+                _ => department.ToString()
+            };
+        }
+
+        // 使用Default权限，因为类级别已经授权，方法级别只需要确保有权限即可
+        // 下载模板只需要查看权限，但为了确保用户能访问页面，使用Default权限
+        public async Task<byte[]> ExportTemplateAsync()
+        {
+            var workbook = new XSSFWorkbook();
+
+            // 创建负责人Sheet（仅表头）
+            var ownerSheet = workbook.CreateSheet("负责人");
+            var ownerHeaderRow = ownerSheet.CreateRow(0);
+            ownerHeaderRow.CreateCell(0).SetCellValue("负责人编码");
+            ownerHeaderRow.CreateCell(1).SetCellValue("负责人名称");
+            ownerHeaderRow.CreateCell(2).SetCellValue("描述");
+            ownerHeaderRow.CreateCell(3).SetCellValue("邮箱");
+            ownerHeaderRow.CreateCell(4).SetCellValue("电话");
+            ownerHeaderRow.CreateCell(5).SetCellValue("部门");
+
+            // 添加说明行
+            var ownerNoteRow = ownerSheet.CreateRow(1);
+            ownerNoteRow.CreateCell(0).SetCellValue("说明：");
+            var ownerNoteCell = ownerNoteRow.CreateCell(1);
+            ownerNoteCell.SetCellValue("1. 负责人名称为必填项；2. 负责人编码可为空（系统自动生成）；3. 部门可选值：研发部、实施部、项目部");
+
+            // 合并说明单元格
+            var ownerRegion = new NPOI.SS.Util.CellRangeAddress(1, 1, 1, 5);
+            ownerSheet.AddMergedRegion(ownerRegion);
+
+            // 自动调整列宽
+            for (int i = 0; i < 6; i++)
+            {
+                ownerSheet.AutoSizeColumn(i);
+            }
+
+            // 转换为字节数组
+            using var stream = new MemoryStream();
+            workbook.Write(stream, true);
+            await Task.CompletedTask;
+            return stream.ToArray();
         }
     }
 }

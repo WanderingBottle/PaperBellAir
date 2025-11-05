@@ -14,7 +14,20 @@ namespace ProjectManage.Owners
                         CreateUpdateOwnerDto,
                         CreateUpdateOwnerDto>
     {
+        /// <summary>
+        /// 导出负责人数据到Excel
+        /// </summary>
+        Task<byte[]> ExportToExcelAsync();
 
+        /// <summary>
+        /// 从Excel导入负责人数据
+        /// </summary>
+        Task ImportFromExcelAsync(byte[] fileContent);
+
+        /// <summary>
+        /// 导出负责人Excel模板（仅表头，用于导入）
+        /// </summary>
+        Task<byte[]> ExportTemplateAsync();
     }
 }
 

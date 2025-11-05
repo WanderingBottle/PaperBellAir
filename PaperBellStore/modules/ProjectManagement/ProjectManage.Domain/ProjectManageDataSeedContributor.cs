@@ -14,7 +14,7 @@ namespace ProjectManage.Domain
 
         public ProjectManageDataSeedContributor(IPermissionDataSeeder permissionDataSeeder)
         {
-            _permissionDataSeeder=permissionDataSeeder;
+            _permissionDataSeeder = permissionDataSeeder;
         }
 
         [UnitOfWork]
@@ -23,6 +23,7 @@ namespace ProjectManage.Domain
             // 默认管理员角色名为 "admin"
             var permissions = new[]
             {
+                "ProjectManagement", // Default权限，必须授予
                 "ProjectManagement.View",
                 "ProjectManagement.Create",
                 "ProjectManagement.Edit",
@@ -31,9 +32,9 @@ namespace ProjectManage.Domain
 
             // 角色权限提供者名称（RolePermissionValueProvider.ProviderName），此处直接使用常量值 "R"
             await _permissionDataSeeder.SeedAsync(
-                "R" ,
-                "admin" ,
-                permissions ,
+                "R",
+                "admin",
+                permissions,
                 context.TenantId
             );
         }

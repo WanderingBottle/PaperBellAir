@@ -1,0 +1,59 @@
+@using MudBlazor
+@using Microsoft.AspNetCore.Components.Forms
+@using System.IO
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Label="选择Excel文件" Variant="Variant.Outlined" FullWidth="true" ReadOnly="true"
+            Value="@_fileName" />
+        <InputFile OnChange="OnFileSelected" class="mt-3" accept=".xlsx,.xls" />
+        <MudText Typo="Typo.caption" Class="mt-2" Color="MudBlazor.Color.Info">
+            支持格式：.xlsx, .xls
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HandleImport" Color="MudBlazor.Color.Primary" Variant="Variant.Filled"
+            Disabled="@(!_hasFile)">
+            导入
+        </MudButton>
+        <MudButton OnClick="Cancel" Color="MudBlazor.Color.Secondary">取消</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public EventCallback<byte[]> OnImport { get; set; }
+
+    private string _fileName = "";
+    private bool _hasFile = false;
+    private byte[] _fileContent;
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        if (e.File != null)
+        {
+            _fileName = e.File.Name;
+            _hasFile = true;
+
+            using var stream = e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            _fileContent = memoryStream.ToArray();
+        }
+    }
+
+    private async Task HandleImport()
+    {
+        if (_hasFile && _fileContent != null)
+        {
+            await OnImport.InvokeAsync(_fileContent);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}
