@@ -24,32 +24,72 @@
 
 ## 实施方案步骤
 
-### 第一步：添加必要的 NuGet 包
+⭐ **重要说明**：本实施方案采用**专门日志数据库方案（方案二）**，日志数据库与业务数据库完全独立，实现性能隔离。
 
-#### 1.1 在 `PaperBellStore.Blazor` 项目中添加包
+### 第一步：创建专门日志数据库和表 ⭐
 
-```xml
-<PackageReference Include="Serilog.Sinks.PostgreSQL" Version="3.0.0" />
-<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+#### 1.1 创建专门日志数据库
+
+**推荐方案**：使用专门的日志数据库，实现性能隔离。
+
+```sql
+-- 创建专门的日志数据库
+CREATE DATABASE pbbstore_logs;
+
+-- 连接到日志数据库
+\c pbbstore_logs;
 ```
 
-#### 1.2 在 `PaperBellStore.DbMigrator` 项目中添加包
+#### 1.2 创建日志表
 
-```xml
-<PackageReference Include="Serilog.Sinks.PostgreSQL" Version="3.0.0" />
+提供两种方案，可根据项目需求选择：
+
+##### 方案 A：使用 SQL 脚本创建（简单快速）⭐ 推荐
+
+**优点**：
+
+- ✅ 简单快速，直接执行 SQL 脚本即可
+- ✅ 不需要创建 EF Core 实体和 DbSet
+- ✅ 不需要维护 EF Core 迁移
+- ✅ 部署更简单
+
+**步骤**：
+
+```sql
+-- 创建日志表
+CREATE TABLE "AppLogs" (
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "Timestamp" TIMESTAMP NOT NULL,
+    "Level" VARCHAR(50),
+    "Message" TEXT,
+    "Exception" TEXT,
+    "Properties" JSONB,
+    "LogEvent" JSONB,
+    "MessageHash" VARCHAR(64),
+    "FirstOccurrence" TIMESTAMP,
+    "LastOccurrence" TIMESTAMP,
+    "OccurrenceCount" INTEGER DEFAULT 1,
+    "DeduplicationWindowMinutes" INTEGER DEFAULT 5
+);
+
+-- 创建索引（优化查询性能）
+CREATE INDEX "IX_AppLogs_Timestamp" ON "AppLogs" ("Timestamp");
+CREATE INDEX "IX_AppLogs_Level" ON "AppLogs" ("Level");
+CREATE INDEX "IX_AppLogs_MessageHash" ON "AppLogs" ("MessageHash");
+CREATE INDEX "IX_AppLogs_MessageHash_LastOccurrence" ON "AppLogs" ("MessageHash", "LastOccurrence");
 ```
 
-#### 1.3 在 `PaperBellStore.EntityFrameworkCore` 项目中添加包（用于创建日志表）
+##### 方案 B：使用 EF Core 迁移创建（符合项目开发习惯）
 
-```xml
-<PackageReference Include="Serilog.Sinks.PostgreSQL" Version="3.0.0" />
-```
+**优点**：
 
----
+- ✅ 符合项目现有的 EF Core 开发流程
+- ✅ 可以通过迁移统一管理表结构变更
+- ✅ 如果以后需要修改表结构，可以通过迁移管理
 
-### 第二步：创建日志表实体和 DbSet
+**步骤**：
 
-#### 2.1 在 `PaperBellStore.Domain` 项目中创建日志实体（支持去重）
+**1. 创建日志实体**
 
 **文件位置**：`src/PaperBellStore.Domain/Data/AppLog.cs`
 
@@ -102,17 +142,17 @@ namespace PaperBellStore.Data
         /// <summary>
         /// 首次出现时间（该重复日志第一次出现的时间）
         /// </summary>
-        public DateTime FirstOccurrence { get; set; }
+        public DateTime? FirstOccurrence { get; set; }
 
         /// <summary>
         /// 最后一次出现时间（该重复日志最后一次出现的时间）
         /// </summary>
-        public DateTime LastOccurrence { get; set; }
+        public DateTime? LastOccurrence { get; set; }
 
         /// <summary>
         /// 出现次数（该重复日志出现的总次数）
         /// </summary>
-        public int OccurrenceCount { get; set; }
+        public int OccurrenceCount { get; set; } = 1;
 
         /// <summary>
         /// 去重时间窗口（分钟），超过此时间窗口后相同日志视为新记录
@@ -122,102 +162,377 @@ namespace PaperBellStore.Data
 }
 ```
 
-#### 2.2 在 `PaperBellStore.EntityFrameworkCore` 项目中的 DbContext 添加 DbSet
+**2. 创建专门的日志数据库 DbContext**
 
-**文件位置**：`src/PaperBellStore.EntityFrameworkCore/EntityFrameworkCore/PaperBellStoreDbContext.cs`
-
-在 `PaperBellStoreDbContext` 类中添加：
+**文件位置**：`src/PaperBellStore.EntityFrameworkCore/EntityFrameworkCore/LogDbContext.cs`
 
 ```csharp
-public DbSet<AppLog> AppLogs { get; set; }
-```
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Data;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.EntityFrameworkCore;
+using PaperBellStore.Data;
 
-在 `OnModelCreating` 方法中配置表：
-
-```csharp
-builder.Entity<AppLog>(b =>
+namespace PaperBellStore.EntityFrameworkCore
 {
-    b.ToTable("AppLogs", PaperBellStoreConsts.DbSchema);
-    b.HasKey(x => x.Id);
+    /// <summary>
+    /// 专门用于日志数据库的 DbContext
+    /// </summary>
+    [ConnectionStringName("Logs")]
+    public class LogDbContext : AbpDbContext<LogDbContext>
+    {
+        public DbSet<AppLog> AppLogs { get; set; }
 
-    // 基本字段
-    b.Property(x => x.Timestamp).IsRequired();
-    b.Property(x => x.Level).HasMaxLength(50);
-    b.Property(x => x.Message).HasMaxLength(4000);
-    b.Property(x => x.Exception).HasMaxLength(8000);
+        public LogDbContext(DbContextOptions<LogDbContext> options)
+            : base(options)
+        {
+        }
 
-    // 去重字段（允许为NULL，当去重功能禁用时）
-    b.Property(x => x.MessageHash).HasMaxLength(64).IsRequired(false);
-    b.Property(x => x.FirstOccurrence).IsRequired(false);
-    b.Property(x => x.LastOccurrence).IsRequired(false);
-    b.Property(x => x.OccurrenceCount).HasDefaultValue(1).IsRequired(false);
-    b.Property(x => x.DeduplicationWindowMinutes).HasDefaultValue(5).IsRequired(false);
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
 
-    // 索引
-    b.HasIndex(x => x.Timestamp);
-    b.HasIndex(x => x.Level);
-    b.HasIndex(x => x.MessageHash); // 用于快速查找重复日志
-    b.HasIndex(x => new { x.MessageHash, x.LastOccurrence }); // 复合索引，优化去重查询
-});
+            // 配置 AppLog 实体
+            builder.Entity<AppLog>(b =>
+            {
+                b.ToTable("AppLogs");
+                b.HasKey(x => x.Id);
+
+                // 基本字段
+                b.Property(x => x.Timestamp).IsRequired();
+                b.Property(x => x.Level).HasMaxLength(50);
+                b.Property(x => x.Message).HasColumnType("TEXT");
+                b.Property(x => x.Exception).HasColumnType("TEXT");
+                b.Property(x => x.Properties).HasColumnType("JSONB");
+                b.Property(x => x.LogEvent).HasColumnType("JSONB");
+
+                // 去重字段（允许为NULL，当去重功能禁用时）
+                b.Property(x => x.MessageHash).HasMaxLength(64).IsRequired(false);
+                b.Property(x => x.FirstOccurrence).IsRequired(false);
+                b.Property(x => x.LastOccurrence).IsRequired(false);
+                b.Property(x => x.OccurrenceCount).HasDefaultValue(1).IsRequired(false);
+                b.Property(x => x.DeduplicationWindowMinutes).HasDefaultValue(5).IsRequired(false);
+
+                // 索引
+                b.HasIndex(x => x.Timestamp).HasDatabaseName("IX_AppLogs_Timestamp");
+                b.HasIndex(x => x.Level).HasDatabaseName("IX_AppLogs_Level");
+                b.HasIndex(x => x.MessageHash).HasDatabaseName("IX_AppLogs_MessageHash");
+                b.HasIndex(x => new { x.MessageHash, x.LastOccurrence })
+                    .HasDatabaseName("IX_AppLogs_MessageHash_LastOccurrence");
+            });
+        }
+    }
+}
 ```
 
----
+**3. 在 EntityFrameworkCore 模块中注册 LogDbContext**
 
-### 第三步：创建专门日志数据库和表
+**文件位置**：`src/PaperBellStore.EntityFrameworkCore/PaperBellStoreEntityFrameworkCoreModule.cs`
 
-#### 3.1 创建专门日志数据库 ⭐
+```csharp
+// 在 ConfigureServices 方法中添加
+public override void ConfigureServices(ServiceConfigurationContext context)
+{
+    // ... 现有代码 ...
 
-**推荐方案**：使用专门的日志数据库，实现性能隔离。
+    // 配置日志数据库
+    Configure<AbpDbContextOptions>(options =>
+    {
+        options.UseNpgsql();
+    });
 
-```sql
--- 创建专门的日志数据库
-CREATE DATABASE pbbstore_logs;
-
--- 连接到日志数据库
-\c pbbstore_logs;
-
--- 创建日志表
-CREATE TABLE "AppLogs" (
-    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "Timestamp" TIMESTAMP NOT NULL,
-    "Level" VARCHAR(50),
-    "Message" TEXT,
-    "Exception" TEXT,
-    "Properties" JSONB,
-    "LogEvent" JSONB,
-    "MessageHash" VARCHAR(64),
-    "FirstOccurrence" TIMESTAMP,
-    "LastOccurrence" TIMESTAMP,
-    "OccurrenceCount" INTEGER DEFAULT 1,
-    "DeduplicationWindowMinutes" INTEGER DEFAULT 5
-);
-
--- 创建索引（优化查询性能）
-CREATE INDEX "IX_AppLogs_Timestamp" ON "AppLogs" ("Timestamp");
-CREATE INDEX "IX_AppLogs_Level" ON "AppLogs" ("Level");
-CREATE INDEX "IX_AppLogs_MessageHash" ON "AppLogs" ("MessageHash");
-CREATE INDEX "IX_AppLogs_MessageHash_LastOccurrence" ON "AppLogs" ("MessageHash", "LastOccurrence");
+    // 配置日志数据库连接字符串
+    Configure<AbpDbConnectionOptions>(options =>
+    {
+        options.ConnectionStrings["Logs"] = context.Services.GetConfiguration()
+            .GetConnectionString("Logs");
+    });
+}
 ```
 
-#### 3.2 备选方案：使用 EF Core 迁移（如果使用同一数据库）
-
-如果选择使用同一数据库，可以执行 EF Core 迁移：
+**4. 创建 EF Core 迁移**
 
 ```bash
+# 进入 EntityFrameworkCore 项目目录
 cd src/PaperBellStore.EntityFrameworkCore
-dotnet ef migrations add AddAppLogsTable
-dotnet ef database update
+
+# 创建迁移（指定使用 LogDbContext）
+dotnet ef migrations add AddAppLogsTable --context LogDbContext --output-dir Migrations/Logs
 ```
 
-**注意**：⭐ **推荐使用专门日志数据库**，直接使用 SQL 脚本创建，因为日志数据库是独立的，不需要通过 EF Core 迁移。
+**5. 执行迁移（两种方式）**
+
+**方式一：使用 EF Core CLI（手动执行）**
+
+```bash
+# 应用迁移到日志数据库
+dotnet ef database update --context LogDbContext
+```
+
+**方式二：使用 ABP 的 DbMigrator（推荐）⭐**
+
+集成到 `DbMigrator` 项目中，运行时会自动执行迁移。详细步骤如下：
+
+ABP 框架提供了 `DbMigrator` 项目来统一管理数据库迁移。可以集成日志数据库的迁移到 `DbMigrator` 项目中，这样运行 `DbMigrator` 时会自动迁移业务数据库和日志数据库。
+
+**步骤**：
+
+**1. 创建日志数据库迁移接口**
+
+**文件位置**：`src/PaperBellStore.Domain/Data/ILogDbSchemaMigrator.cs`
+
+```csharp
+using System.Threading.Tasks;
+
+namespace PaperBellStore.Data;
+
+/// <summary>
+/// 日志数据库迁移接口
+/// </summary>
+public interface ILogDbSchemaMigrator
+{
+    Task MigrateAsync();
+}
+```
+
+**2. 创建日志数据库迁移实现**
+
+**文件位置**：`src/PaperBellStore.EntityFrameworkCore/EntityFrameworkCore/EntityFrameworkCoreLogDbSchemaMigrator.cs`
+
+```csharp
+using System;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using PaperBellStore.Data;
+using Volo.Abp.DependencyInjection;
+
+namespace PaperBellStore.EntityFrameworkCore;
+
+/// <summary>
+/// EF Core 日志数据库迁移实现
+/// </summary>
+public class EntityFrameworkCoreLogDbSchemaMigrator
+    : ILogDbSchemaMigrator, ITransientDependency
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public EntityFrameworkCoreLogDbSchemaMigrator(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public async Task MigrateAsync()
+    {
+        /* We intentionally resolving the LogDbContext
+         * from IServiceProvider (instead of directly injecting it)
+         * to properly get the connection string from configuration.
+         */
+
+        await _serviceProvider
+            .GetRequiredService<LogDbContext>()
+            .Database
+            .MigrateAsync();
+    }
+}
+```
+
+**3. 在 EntityFrameworkCore 模块中注册 LogDbContext**
+
+**文件位置**：`src/PaperBellStore.EntityFrameworkCore/PaperBellStoreEntityFrameworkCoreModule.cs`
+
+```csharp
+public override void ConfigureServices(ServiceConfigurationContext context)
+{
+    // ... 现有代码 ...
+
+    // 配置业务数据库
+    context.Services.AddAbpDbContext<PaperBellStoreDbContext>(options =>
+    {
+        options.AddDefaultRepositories(includeAllEntities: true);
+    });
+
+    // 配置日志数据库
+    context.Services.AddAbpDbContext<LogDbContext>(options =>
+    {
+        // 日志数据库不需要默认仓库，只用于迁移
+        options.AddDefaultRepositories(includeAllEntities: false);
+    });
+
+    // ... 现有代码 ...
+
+    Configure<AbpDbContextOptions>(options =>
+    {
+        // 业务数据库配置
+        options.UseNpgsql();
+
+        // 日志数据库配置（使用 Logs 连接字符串）
+        options.UseNpgsql<LogDbContext>(connectionStringName: "Logs");
+    });
+
+    // 配置日志数据库连接字符串
+    Configure<AbpDbConnectionOptions>(options =>
+    {
+        var connectionString = context.Services.GetConfiguration()
+            .GetConnectionString("Logs");
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            options.ConnectionStrings["Logs"] = connectionString;
+        }
+    });
+}
+```
+
+**4. 在 PaperBellStoreDbMigrationService 中添加日志数据库迁移**
+
+**文件位置**：`src/PaperBellStore.Domain/Data/PaperBellStoreDbMigrationService.cs`
+
+```csharp
+public class PaperBellStoreDbMigrationService : ITransientDependency
+{
+    public ILogger<PaperBellStoreDbMigrationService> Logger { get; set; }
+
+    private readonly IDataSeeder _dataSeeder;
+    private readonly IEnumerable<IPaperBellStoreDbSchemaMigrator> _dbSchemaMigrators;
+    private readonly IEnumerable<ILogDbSchemaMigrator> _logDbSchemaMigrators; // 添加日志数据库迁移器
+    private readonly ITenantRepository _tenantRepository;
+    private readonly ICurrentTenant _currentTenant;
+
+    public PaperBellStoreDbMigrationService(
+        IDataSeeder dataSeeder,
+        ITenantRepository tenantRepository,
+        ICurrentTenant currentTenant,
+        IEnumerable<IPaperBellStoreDbSchemaMigrator> dbSchemaMigrators,
+        IEnumerable<ILogDbSchemaMigrator> logDbSchemaMigrators) // 注入日志数据库迁移器
+    {
+        _dataSeeder = dataSeeder;
+        _tenantRepository = tenantRepository;
+        _currentTenant = currentTenant;
+        _dbSchemaMigrators = dbSchemaMigrators;
+        _logDbSchemaMigrators = logDbSchemaMigrators; // 初始化日志数据库迁移器
+
+        Logger = NullLogger<PaperBellStoreDbMigrationService>.Instance;
+    }
+
+    public async Task MigrateAsync()
+    {
+        var initialMigrationAdded = AddInitialMigrationIfNotExist();
+
+        if (initialMigrationAdded)
+        {
+            return;
+        }
+
+        Logger.LogInformation("Started database migrations...");
+
+        // 迁移业务数据库
+        await MigrateDatabaseSchemaAsync();
+
+        // 迁移日志数据库 ⭐
+        await MigrateLogDatabaseSchemaAsync();
+
+        await SeedDataAsync();
+
+        Logger.LogInformation($"Successfully completed host database migrations.");
+
+        // ... 多租户迁移逻辑 ...
+    }
+
+    /// <summary>
+    /// 迁移日志数据库架构
+    /// </summary>
+    private async Task MigrateLogDatabaseSchemaAsync()
+    {
+        Logger.LogInformation("Migrating log database schema...");
+
+        foreach (var migrator in _logDbSchemaMigrators)
+        {
+            await migrator.MigrateAsync();
+        }
+
+        Logger.LogInformation("Successfully completed log database migrations.");
+    }
+
+    // ... 其他方法保持不变 ...
+}
+```
+
+**5. 执行迁移**
+
+运行 `DbMigrator` 项目时，会自动执行业务数据库和日志数据库的迁移：
+
+```bash
+cd src/PaperBellStore.DbMigrator
+dotnet run
+```
+
+**说明**：
+
+- ✅ 使用 ABP 的 `DbMigrator` 项目，统一管理所有数据库迁移
+- ✅ 运行 `DbMigrator` 时，会自动迁移业务数据库和日志数据库
+- ✅ 符合 ABP 框架的开发习惯
+- ✅ 如果以后需要修改表结构，可以通过迁移统一管理
+
+**优势**：
+
+- ✅ **统一管理**：所有数据库迁移都在 `DbMigrator` 中统一管理
+- ✅ **自动化**：运行 `DbMigrator` 时自动执行所有迁移
+- ✅ **符合规范**：符合 ABP 框架的开发规范和最佳实践
+- ✅ **易于维护**：迁移逻辑集中管理，易于维护和调试
+
+**说明**：
+
+- ✅ 使用 EF Core 迁移创建，符合项目开发习惯
+- ✅ 如果以后需要修改表结构，可以通过迁移管理
+- ✅ 需要创建实体、DbContext 和迁移
+- ⚠️ 相比 SQL 脚本方案，稍微复杂一些
+
+**两种方案对比**：
+
+| 方案             | 优点                             | 缺点                               | 适用场景                     |
+| ---------------- | -------------------------------- | ---------------------------------- | ---------------------------- |
+| **SQL 脚本**     | 简单快速，部署简单               | 表结构变更需要手动管理             | 表结构稳定的场景 ⭐ **推荐** |
+| **EF Core 迁移** | 符合开发习惯，可通过迁移管理变更 | 需要创建实体和 DbContext，稍微复杂 | 需要频繁修改表结构的场景     |
+
+**推荐**：
+
+- ⭐ **如果表结构稳定**：推荐使用 SQL 脚本方案（方案 A），更简单快速
+- ⭐ **如果需要迁移管理**：推荐使用 EF Core 迁移 + ABP DbMigrator 方案（方案 B），统一管理所有数据库迁移
 
 ---
 
-### 第四步：创建支持去重的自定义 Serilog Sink
+### 第二步：添加必要的 NuGet 包
 
-#### 4.1 创建自定义 PostgreSQL Sink（支持去重）
+#### 2.1 在 `PaperBellStore.Blazor` 项目中添加包
+
+```xml
+<PackageReference Include="Serilog.Sinks.PostgreSQL" Version="3.0.0" />
+<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+```
+
+#### 2.2 在 `PaperBellStore.DbMigrator` 项目中添加包
+
+```xml
+<PackageReference Include="Serilog.Sinks.PostgreSQL" Version="3.0.0" />
+```
+
+**说明**：
+
+- ✅ **如果使用 SQL 脚本方案（方案 A）**：不需要在 `PaperBellStore.EntityFrameworkCore` 项目中添加包
+- ⚠️ **如果使用 EF Core 迁移方案（方案 B）**：需要在 `PaperBellStore.EntityFrameworkCore` 项目中添加包
+
+---
+
+### 第三步：创建支持去重的自定义 Serilog Sink
+
+#### 3.1 创建自定义 PostgreSQL Sink（支持去重）
 
 **文件位置**：`src/PaperBellStore.Blazor/Sinks/DeduplicatingPostgreSQLSink.cs`
+
+**说明**：
+
+- 创建自定义 Sink 用于支持去重、级别控制和内容屏蔽功能
+- 该 Sink 直接使用 Npgsql 连接专门日志数据库，不依赖 EF Core
 
 ```csharp
 using System;
@@ -775,7 +1090,77 @@ namespace PaperBellStore.Blazor.Extensions
 }
 ```
 
-#### 4.2 更新 `Program.cs` 配置（默认使用专门日志数据库）
+### 第四步：配置连接字符串和日志设置
+
+#### 4.1 配置连接字符串
+
+**文件位置**：`src/PaperBellStore.Blazor/appsettings.json`
+
+```json
+{
+  "ConnectionStrings": {
+    "Default": "Host=localhost;Port=5432;Database=PpbStore;UserName=postgres;Password=123456;",
+    "Logs": "Host=localhost;Port=5432;Database=pbbstore_logs;UserName=postgres;Password=123456;"
+  }
+}
+```
+
+**说明**：
+
+- `Default`：业务数据库连接字符串
+- `Logs`：专门日志数据库连接字符串 ⭐
+
+#### 4.2 配置日志数据库设置
+
+**文件位置**：`src/PaperBellStore.Blazor/appsettings.json`
+
+```json
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Information",
+        "Microsoft.EntityFrameworkCore": "Warning",
+        "System": "Warning"
+      }
+    },
+    "File": {
+      "MinimumLevel": "Information",
+      "FileSizeLimitMB": 25,
+      "ExcludedKeywords": ["SensitiveData", "Password", "Token"],
+      "ExcludedPatterns": [".*password.*", ".*token.*", ".*secret.*"]
+    },
+    "Database": {
+      "ConnectionStringName": "Logs",
+      "EnableDeduplication": true,
+      "DeduplicationWindowMinutes": 5,
+      "CacheExpirationMinutes": 10,
+      "MinimumLevel": "Information",
+      "ExcludedKeywords": ["Debug", "Trace"],
+      "ExcludedPatterns": [".*debug.*", ".*trace.*"]
+    }
+  }
+}
+```
+
+**说明**：
+
+- `ConnectionStringName: "Logs"`：使用专门日志数据库连接字符串 ⭐
+- `EnableDeduplication: true`：启用去重功能
+- `MinimumLevel: "Information"`：记录 Information 及以上级别的日志
+
+---
+
+### 第五步：配置 Blazor 项目使用专门日志数据库
+
+#### 5.1 创建 Serilog 扩展类
+
+**文件位置**：`src/PaperBellStore.Blazor/Extensions/SerilogExtensions.cs`
+
+（扩展类代码保持不变，见下方）
+
+#### 5.2 更新 `Program.cs` 配置（默认使用专门日志数据库）
 
 **文件位置**：`src/PaperBellStore.Blazor/Program.cs`
 
@@ -930,13 +1315,35 @@ public class Program
 
 ---
 
-### 第五步：更新 DbMigrator 项目配置
+### 第六步：更新 DbMigrator 项目配置
 
-#### 5.1 创建 Serilog 扩展类（同步骤 4.1）
+#### 6.1 创建 Serilog 扩展类（同步骤 3.1）
 
 **文件位置**：`src/PaperBellStore.DbMigrator/Extensions/SerilogExtensions.cs`
 
-#### 5.2 更新 `Program.cs`（使用专门日志数据库）
+#### 6.2 配置连接字符串和日志设置
+
+**文件位置**：`src/PaperBellStore.DbMigrator/appsettings.json`
+
+```json
+{
+  "ConnectionStrings": {
+    "Default": "Host=localhost;Port=5432;Database=PpbStore;UserName=postgres;Password=123456;",
+    "Logs": "Host=localhost;Port=5432;Database=pbbstore_logs;UserName=postgres;Password=123456;"
+  },
+  "Serilog": {
+    "Database": {
+      "ConnectionStringName": "Logs",
+      "EnableDeduplication": true,
+      "DeduplicationWindowMinutes": 5,
+      "CacheExpirationMinutes": 10,
+      "MinimumLevel": "Information"
+    }
+  }
+}
+```
+
+#### 6.3 更新 `Program.cs`（使用专门日志数据库）
 
 **文件位置**：`src/PaperBellStore.DbMigrator/Program.cs`
 
@@ -994,9 +1401,112 @@ static async Task Main(string[] args)
 
 ---
 
-### 第六步：使用配置文件管理日志设置（可选，推荐）
+### 第七步：测试验证
 
-#### 6.1 更新 `appsettings.json`
+#### 7.1 验证日志写入专门日志数据库
+
+1. 启动应用程序
+2. 生成一些日志（如访问应用、触发错误等）
+3. 检查专门日志数据库中的日志记录：
+
+```sql
+-- 连接到日志数据库
+\c pbbstore_logs;
+
+-- 查询日志记录
+SELECT * FROM "AppLogs" ORDER BY "Timestamp" DESC LIMIT 10;
+```
+
+#### 7.2 验证 EFCore 操作不受影响
+
+1. 执行一些业务数据库操作（查询、保存等）
+2. 监控业务数据库性能（CPU、IO、连接数）
+3. 确认业务数据库操作不受日志写入影响
+
+#### 7.3 验证去重功能
+
+1. 生成相同内容的日志（在时间窗口内）
+2. 检查日志是否正确去重（`OccurrenceCount` 是否增加）
+3. 检查 `FirstOccurrence` 和 `LastOccurrence` 是否正确记录
+
+---
+
+## 备选方案：如果使用同一数据库（仅用于小规模应用）
+
+### 备选方案说明
+
+如果选择使用同一数据库（方案一），需要以下额外步骤：
+
+#### 1. 创建 EF Core 实体和 DbSet
+
+**文件位置**：`src/PaperBellStore.Domain/Data/AppLog.cs`
+
+```csharp
+using System;
+using Volo.Abp.Domain.Entities;
+
+namespace PaperBellStore.Data
+{
+    public class AppLog : Entity<Guid>
+    {
+        public DateTime Timestamp { get; set; }
+        public string Level { get; set; }
+        public string Message { get; set; }
+        public string Exception { get; set; }
+        public string Properties { get; set; }
+        public string LogEvent { get; set; }
+        public string MessageHash { get; set; }
+        public DateTime FirstOccurrence { get; set; }
+        public DateTime LastOccurrence { get; set; }
+        public int OccurrenceCount { get; set; }
+        public int DeduplicationWindowMinutes { get; set; } = 5;
+    }
+}
+```
+
+**文件位置**：`src/PaperBellStore.EntityFrameworkCore/EntityFrameworkCore/PaperBellStoreDbContext.cs`
+
+```csharp
+public DbSet<AppLog> AppLogs { get; set; }
+
+// 在 OnModelCreating 中配置
+builder.Entity<AppLog>(b =>
+{
+    b.ToTable("AppLogs", PaperBellStoreConsts.DbSchema);
+    b.HasKey(x => x.Id);
+    // ... 配置字段和索引
+});
+```
+
+#### 2. 执行 EF Core 迁移
+
+```bash
+cd src/PaperBellStore.EntityFrameworkCore
+dotnet ef migrations add AddAppLogsTable
+dotnet ef database update
+```
+
+#### 3. 配置使用业务数据库
+
+```json
+{
+  "Serilog": {
+    "Database": {
+      "ConnectionStringName": "Default", // 使用业务数据库
+      "MinimumLevel": "Warning", // 只记录重要日志
+      "EnableDeduplication": true
+    }
+  }
+}
+```
+
+**注意**：⭐ **推荐使用专门日志数据库（方案二）**，不需要 EF Core 实体和迁移，部署更简单。
+
+---
+
+## 配置文件完整示例
+
+### 完整的 `appsettings.json` 配置
 
 **文件位置**：`src/PaperBellStore.Blazor/appsettings.json`
 
