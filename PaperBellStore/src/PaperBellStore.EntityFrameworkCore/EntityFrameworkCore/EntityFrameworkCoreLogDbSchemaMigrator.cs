@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -40,11 +41,53 @@ public class EntityFrameworkCoreLogDbSchemaMigrator
         // 自动创建数据库（如果不存在）
         await EnsureDatabaseCreatedAsync();
 
-        // 执行迁移
-        await _serviceProvider
-            .GetRequiredService<LogDbContext>()
-            .Database
-            .MigrateAsync();
+        try
+        {
+            // 执行迁移
+            var dbContext = _serviceProvider.GetRequiredService<LogDbContext>();
+            _logger.LogInformation("Starting EF Core migrations for log database...");
+
+            await dbContext.Database.MigrateAsync();
+
+            // 验证表是否创建成功
+            var canConnect = await dbContext.Database.CanConnectAsync();
+            if (canConnect)
+            {
+                // 检查 AppLogs 表是否存在
+                var connection = dbContext.Database.GetDbConnection();
+                await connection.OpenAsync();
+                try
+                {
+                    await using var command = connection.CreateCommand();
+                    command.CommandText = @"
+                        SELECT COUNT(*) FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'AppLogs'";
+                    var tableExists = Convert.ToInt32(await command.ExecuteScalarAsync()) > 0;
+
+                    _logger.LogInformation("EF Core migrations completed successfully for log database.");
+                    _logger.LogInformation("AppLogs table verification: Table exists = {TableExists}", tableExists);
+
+                    if (!tableExists)
+                    {
+                        _logger.LogWarning("AppLogs table was not created. Migration may have failed silently.");
+                    }
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Cannot connect to log database after migration.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute EF Core migrations for log database.");
+            throw; // 重新抛出异常，让调用者知道迁移失败
+        }
     }
 
     /// <summary>

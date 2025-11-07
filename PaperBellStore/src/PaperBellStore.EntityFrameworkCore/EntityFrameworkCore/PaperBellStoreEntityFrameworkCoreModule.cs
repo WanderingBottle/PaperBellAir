@@ -74,10 +74,14 @@ public class PaperBellStoreEntityFrameworkCoreModule : AbpModule
 
             // 日志数据库配置（使用 Logs 连接字符串）
             // 注意：LogDbContext 已经通过 [ConnectionStringName("Logs")] 属性指定了连接字符串名称
-            // 这里只需要配置使用 Npgsql，连接字符串会自动从配置中获取
+            // 这里需要配置使用 Npgsql，并指定迁移程序集和迁移历史表
             options.Configure<LogDbContext>(opts =>
             {
-                opts.UseNpgsql();
+                opts.UseNpgsql(builder =>
+                {
+                    builder.MigrationsAssembly(typeof(PaperBellStoreEntityFrameworkCoreModule).Assembly.GetName().Name);
+                    builder.MigrationsHistoryTable("__EFMigrationsHistory");
+                });
             });
         });
 
