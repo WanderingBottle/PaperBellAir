@@ -39,25 +39,24 @@ public class PaperBellStoreMenuContributor : IMenuContributor
         var administration = context.Menu.GetAdministration();
         administration.Order = 6;
 
-        // 将示例菜单添加到Administration组下，以生成面包屑导航
-        // 注意：ABP框架的面包屑通常需要菜单项位于Administration组下才会显示
-        var sampleManagement = new ApplicationMenuItem(
-            PaperBellStoreMenus.SampleGroup,
-            l["Menu:SampleGroup"],
-            icon: "fas fa-folder",
-            order: 1
+        // 添加日志测试菜单
+        var logTestManagement = new ApplicationMenuItem(
+            PaperBellStoreMenus.LogTestGroup,
+            l["Menu:LogTestGroup"],
+            icon: "fas fa-file-alt",
+            order: 2
         );
 
-        // 添加示例页面作为子菜单项
-        sampleManagement.AddItem(new ApplicationMenuItem(
-            PaperBellStoreMenus.Sample,
-            l["Menu:Sample"],
-            "/sample",
-            icon: "fas fa-file-alt"
+        // 添加日志测试页面作为子菜单项
+        logTestManagement.AddItem(new ApplicationMenuItem(
+            PaperBellStoreMenus.LogTest,
+            l["Menu:LogTest"],
+            "/log-test",
+            icon: "fas fa-bug"
         ));
 
-        // 将示例菜单添加到Administration组下，这样层级为：管理 > 示例管理 > 示例页面
-        administration.AddItem(sampleManagement);
+        // 将日志测试菜单添加到Administration组下
+        administration.AddItem(logTestManagement);
 
         if (MultiTenancyConsts.IsEnabled)
         {

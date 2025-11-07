@@ -18,8 +18,14 @@ public class Program
 {
     public async static Task<int> Main(string[] args)
     {
+        // Bootstrap Logger：在应用程序完全配置之前使用
+        // 使用滚动文件格式，与主 Logger 保持一致
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Async(c => c.File("Logs/logs.txt"))
+            .WriteTo.Async(c => c.File(
+                "Logs/logs-.txt",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 30,
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"))
             .WriteTo.Async(c => c.Console())
             .CreateBootstrapLogger();
 
@@ -59,6 +65,7 @@ public class Program
                     var filePath = "Logs/logs-.txt";
 
                     // 配置文件输出（支持级别控制和内容屏蔽）
+                    // 注意：ABP 框架的原生日志也会通过 Serilog 输出
                     var fileSinkConfiguration = loggerConfiguration.WriteTo.Async(c => c.File(
                         filePath,
                         restrictedToMinimumLevel: Enum.Parse<LogEventLevel>(fileMinimumLevel),

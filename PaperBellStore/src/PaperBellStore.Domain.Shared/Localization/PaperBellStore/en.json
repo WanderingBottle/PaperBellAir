@@ -3,8 +3,6 @@
   "Texts": {
     "AppName": "PaperBellStore",
     "Menu:Home": "Home",
-    "Menu:SampleGroup": "Sample Management",
-    "Menu:Sample": "Sample Page",
     "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information visit",
     "Welcome": "Welcome"
   }

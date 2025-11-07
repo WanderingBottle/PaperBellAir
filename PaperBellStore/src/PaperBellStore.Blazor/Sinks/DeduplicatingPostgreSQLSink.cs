@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
+using NpgsqlTypes;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.PeriodicBatching;
@@ -99,7 +100,10 @@ namespace PaperBellStore.Blazor.Sinks
             catch (Exception ex)
             {
                 // 写入失败时记录到控制台（避免循环日志）
+                // 同时输出到标准错误流，确保错误可见
                 System.Diagnostics.Debug.WriteLine($"Failed to write log to database: {ex.Message}");
+                Console.Error.WriteLine($"[Serilog Database Sink Error] Failed to write log to database: {ex.Message}");
+                Console.Error.WriteLine($"[Serilog Database Sink Error] StackTrace: {ex.StackTrace}");
             }
             finally
             {
@@ -112,7 +116,10 @@ namespace PaperBellStore.Blazor.Sinks
         /// </summary>
         private async Task ProcessBatchWithDeduplicationAsync(NpgsqlConnection connection, List<LogEvent> events)
         {
-            var now = DateTime.UtcNow;
+            // 使用当前时间（本地时间）进行时间窗口计算
+            // 注意：这里使用 DateTime.Now 是为了与 ABP 框架的时区配置保持一致
+            // ABP 框架默认使用本地时间，除非明确配置了 UTC 时区
+            var now = DateTime.Now;
             var windowStart = now.AddMinutes(-_deduplicationWindowMinutes);
             var cacheExpirationTime = now.AddMinutes(-_cacheExpirationMinutes);
 
@@ -124,6 +131,10 @@ namespace PaperBellStore.Blazor.Sinks
             foreach (var logEvent in events)
             {
                 var messageHash = CalculateMessageHash(logEvent);
+                // 使用日志事件的时间戳（Serilog 的 LogEvent.Timestamp 是 UTC 时间）
+                // 转换为本地时间以与 ABP 框架的时区配置保持一致
+                // 如果 ABP 配置了特定时区，这里会使用系统本地时区，这是合理的默认行为
+                var logTimestamp = logEvent.Timestamp.ToLocalTime().DateTime;
 
                 // 性能优化：先检查内存缓存
                 if (_hashCache.TryGetValue(messageHash, out var cached))
@@ -134,15 +145,15 @@ namespace PaperBellStore.Blazor.Sinks
                         // 在内存中合并，减少数据库操作
                         if (hashToUpdate.TryGetValue(messageHash, out var existing))
                         {
-                            hashToUpdate[messageHash] = (existing.LogId, now, existing.Count + 1);
+                            hashToUpdate[messageHash] = (existing.LogId, logTimestamp, existing.Count + 1);
                         }
                         else
                         {
-                            hashToUpdate[messageHash] = (cached.LogId, now, 1);
+                            hashToUpdate[messageHash] = (cached.LogId, logTimestamp, 1);
                         }
 
                         // 更新缓存
-                        _hashCache[messageHash] = (cached.LogId, now);
+                        _hashCache[messageHash] = (cached.LogId, logTimestamp);
                         continue;
                     }
                 }
@@ -152,7 +163,7 @@ namespace PaperBellStore.Blazor.Sinks
                 {
                     hashToEvents[messageHash] = new List<(LogEvent, DateTime)>();
                 }
-                hashToEvents[messageHash].Add((logEvent, now));
+                hashToEvents[messageHash].Add((logEvent, logTimestamp));
             }
 
             // 性能优化：批量查询数据库中未缓存的哈希
@@ -202,8 +213,9 @@ namespace PaperBellStore.Blazor.Sinks
         /// </summary>
         private async Task ProcessBatchWithoutDeduplicationAsync(NpgsqlConnection connection, List<LogEvent> events)
         {
-            var newLogs = events.Select(e => (e, string.Empty, DateTime.UtcNow)).ToList();
-            await InsertLogsBatchAsync(connection, newLogs, DateTime.UtcNow);
+            // 使用日志事件的时间戳（已转换为本地时间）
+            var newLogs = events.Select(e => (e, string.Empty, e.Timestamp.ToLocalTime().DateTime)).ToList();
+            await InsertLogsBatchAsync(connection, newLogs, DateTime.Now);
         }
 
         /// <summary>
@@ -330,8 +342,20 @@ namespace PaperBellStore.Blazor.Sinks
                         command.Parameters.AddWithValue("level", level);
                         command.Parameters.AddWithValue("message", (object)message ?? DBNull.Value);
                         command.Parameters.AddWithValue("exception", (object)exception ?? DBNull.Value);
-                        command.Parameters.AddWithValue("properties", (object)properties ?? DBNull.Value);
-                        command.Parameters.AddWithValue("logEvent", (object)logEventJson ?? DBNull.Value);
+
+                        // JSONB 字段需要明确指定类型
+                        var propertiesParam = new NpgsqlParameter("properties", NpgsqlDbType.Jsonb)
+                        {
+                            Value = (object)properties ?? DBNull.Value
+                        };
+                        command.Parameters.Add(propertiesParam);
+
+                        var logEventParam = new NpgsqlParameter("logEvent", NpgsqlDbType.Jsonb)
+                        {
+                            Value = (object)logEventJson ?? DBNull.Value
+                        };
+                        command.Parameters.Add(logEventParam);
+
                         command.Parameters.AddWithValue("messageHash", messageHash ?? string.Empty);
                         command.Parameters.AddWithValue("firstOccurrence", timestamp);
                         command.Parameters.AddWithValue("lastOccurrence", timestamp);
@@ -368,8 +392,19 @@ namespace PaperBellStore.Blazor.Sinks
                         command.Parameters.AddWithValue("level", level);
                         command.Parameters.AddWithValue("message", (object)message ?? DBNull.Value);
                         command.Parameters.AddWithValue("exception", (object)exception ?? DBNull.Value);
-                        command.Parameters.AddWithValue("properties", (object)properties ?? DBNull.Value);
-                        command.Parameters.AddWithValue("logEvent", (object)logEventJson ?? DBNull.Value);
+
+                        // JSONB 字段需要明确指定类型
+                        var propertiesParam = new NpgsqlParameter("properties", NpgsqlDbType.Jsonb)
+                        {
+                            Value = (object)properties ?? DBNull.Value
+                        };
+                        command.Parameters.Add(propertiesParam);
+
+                        var logEventParam = new NpgsqlParameter("logEvent", NpgsqlDbType.Jsonb)
+                        {
+                            Value = (object)logEventJson ?? DBNull.Value
+                        };
+                        command.Parameters.Add(logEventParam);
 
                         await command.ExecuteNonQueryAsync();
                     }
@@ -391,7 +426,7 @@ namespace PaperBellStore.Blazor.Sinks
         {
             try
             {
-                var expirationTime = DateTime.UtcNow.AddMinutes(-_cacheExpirationMinutes);
+                var expirationTime = DateTime.Now.AddMinutes(-_cacheExpirationMinutes);
                 var expiredKeys = _hashCache
                     .Where(kvp => kvp.Value.LastOccurrence < expirationTime)
                     .Select(kvp => kvp.Key)
