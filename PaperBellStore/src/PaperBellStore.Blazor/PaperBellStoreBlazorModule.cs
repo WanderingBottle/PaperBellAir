@@ -52,6 +52,11 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.Studio.Client.AspNetCore;
+using Hangfire;
+using Hangfire.PostgreSql;
+using Hangfire.Dashboard;
+using PaperBellStore.Blazor.Filters;
+using PaperBellStore.Blazor.RecurringJobs;
 
 namespace PaperBellStore.Blazor;
 
@@ -159,6 +164,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         ConfigureBlazorise(context);
         ConfigureRouter(context);
         ConfigureMenu(context);
+        ConfigureHangfire(context);
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
@@ -287,6 +293,38 @@ public class PaperBellStoreBlazorModule : AbpModule
         });
     }
 
+    private void ConfigureHangfire(ServiceConfigurationContext context)
+    {
+        var configuration = context.Services.GetConfiguration();
+
+        // 配置 Hangfire
+        context.Services.AddHangfire(config =>
+        {
+            config.UsePostgreSqlStorage(
+                configuration.GetConnectionString("Default"),
+                new PostgreSqlStorageOptions
+                {
+                    SchemaName = "hangfire",  // 使用独立的 Schema
+                    QueuePollInterval = TimeSpan.FromSeconds(15),  // 轮询间隔
+                    JobExpirationCheckInterval = TimeSpan.FromHours(1),  // 作业过期检查间隔
+                    PrepareSchemaIfNecessary = true,  // 自动创建表结构
+                    EnableTransactionScopeEnlistment = true  // 启用事务范围
+                });
+
+            // 配置序列化器
+            config.UseSimpleAssemblyNameTypeSerializer();
+            config.UseRecommendedSerializerSettings();
+        });
+
+        // 添加 Hangfire 服务器
+        context.Services.AddHangfireServer(options =>
+        {
+            options.ServerName = "PaperBellStore-Server";  // 服务器名称
+            options.WorkerCount = Environment.ProcessorCount * 5;  // 工作线程数
+            options.Queues = new[] { "default", "critical", "low" };  // 队列名称
+        });
+    }
+
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var env = context.GetEnvironment();
@@ -331,11 +369,59 @@ public class PaperBellStoreBlazorModule : AbpModule
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
+
+        // 配置 Hangfire Dashboard
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            DashboardTitle = "PaperBellStore 任务调度中心",
+            Authorization = new[] { new HangfireAuthorizationFilter() },
+            StatsPollingInterval = 2000,  // 统计信息轮询间隔（毫秒）
+            DisplayStorageConnectionString = false,  // 不显示连接字符串
+            IsReadOnlyFunc = (DashboardContext ctx) => false  // 是否只读
+        });
+
         app.UseConfiguredEndpoints(builder =>
         {
             builder.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode()
                 .AddAdditionalAssemblies(builder.ServiceProvider.GetRequiredService<IOptions<AbpRouterOptions>>().Value.AdditionalAssemblies.ToArray());
         });
+
+        // 注册定时任务
+        RegisterRecurringJobs(context);
+    }
+
+    private void RegisterRecurringJobs(ApplicationInitializationContext context)
+    {
+        // 示例：注册定时任务
+        // 可以根据实际需求添加更多任务
+
+        // 示例1：每天 23:30 执行
+        RecurringJob.AddOrUpdate<SampleRecurringJob>(
+            "sample-job-daily",
+            job => job.ExecuteAsync(),
+            Cron.Daily(23, 30),  // 每天 23:30 执行
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Local
+            });
+
+        // 示例2：每小时执行一次
+        // RecurringJob.AddOrUpdate<SampleRecurringJob>(
+        //     "sample-job-hourly",
+        //     job => job.ExecuteAsync(),
+        //     Cron.Hourly());
+
+        // 示例3：每5分钟执行一次
+        // RecurringJob.AddOrUpdate<SampleRecurringJob>(
+        //     "sample-job-every-5-minutes",
+        //     job => job.ExecuteAsync(),
+        //     "0 */5 * * *");  // Cron 表达式
+
+        // 示例4：带参数的任务
+        // RecurringJob.AddOrUpdate<SampleRecurringJob>(
+        //     "sample-job-with-parameters",
+        //     job => job.ExecuteWithParametersAsync("Hello", 10),
+        //     Cron.Daily());
     }
 }
