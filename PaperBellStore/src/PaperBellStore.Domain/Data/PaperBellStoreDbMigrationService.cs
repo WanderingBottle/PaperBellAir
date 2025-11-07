@@ -22,6 +22,7 @@ public class PaperBellStoreDbMigrationService : ITransientDependency
 
     private readonly IDataSeeder _dataSeeder;
     private readonly IEnumerable<IPaperBellStoreDbSchemaMigrator> _dbSchemaMigrators;
+    private readonly IEnumerable<ILogDbSchemaMigrator> _logDbSchemaMigrators; // 添加日志数据库迁移器
     private readonly ITenantRepository _tenantRepository;
     private readonly ICurrentTenant _currentTenant;
 
@@ -29,12 +30,14 @@ public class PaperBellStoreDbMigrationService : ITransientDependency
         IDataSeeder dataSeeder,
         ITenantRepository tenantRepository,
         ICurrentTenant currentTenant,
-        IEnumerable<IPaperBellStoreDbSchemaMigrator> dbSchemaMigrators)
+        IEnumerable<IPaperBellStoreDbSchemaMigrator> dbSchemaMigrators,
+        IEnumerable<ILogDbSchemaMigrator> logDbSchemaMigrators) // 注入日志数据库迁移器
     {
         _dataSeeder = dataSeeder;
         _tenantRepository = tenantRepository;
         _currentTenant = currentTenant;
         _dbSchemaMigrators = dbSchemaMigrators;
+        _logDbSchemaMigrators = logDbSchemaMigrators; // 初始化日志数据库迁移器
 
         Logger = NullLogger<PaperBellStoreDbMigrationService>.Instance;
     }
@@ -50,14 +53,19 @@ public class PaperBellStoreDbMigrationService : ITransientDependency
 
         Logger.LogInformation("Started database migrations...");
 
+        // 迁移业务数据库
         await MigrateDatabaseSchemaAsync();
+
+        // 迁移日志数据库 ⭐
+        await MigrateLogDatabaseSchemaAsync();
+
         await SeedDataAsync();
 
         Logger.LogInformation($"Successfully completed host database migrations.");
 
         if (MultiTenancyConsts.IsEnabled)
         {
-            
+
             var tenants = await _tenantRepository.GetListAsync(includeDetails: true);
 
             var migratedDatabaseSchemas = new HashSet<string>();
@@ -94,17 +102,32 @@ public class PaperBellStoreDbMigrationService : ITransientDependency
     {
         Logger.LogInformation(
             $"Migrating schema for {(tenant == null ? "host" : tenant.Name + " tenant")} database...");
-        
+
         foreach (var migrator in _dbSchemaMigrators)
         {
             await migrator.MigrateAsync();
         }
     }
 
+    /// <summary>
+    /// 迁移日志数据库架构
+    /// </summary>
+    private async Task MigrateLogDatabaseSchemaAsync()
+    {
+        Logger.LogInformation("Migrating log database schema...");
+
+        foreach (var migrator in _logDbSchemaMigrators)
+        {
+            await migrator.MigrateAsync();
+        }
+
+        Logger.LogInformation("Successfully completed log database migrations.");
+    }
+
     private async Task SeedDataAsync(Tenant? tenant = null)
     {
         Logger.LogInformation($"Executing {(tenant == null ? "host" : tenant.Name + " tenant")} database seed...");
-        
+
         await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id)
             .WithProperty(IdentityDataSeedContributor.AdminEmailPropertyName,
                 PaperBellStoreConsts.AdminEmailDefaultValue)

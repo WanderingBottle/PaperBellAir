@@ -23,7 +23,7 @@ public class PaperBellStoreMenuContributor : IMenuContributor
     private Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
         var l = context.GetLocalizer<PaperBellStoreResource>();
-        
+
         context.Menu.Items.Insert(
             0,
             new ApplicationMenuItem(
@@ -38,7 +38,26 @@ public class PaperBellStoreMenuContributor : IMenuContributor
         //Administration
         var administration = context.Menu.GetAdministration();
         administration.Order = 6;
-    
+
+        // 添加日志测试菜单
+        var logTestManagement = new ApplicationMenuItem(
+            PaperBellStoreMenus.LogTestGroup,
+            l["Menu:LogTestGroup"],
+            icon: "fas fa-file-alt",
+            order: 2
+        );
+
+        // 添加日志测试页面作为子菜单项
+        logTestManagement.AddItem(new ApplicationMenuItem(
+            PaperBellStoreMenus.LogTest,
+            l["Menu:LogTest"],
+            "/log-test",
+            icon: "fas fa-bug"
+        ));
+
+        // 将日志测试菜单添加到Administration组下
+        administration.AddItem(logTestManagement);
+
         if (MultiTenancyConsts.IsEnabled)
         {
             administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
