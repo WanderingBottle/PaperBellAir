@@ -149,7 +149,7 @@ namespace PaperBellStore.Blazor.Controllers
         /// 添加或更新定时任务
         /// </summary>
         [HttpPost("add-or-update-recurring")]
-        public IActionResult AddOrUpdateRecurring([FromBody] RecurringJobRequest request)
+        public IActionResult AddOrUpdateRecurring([FromBody] RecurringJobRequest? request)
         {
             if (request == null || string.IsNullOrEmpty(request.JobId) || string.IsNullOrEmpty(request.CronExpression))
             {
@@ -359,7 +359,7 @@ namespace PaperBellStore.Blazor.Controllers
     /// </summary>
     public class JobParameters
     {
-        public string Message { get; set; }
+        public string? Message { get; set; }
         public int Count { get; set; } = 1;
     }
 
@@ -368,8 +368,8 @@ namespace PaperBellStore.Blazor.Controllers
     /// </summary>
     public class RecurringJobRequest
     {
-        public string JobId { get; set; }
-        public string CronExpression { get; set; }
+        public string? JobId { get; set; }
+        public string? CronExpression { get; set; }
     }
 }
 

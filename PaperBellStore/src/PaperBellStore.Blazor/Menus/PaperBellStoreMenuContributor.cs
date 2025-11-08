@@ -71,10 +71,7 @@ public class PaperBellStoreMenuContributor : IMenuContributor
         {
             administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
         }
-        else
-        {
-            administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
-        }
+        // 注意：如果多租户未启用，租户管理菜单项可能不存在，因此不尝试移除
 
         administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
         administration.SetSubItemOrder(SettingManagementMenus.GroupName, 3);
