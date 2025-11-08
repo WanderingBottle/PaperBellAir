@@ -57,7 +57,7 @@ using Hangfire.PostgreSql;
 using Hangfire.Dashboard;
 using PaperBellStore.Blazor.Filters;
 using PaperBellStore.Blazor.Middleware;
-using PaperBellStore.Blazor.RecurringJobs;
+// using PaperBellStore.Blazor.RecurringJobs; // SampleRecurringJob 已移除
 
 namespace PaperBellStore.Blazor;
 
@@ -306,6 +306,20 @@ public class PaperBellStoreBlazorModule : AbpModule
             {
                 // 使用推荐的方法设置连接字符串
                 options.UseNpgsqlConnection(connectionString);
+
+                // ===== 清理配置（可选） =====
+                // 如果不需要自定义清理配置，可以注释掉以下配置，使用默认值
+
+                // 配置清理检查间隔（默认：1 小时）
+                // Hangfire 会定期检查并清理过期的任务记录
+                // options.JobExpirationCheckInterval = TimeSpan.FromHours(1);
+
+                // 配置任务保留时间（默认：24 小时）
+                // 成功任务在完成后的保留时间，超过此时间的任务会被清理
+                // options.JobExpirationTimeout = TimeSpan.FromHours(24);
+
+                // 注意：不同版本的 Hangfire.PostgreSql 可能配置选项不同
+                // 如果上述属性不存在，请参考对应版本的文档
             });
 
             // 配置序列化器
@@ -397,32 +411,17 @@ public class PaperBellStoreBlazorModule : AbpModule
         // 示例：注册定时任务
         // 可以根据实际需求添加更多任务
 
-        // 示例1：每天 23:30 执行
-        RecurringJob.AddOrUpdate<SampleRecurringJob>(
-            "sample-job-daily",
-            job => job.ExecuteAsync(),
-            Cron.Daily(23, 30),  // 每天 23:30 执行
-            new RecurringJobOptions
-            {
-                TimeZone = TimeZoneInfo.Local
-            });
+        // SampleRecurringJob 已移除，以下代码已注释
+        // 如果需要添加新的定时任务，请在此处添加
 
-        // 示例2：每小时执行一次
+        // 示例：每天 23:30 执行（已移除）
         // RecurringJob.AddOrUpdate<SampleRecurringJob>(
-        //     "sample-job-hourly",
+        //     "sample-job-daily",
         //     job => job.ExecuteAsync(),
-        //     Cron.Hourly());
-
-        // 示例3：每5分钟执行一次
-        // RecurringJob.AddOrUpdate<SampleRecurringJob>(
-        //     "sample-job-every-5-minutes",
-        //     job => job.ExecuteAsync(),
-        //     "0 */5 * * *");  // Cron 表达式
-
-        // 示例4：带参数的任务
-        // RecurringJob.AddOrUpdate<SampleRecurringJob>(
-        //     "sample-job-with-parameters",
-        //     job => job.ExecuteWithParametersAsync("Hello", 10),
-        //     Cron.Daily());
+        //     Cron.Daily(23, 30),
+        //     new RecurringJobOptions
+        //     {
+        //         TimeZone = TimeZoneInfo.Local
+        //     });
     }
 }

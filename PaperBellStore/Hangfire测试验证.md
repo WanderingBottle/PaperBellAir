@@ -14,6 +14,7 @@
 6. [测试不同场景](#6-测试不同场景)
 7. [验证检查清单](#7-验证检查清单)
 8. [常见问题排查](#8-常见问题排查)
+9. [删除示例任务（SampleRecurringJob）](#9-删除示例任务samplerecurringjob)
 
 ---
 
@@ -894,6 +895,92 @@ curl -X POST "https://localhost:44305/api/hangfire-test/execute-sample-job"
 3. **日志记录**：在任务中添加详细日志，方便排查问题
 4. **监控**：定期检查 Dashboard，确保任务正常执行
 5. **备份**：重要任务建议添加数据备份逻辑
+
+---
+
+## 9. 删除示例任务（SampleRecurringJob）
+
+如果不再需要 `SampleRecurringJob` 示例任务，可以按照以下步骤完全移除它。
+
+### 9.1 已完成的操作
+
+以下操作已经自动完成：
+
+1. ✅ **删除注册代码** - `PaperBellStoreBlazorModule.cs` 中的注册代码已注释
+2. ✅ **注释测试控制器方法** - `HangfireTestController.cs` 中相关方法已注释
+3. ✅ **删除文件** - `SampleRecurringJob.cs` 文件已删除
+4. ✅ **移除 using 引用** - 相关命名空间引用已注释
+
+### 9.2 需要手动执行的操作
+
+#### ⚠️ 重要：删除数据库中的任务记录
+
+**必须在应用重新启动前执行**，否则任务会执行失败。
+
+##### 方法一：通过 Hangfire Dashboard（推荐）
+
+1. 启动应用程序（如果还没启动）
+2. 访问 `http://localhost:44305/hangfire`（或你的应用地址）
+3. 登录系统（需要 HangfireDashboardView 权限）
+4. 点击左侧菜单 "Recurring jobs"（周期性作业）
+5. 找到 `sample-job-daily` 任务
+6. 点击该任务右侧的 "Delete" 按钮
+7. 确认删除
+
+##### 方法二：通过 SQL 直接删除（推荐）
+
+执行项目根目录下的 `删除SampleRecurringJob数据库记录.sql` 文件：
+
+```sql
+-- 删除定时任务记录
+DELETE FROM hangfire.recurringjob
+WHERE id = 'sample-job-daily';
+
+-- 验证删除结果（应该返回空）
+SELECT * FROM hangfire.recurringjob
+WHERE id = 'sample-job-daily';
+```
+
+##### 方法三：通过 API 删除（如果应用正在运行）
+
+```bash
+# 使用 curl 或 Postman
+DELETE http://localhost:44305/api/hangfire-test/remove-recurring?jobId=sample-job-daily
+```
+
+### 9.3 验证步骤
+
+完成数据库删除后，请验证：
+
+1. ✅ **编译通过** - 项目可以正常编译
+2. ✅ **应用正常启动** - 应用可以正常启动，无错误
+3. ✅ **数据库中没有残留记录** - 执行验证 SQL 确认记录已删除
+4. ✅ **Dashboard 中任务已消失** - 访问 `/hangfire` 确认任务不在列表中
+5. ✅ **日志中没有错误** - 检查应用日志，确认没有类型加载错误
+
+### 9.4 已修改的文件
+
+1. `src/PaperBellStore.Blazor/PaperBellStoreBlazorModule.cs`
+
+   - 注释了 `RegisterRecurringJobs` 中的注册代码
+   - 注释了 `using PaperBellStore.Blazor.RecurringJobs;`
+
+2. `src/PaperBellStore.Blazor/Controllers/HangfireTestController.cs`
+
+   - 注释了所有使用 `SampleRecurringJob` 的方法
+   - 注释了 `using PaperBellStore.Blazor.RecurringJobs;`
+
+3. `src/PaperBellStore.Blazor/RecurringJobs/SampleRecurringJob.cs`
+   - ✅ **文件已删除**
+
+### 9.5 注意事项
+
+1. **必须先删除数据库记录**，再重新启动应用，否则任务会执行失败
+2. 如果应用已经重新启动且任务执行失败，需要：
+   - 在 Dashboard 的 "Failed jobs" 页面查看失败任务
+   - 删除失败的任务记录
+   - 删除 `hangfire.recurringjob` 表中的记录
+3. 测试控制器中的其他方法（如 `GetRecurringJobs`、`RemoveRecurring` 等）仍然可用
 
 ---
 

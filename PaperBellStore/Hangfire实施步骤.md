@@ -362,15 +362,24 @@ Hangfire 会在 `hangfire` Schema 下自动创建以下表：
 
 **定时任务定义持久化**：
 
-- 存储位置：`hangfire.set` 表
+- 存储位置：`hangfire.set` 表（注意：实际表名是 `hangfire.set`，不是 `hangfire.recurringjob`）
 - 存储时机：调用 `AddOrUpdate` 时立即存储
 - 特点：即使应用重启，定时任务定义仍然存在
+- **不会被自动清理**：定时任务定义会永久保存，除非手动删除
 
 **任务执行记录持久化**：
 
 - 存储位置：`hangfire.job`、`hangfire.jobstate`、`hangfire.jobparameter` 表
 - 存储时机：任务创建时、状态变化时、加入队列时
-- 特点：任务执行历史永久保存（除非手动清理）
+- 特点：任务执行历史会保存，但**会被自动清理**（根据配置的保留时间）
+
+**说明**：
+
+- 数据持久化和数据清理**不是互斥的**，而是**互补的**
+- **持久化**：确保数据在应用重启后仍然存在
+- **清理**：定期删除过期的历史记录，避免数据库无限增长
+- 定时任务定义（`hangfire.set`）不会被自动清理
+- 任务执行记录（`hangfire.job` 等）会被自动清理
 
 ### 4.6 数据库权限要求
 
@@ -389,18 +398,415 @@ GRANT ALL ON SCHEMA hangfire TO postgres;
 
 ### 4.7 数据清理
 
-**自动清理**：
+#### 4.7.1 自动清理机制
 
-- Hangfire 会自动清理过期的任务记录
-- 成功执行的任务：默认保留 24 小时
-- 失败的任务：默认保留 7 天
+**Hangfire 默认启用自动清理**，可以配置清理间隔和保留时间。
 
-**手动清理**（谨慎操作）：
+**默认保留策略**：
+
+- **成功执行的任务**：默认保留 **24 小时**
+- **失败的任务**：默认保留 **7 天**
+- **定时任务定义**：**不会被清理**（永久保存）
+- **清理检查间隔**：默认 **1 小时**
+
+#### 4.7.2 配置清理间隔和保留时间
+
+**可以配置**：✅ 清理间隔和保留时间都可以配置
+
+**配置方法**：
+
+在 `ConfigureHangfire` 方法中配置 `PostgreSqlStorageOptions`：
+
+**注意**：`Hangfire.PostgreSql` 1.20.6 版本的配置选项可能与 SQL Server 版本不同。如果以下属性不存在，请参考该版本的官方文档。
+
+```csharp
+private void ConfigureHangfire(ServiceConfigurationContext context)
+{
+    var configuration = context.Services.GetConfiguration();
+    var connectionString = configuration.GetConnectionString("Default");
+
+    context.Services.AddHangfire(config =>
+    {
+        config.UsePostgreSqlStorage(options =>
+        {
+            options.UseNpgsqlConnection(connectionString);
+
+            // ===== 清理配置 =====
+            // 注意：Hangfire.PostgreSql 1.20.6 可能使用不同的配置属性名
+            // 如果以下属性不存在，请检查该版本的 API 文档
+
+            // 方式 1：尝试使用标准配置（如果支持）
+            // options.JobExpirationCheckInterval = TimeSpan.FromHours(1);
+            // options.JobExpirationTimeout = TimeSpan.FromHours(24);
+
+            // 方式 2：通过 Hangfire Server 配置（如果存储选项不支持）
+            // 清理配置主要通过 Hangfire Server 的后台任务执行
+
+            // 其他可选配置
+            options.EnableTransactionScopeEnlistment = true;  // 启用事务范围
+            options.PrepareSchemaIfNecessary = true;  // 自动创建 Schema（默认启用）
+        });
+
+        // 配置序列化器
+        config.UseSimpleAssemblyNameTypeSerializer();
+        config.UseRecommendedSerializerSettings();
+    });
+
+    // 添加 Hangfire 服务器
+    // 注意：清理任务由 Hangfire Server 自动执行
+    context.Services.AddHangfireServer(options =>
+    {
+        options.ServerName = "PaperBellStore-Server";
+        options.WorkerCount = Environment.ProcessorCount * 5;
+        options.Queues = new[] { "default", "critical", "low" };
+
+        // Hangfire Server 会自动执行清理任务
+        // 清理间隔和保留时间由 Hangfire 内部机制控制
+    });
+}
+```
+
+**如果配置属性不存在时的替代方案**：
+
+1. **检查版本文档**：查看 `Hangfire.PostgreSql` 1.20.6 的官方文档
+2. **使用默认值**：Hangfire 默认会启用自动清理（1 小时检查一次，保留 24 小时）
+3. **通过配置文件**：某些版本可能支持通过 `appsettings.json` 配置
+4. **手动清理**：如果无法配置，可以定期执行手动清理 SQL
+
+**配置参数说明**：
+
+| 参数                         | 类型       | 默认值    | 说明                                                  |
+| ---------------------------- | ---------- | --------- | ----------------------------------------------------- |
+| `JobExpirationCheckInterval` | `TimeSpan` | `1 小时`  | 清理检查的间隔时间，Hangfire 会定期检查并清理过期任务 |
+| `JobExpirationTimeout`       | `TimeSpan` | `24 小时` | 成功任务在完成后的保留时间，超过此时间的任务会被清理  |
+| `PrepareSchemaIfNecessary`   | `bool`     | `true`    | 是否自动创建 Schema 和表（首次运行时）                |
+
+**关于失败任务保留时间**：
+
+- ❌ **没有直接的配置项**：`Hangfire.PostgreSql` 存储选项中**没有单独的失败任务保留时间配置项**
+- ✅ **默认行为**：失败任务默认保留 **7 天**（由 Hangfire 内部机制控制）
+- ✅ **编程方式配置**：可以通过编程方式为失败任务设置不同的过期时间（见下方示例）
+
+**重要提示**：
+
+- ⚠️ **版本差异**：不同版本的 `Hangfire.PostgreSql` 可能配置选项名称不同
+  - 如果 `JobExpirationCheckInterval` 或 `JobExpirationTimeout` 属性不存在，请检查：
+    1. 使用的 `Hangfire.PostgreSql` 版本
+    2. 该版本的官方文档
+    3. 可能需要使用其他配置方式（如通过配置文件）
+- ⚠️ `JobExpirationTimeout` 主要控制**成功任务**的保留时间
+- ⚠️ **失败任务保留时间**：没有直接的配置项，默认保留 7 天，可以通过编程方式设置
+- ⚠️ **定时任务定义**（`hangfire.set`）不会被清理，需要手动删除
+
+**实际配置步骤**：
+
+1. **尝试配置**：在代码中尝试使用上述配置属性
+2. **编译检查**：如果属性不存在，编译器会报错
+3. **查看 IntelliSense**：在 IDE 中输入 `options.` 查看可用的属性
+4. **参考文档**：查看 [Hangfire.PostgreSql GitHub](https://github.com/frankhommers/Hangfire.PostgreSql) 的文档
+
+**验证配置是否生效**：
+
+1. **检查编译**：确保代码可以正常编译
+2. **查看日志**：启动应用后，检查 Hangfire 日志中是否有清理任务执行
+3. **观察 Dashboard**：在 Dashboard 中观察历史记录的保留情况
+4. **等待验证**：等待清理间隔时间后，检查过期任务是否被清理
+5. **查询数据库**：直接查询数据库，检查过期任务是否被删除
+
+   ```sql
+   -- 查看任务数量（应该会随时间减少）
+   SELECT COUNT(*) FROM hangfire.job;
+
+   -- 查看最近的任务
+   SELECT id, createdat, statename
+   FROM hangfire.job j
+   JOIN hangfire.jobstate js ON j.stateid = js.id
+   ORDER BY j.createdat DESC
+   LIMIT 10;
+   ```
+
+**配置示例**：
+
+```csharp
+// 示例 1：更频繁的清理检查（每 30 分钟）
+options.JobExpirationCheckInterval = TimeSpan.FromMinutes(30);
+
+// 示例 2：保留更长时间的历史记录（7 天）
+options.JobExpirationTimeout = TimeSpan.FromDays(7);
+
+// 示例 3：生产环境推荐配置
+options.JobExpirationCheckInterval = TimeSpan.FromHours(2);  // 每 2 小时检查一次
+options.JobExpirationTimeout = TimeSpan.FromDays(3);        // 保留 3 天历史记录
+```
+
+#### 4.7.2.1 为失败任务设置不同的保留时间（编程方式）
+
+由于 `Hangfire.PostgreSql` 没有单独的失败任务保留时间配置项，可以通过编程方式在任务执行后根据状态设置不同的过期时间：
+
+**方法 1：在任务类中设置过期时间**
+
+```csharp
+using Hangfire;
+using Hangfire.States;
+
+public class SampleRecurringJob : ITransientDependency
+{
+    private readonly ILogger<SampleRecurringJob> _logger;
+
+    public SampleRecurringJob(ILogger<SampleRecurringJob> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task ExecuteAsync()
+    {
+        try
+        {
+            // 任务逻辑
+            await Task.Delay(1000);
+
+            // 任务成功后，设置过期时间（可选，如果不设置则使用 JobExpirationTimeout）
+            var jobId = JobContext.CurrentJobId;
+            if (jobId != null)
+            {
+                // 成功任务保留 3 天
+                BackgroundJob.Expire(jobId, TimeSpan.FromDays(3));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "任务执行失败");
+
+            // 任务失败后，设置更长的过期时间
+            var jobId = JobContext.CurrentJobId;
+            if (jobId != null)
+            {
+                // 失败任务保留 30 天（便于排查问题）
+                BackgroundJob.Expire(jobId, TimeSpan.FromDays(30));
+            }
+
+            throw;  // 重新抛出异常以触发重试
+        }
+    }
+}
+```
+
+**方法 2：使用全局过滤器设置过期时间**
+
+创建全局过滤器，在任务状态变化时自动设置过期时间：
+
+```csharp
+using Hangfire.Client;
+using Hangfire.Common;
+using Hangfire.States;
+
+public class JobExpirationFilter : IServerFilter
+{
+    public void OnPerforming(PerformingContext filterContext)
+    {
+        // 任务执行前
+    }
+
+    public void OnPerformed(PerformedContext filterContext)
+    {
+        // 任务执行后
+        var jobId = filterContext.BackgroundJob.Id;
+
+        // 根据任务状态设置不同的过期时间
+        if (filterContext.Exception == null)
+        {
+            // 成功任务：保留 3 天
+            BackgroundJob.Expire(jobId, TimeSpan.FromDays(3));
+        }
+        else
+        {
+            // 失败任务：保留 30 天
+            BackgroundJob.Expire(jobId, TimeSpan.FromDays(30));
+        }
+    }
+}
+```
+
+**注册全局过滤器**：
+
+```csharp
+context.Services.AddHangfire(config =>
+{
+    config.UsePostgreSqlStorage(options =>
+    {
+        options.UseNpgsqlConnection(connectionString);
+    });
+
+    // 注册全局过滤器
+    config.UseFilter(new JobExpirationFilter());
+});
+```
+
+**方法 3：使用 Hangfire 的默认行为（推荐）**
+
+如果不需要自定义失败任务的保留时间，可以依赖 Hangfire 的默认行为：
+
+- 成功任务：使用 `JobExpirationTimeout` 配置（默认 24 小时）
+- 失败任务：使用 Hangfire 内部默认值（7 天）
+
+**注意**：
+
+- ⚠️ `BackgroundJob.Expire` 方法会覆盖全局的 `JobExpirationTimeout` 设置
+- ⚠️ 如果任务在重试过程中，过期时间可能会被重置
+- ⚠️ 建议在生产环境中为失败任务设置更长的保留时间，便于问题排查
+
+**当前项目状态**：
+
+- ✅ **已启用自动清理**（Hangfire 默认行为）
+- ⚠️ **未显式配置清理间隔**（使用默认值：1 小时）
+- ⚠️ **未配置自定义保留时间**（使用默认值：成功 24 小时，失败 7 天）
+
+**建议配置**：
+
+根据业务需求选择合适的配置：
+
+- **开发环境**：可以缩短保留时间，减少数据库占用
+
+  ```csharp
+  options.JobExpirationCheckInterval = TimeSpan.FromMinutes(30);
+  options.JobExpirationTimeout = TimeSpan.FromHours(12);
+  // 失败任务：使用默认 7 天，或通过编程方式设置（见 4.7.2.1）
+  ```
+
+- **生产环境**：建议保留更长时间，便于问题排查
+
+  ```csharp
+  options.JobExpirationCheckInterval = TimeSpan.FromHours(2);
+  options.JobExpirationTimeout = TimeSpan.FromDays(7);
+  // 失败任务：建议通过编程方式设置为 30 天（见 4.7.2.1）
+  ```
+
+**完整配置示例（包含失败任务保留时间）**：
+
+```csharp
+private void ConfigureHangfire(ServiceConfigurationContext context)
+{
+    var configuration = context.Services.GetConfiguration();
+    var connectionString = configuration.GetConnectionString("Default");
+
+    context.Services.AddHangfire(config =>
+    {
+        config.UsePostgreSqlStorage(options =>
+        {
+            options.UseNpgsqlConnection(connectionString);
+
+            // 清理配置
+            options.JobExpirationCheckInterval = TimeSpan.FromHours(1);  // 清理检查间隔
+            options.JobExpirationTimeout = TimeSpan.FromDays(3);         // 成功任务保留 3 天
+            // 注意：失败任务保留时间需要通过编程方式设置（见下方）
+        });
+
+        // 配置序列化器
+        config.UseSimpleAssemblyNameTypeSerializer();
+        config.UseRecommendedSerializerSettings();
+
+        // 注册全局过滤器，为失败任务设置更长的保留时间
+        config.UseFilter(new JobExpirationFilter());
+    });
+
+    context.Services.AddHangfireServer(options =>
+    {
+        options.ServerName = "PaperBellStore-Server";
+        options.WorkerCount = Environment.ProcessorCount * 5;
+        options.Queues = new[] { "default", "critical", "low" };
+    });
+}
+```
+
+**创建全局过滤器文件**：`src/PaperBellStore.Blazor/Filters/JobExpirationFilter.cs`
+
+```csharp
+using Hangfire.Client;
+using Hangfire.Common;
+using Hangfire.States;
+
+namespace PaperBellStore.Blazor.Filters
+{
+    /// <summary>
+    /// 任务过期时间过滤器
+    /// 根据任务执行结果设置不同的保留时间
+    /// </summary>
+    public class JobExpirationFilter : IServerFilter
+    {
+        public void OnPerforming(PerformingContext filterContext)
+        {
+            // 任务执行前（不需要处理）
+        }
+
+        public void OnPerformed(PerformedContext filterContext)
+        {
+            // 任务执行后，根据结果设置过期时间
+            var jobId = filterContext.BackgroundJob.Id;
+
+            if (filterContext.Exception == null)
+            {
+                // 成功任务：使用 JobExpirationTimeout 配置（或默认 24 小时）
+                // 如果需要自定义，可以取消注释：
+                // BackgroundJob.Expire(jobId, TimeSpan.FromDays(3));
+            }
+            else
+            {
+                // 失败任务：保留 30 天（便于排查问题）
+                BackgroundJob.Expire(jobId, TimeSpan.FromDays(30));
+            }
+        }
+    }
+}
+```
+
+#### 4.7.3 手动清理（可选）
+
+如果需要立即清理或自定义清理策略，可以手动执行 SQL：
 
 ```sql
--- 清理过期的任务记录
-DELETE FROM hangfire.job WHERE "createdat" < NOW() - INTERVAL '7 days';
+-- 清理超过 7 天的成功任务
+DELETE FROM hangfire.job
+WHERE "createdat" < NOW() - INTERVAL '7 days'
+  AND "stateid" IN (
+    SELECT id FROM hangfire.jobstate
+    WHERE "name" = 'Succeeded'
+  );
+
+-- 清理超过 30 天的失败任务
+DELETE FROM hangfire.job
+WHERE "createdat" < NOW() - INTERVAL '30 days'
+  AND "stateid" IN (
+    SELECT id FROM hangfire.jobstate
+    WHERE "name" = 'Failed'
+  );
 ```
+
+**注意事项**：
+
+- ⚠️ 手动清理需要谨慎操作，建议先备份数据
+- ⚠️ 清理会影响 Dashboard 中的历史记录显示
+- ⚠️ 定时任务定义（`hangfire.set`）不会被清理，需要手动删除
+
+#### 4.7.4 清理配置建议
+
+**生产环境推荐配置**：
+
+```csharp
+config.UsePostgreSqlStorage(options =>
+{
+    options.UseNpgsqlConnection(connectionString);
+
+    // 生产环境：保留更长时间的历史记录
+    // 注意：Hangfire.PostgreSql 1.20.6 版本中，
+    // 清理策略主要通过 Hangfire Server 的配置控制
+});
+```
+
+**监控清理效果**：
+
+- 在 Dashboard 中查看历史记录数量
+- 定期检查数据库表大小
+- 监控清理任务的执行日志
 
 ---
 
@@ -810,4 +1216,3 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 ---
 
 **最后更新**：2024 年
-
