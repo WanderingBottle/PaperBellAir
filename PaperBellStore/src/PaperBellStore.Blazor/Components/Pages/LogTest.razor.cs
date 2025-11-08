@@ -20,7 +20,7 @@ public partial class LogTest : IAsyncDisposable
     protected IDbContextProvider<LogDbContext> LogDbContextProvider { get; set; } = default!;
 
     [Inject]
-    protected ILogger<LogTest> Logger { get; set; } = default!;
+    protected new ILogger<LogTest> Logger { get; set; } = default!;
 
     [Inject]
     protected IJSRuntime JSRuntime { get; set; } = default!;

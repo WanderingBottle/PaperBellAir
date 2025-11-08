@@ -29,8 +29,8 @@ namespace PaperBellStore.DbMigrator.Extensions
             bool enableDeduplication = false,
             int deduplicationWindowMinutes = 5,
             LogEventLevel minimumLevel = LogEventLevel.Verbose,
-            IEnumerable<string> excludedKeywords = null,
-            IEnumerable<string> excludedPatterns = null,
+            IEnumerable<string>? excludedKeywords = null,
+            IEnumerable<string>? excludedPatterns = null,
             int batchPostingLimit = 100,
             int cacheExpirationMinutes = 10)
         {

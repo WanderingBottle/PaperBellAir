@@ -41,8 +41,8 @@ namespace PaperBellStore.DbMigrator.Sinks
             bool enableDeduplication = false,
             int deduplicationWindowMinutes = 5,
             LogEventLevel minimumLevel = LogEventLevel.Verbose,
-            IEnumerable<string> excludedKeywords = null,
-            IEnumerable<string> excludedPatterns = null,
+            IEnumerable<string>? excludedKeywords = null,
+            IEnumerable<string>? excludedPatterns = null,
             int batchPostingLimit = 100,
             TimeSpan? period = null,
             int cacheExpirationMinutes = 10)
@@ -118,7 +118,7 @@ namespace PaperBellStore.DbMigrator.Sinks
             // 性能优化：批量计算哈希值
             var hashToEvents = new Dictionary<string, List<(LogEvent Event, DateTime Timestamp)>>();
             var hashToUpdate = new Dictionary<string, (Guid LogId, DateTime LastOccurrence, int Count)>();
-            var newLogs = new List<(LogEvent Event, string MessageHash, DateTime Timestamp)>();
+            var newLogs = new List<(LogEvent Event, string? MessageHash, DateTime Timestamp)>();
 
             foreach (var logEvent in events)
             {
@@ -201,7 +201,7 @@ namespace PaperBellStore.DbMigrator.Sinks
         /// </summary>
         private async Task ProcessBatchWithoutDeduplicationAsync(NpgsqlConnection connection, List<LogEvent> events)
         {
-            var newLogs = events.Select(e => (e, (string)null, DateTime.UtcNow)).ToList();
+            var newLogs = events.Select(e => (e, (string?)null, DateTime.UtcNow)).ToList();
             await InsertLogsBatchAsync(connection, newLogs, DateTime.UtcNow);
         }
 
@@ -291,7 +291,7 @@ namespace PaperBellStore.DbMigrator.Sinks
         /// </summary>
         private async Task InsertLogsBatchAsync(
             NpgsqlConnection connection,
-            List<(LogEvent Event, string MessageHash, DateTime Timestamp)> logs,
+            List<(LogEvent Event, string? MessageHash, DateTime Timestamp)> logs,
             DateTime now)
         {
             if (!logs.Any())
@@ -311,7 +311,7 @@ namespace PaperBellStore.DbMigrator.Sinks
                         var logId = Guid.NewGuid();
                         var level = logEvent.Level.ToString();
                         var message = logEvent.RenderMessage();
-                        var exception = logEvent.Exception?.ToString() ?? (string)null;
+                        var exception = logEvent.Exception?.ToString();
                         var properties = SerializeProperties(logEvent);
                         var logEventJson = SerializeLogEvent(logEvent);
 
@@ -327,11 +327,11 @@ namespace PaperBellStore.DbMigrator.Sinks
                         command.Parameters.AddWithValue("id", logId);
                         command.Parameters.AddWithValue("timestamp", timestamp);
                         command.Parameters.AddWithValue("level", level);
-                        command.Parameters.AddWithValue("message", (object)message ?? DBNull.Value);
-                        command.Parameters.AddWithValue("exception", (object)exception ?? DBNull.Value);
-                        command.Parameters.AddWithValue("properties", (object)properties ?? DBNull.Value);
-                        command.Parameters.AddWithValue("logEvent", (object)logEventJson ?? DBNull.Value);
-                        command.Parameters.AddWithValue("messageHash", messageHash);
+                        command.Parameters.AddWithValue("message", (object?)message ?? DBNull.Value);
+                        command.Parameters.AddWithValue("exception", (object?)exception ?? DBNull.Value);
+                        command.Parameters.AddWithValue("properties", (object?)properties ?? DBNull.Value);
+                        command.Parameters.AddWithValue("logEvent", (object?)logEventJson ?? DBNull.Value);
+                        command.Parameters.AddWithValue("messageHash", messageHash ?? string.Empty);
                         command.Parameters.AddWithValue("firstOccurrence", timestamp);
                         command.Parameters.AddWithValue("lastOccurrence", timestamp);
                         command.Parameters.AddWithValue("occurrenceCount", 1);
@@ -340,7 +340,10 @@ namespace PaperBellStore.DbMigrator.Sinks
                         await command.ExecuteNonQueryAsync();
 
                         // 更新缓存
-                        _hashCache[messageHash] = (logId, timestamp);
+                        if (messageHash != null)
+                        {
+                            _hashCache[messageHash] = (logId, timestamp);
+                        }
                     }
                 }
                 else
@@ -351,7 +354,7 @@ namespace PaperBellStore.DbMigrator.Sinks
                         var logId = Guid.NewGuid();
                         var level = logEvent.Level.ToString();
                         var message = logEvent.RenderMessage();
-                        var exception = logEvent.Exception?.ToString() ?? (string)null;
+                        var exception = logEvent.Exception?.ToString();
                         var properties = SerializeProperties(logEvent);
                         var logEventJson = SerializeLogEvent(logEvent);
 
@@ -365,10 +368,10 @@ namespace PaperBellStore.DbMigrator.Sinks
                         command.Parameters.AddWithValue("id", logId);
                         command.Parameters.AddWithValue("timestamp", timestamp);
                         command.Parameters.AddWithValue("level", level);
-                        command.Parameters.AddWithValue("message", (object)message ?? DBNull.Value);
-                        command.Parameters.AddWithValue("exception", (object)exception ?? DBNull.Value);
-                        command.Parameters.AddWithValue("properties", (object)properties ?? DBNull.Value);
-                        command.Parameters.AddWithValue("logEvent", (object)logEventJson ?? DBNull.Value);
+                        command.Parameters.AddWithValue("message", (object?)message ?? DBNull.Value);
+                        command.Parameters.AddWithValue("exception", (object?)exception ?? DBNull.Value);
+                        command.Parameters.AddWithValue("properties", (object?)properties ?? DBNull.Value);
+                        command.Parameters.AddWithValue("logEvent", (object?)logEventJson ?? DBNull.Value);
 
                         await command.ExecuteNonQueryAsync();
                     }
@@ -386,7 +389,7 @@ namespace PaperBellStore.DbMigrator.Sinks
         /// <summary>
         /// 性能优化：清理过期的缓存项
         /// </summary>
-        private void CleanupExpiredCache(object state)
+        private void CleanupExpiredCache(object? state)
         {
             try
             {
@@ -442,7 +445,7 @@ namespace PaperBellStore.DbMigrator.Sinks
             return Convert.ToHexString(hash);
         }
 
-        private string SerializeProperties(LogEvent logEvent)
+        private string? SerializeProperties(LogEvent logEvent)
         {
             try
             {
@@ -459,7 +462,7 @@ namespace PaperBellStore.DbMigrator.Sinks
             }
         }
 
-        private string SerializeLogEvent(LogEvent logEvent)
+        private string? SerializeLogEvent(LogEvent logEvent)
         {
             try
             {

@@ -34,23 +34,23 @@ namespace PaperBellStore.Blazor.Pages.Account
     {
         [HiddenInput]
         [BindProperty(SupportsGet = true)]
-        public string ReturnUrl { get; set; }
+        public string? ReturnUrl { get; set; }
 
         [HiddenInput]
         [BindProperty(SupportsGet = true)]
-        public string ReturnUrlHash { get; set; }
+        public string? ReturnUrlHash { get; set; }
 
         [BindProperty]
-        public LoginInputModel LoginInput { get; set; }
+        public LoginInputModel? LoginInput { get; set; }
 
         public bool EnableLocalLogin { get; set; }
 
         //TODO: Why there is an ExternalProviders if only the VisibleExternalProviders is used.
-        public IEnumerable<ExternalProviderModel> ExternalProviders { get; set; }
+        public IEnumerable<ExternalProviderModel> ExternalProviders { get; set; } = new List<ExternalProviderModel>();
         public IEnumerable<ExternalProviderModel> VisibleExternalProviders => ExternalProviders.Where(x => !String.IsNullOrWhiteSpace(x.DisplayName));
 
         public bool IsExternalLoginOnly => EnableLocalLogin==false&&ExternalProviders?.Count()==1;
-        public string ExternalLoginScheme => IsExternalLoginOnly ? ExternalProviders?.SingleOrDefault()?.AuthenticationScheme : null;
+        public string? ExternalLoginScheme => IsExternalLoginOnly ? ExternalProviders?.SingleOrDefault()?.AuthenticationScheme : null;
 
         //Optional IdentityServer services
         //public IIdentityServerInteractionService Interaction { get; set; }
@@ -59,7 +59,7 @@ namespace PaperBellStore.Blazor.Pages.Account
 
         protected IAuthenticationSchemeProvider SchemeProvider { get; }
         protected AbpAccountOptions AccountOptions { get; }
-        protected IOptions<IdentityOptions> IdentityOptions { get; }
+        protected new IOptions<IdentityOptions> IdentityOptions { get; }
         protected IdentityDynamicClaimsPrincipalContributorCache IdentityDynamicClaimsPrincipalContributorCache { get; }
         protected IWebHostEnvironment WebHostEnvironment { get; }
         public bool ShowCancelButton { get; set; }
@@ -98,6 +98,11 @@ namespace PaperBellStore.Blazor.Pages.Account
         public virtual async Task<IActionResult> OnPostAsync(string action)
         {
             await CheckLocalLoginAsync();
+
+            if (LoginInput == null)
+            {
+                LoginInput = new LoginInputModel();
+            }
 
             ValidateModel();
 
@@ -166,7 +171,7 @@ namespace PaperBellStore.Blazor.Pages.Account
             // Clear the dynamic claims cache.
             await IdentityDynamicClaimsPrincipalContributorCache.ClearAsync(user.Id , user.TenantId);
 
-            return await RedirectSafelyAsync(ReturnUrl , ReturnUrlHash);
+            return await RedirectSafelyAsync(ReturnUrl ?? string.Empty, ReturnUrlHash);
         }
 
         /// <summary>
@@ -185,7 +190,7 @@ namespace PaperBellStore.Blazor.Pages.Account
                 .Where(x => x.DisplayName!=null||x.Name.Equals(AccountOptions.WindowsAuthenticationSchemeName , StringComparison.OrdinalIgnoreCase))
                 .Select(x => new ExternalProviderModel
                 {
-                    DisplayName=x.DisplayName ,
+                    DisplayName=x.DisplayName ?? string.Empty ,
                     AuthenticationScheme=x.Name
                 })
                 .ToList();
@@ -200,7 +205,7 @@ namespace PaperBellStore.Blazor.Pages.Account
             return await Task.FromResult(Challenge(properties , provider));
         }
 
-        public virtual async Task<IActionResult> OnGetExternalLoginCallbackAsync(string returnUrl = "" , string returnUrlHash = "" , string remoteError = null)
+        public virtual async Task<IActionResult> OnGetExternalLoginCallbackAsync(string returnUrl = "" , string returnUrlHash = "" , string? remoteError = null)
         {
             //TODO: Did not implemented Identity Server 4 sample for this method (see ExternalLoginCallback in Quickstart of IDS4 sample)
             /* Also did not implement these:
@@ -250,7 +255,7 @@ namespace PaperBellStore.Blazor.Pages.Account
                 throw new UserFriendlyException("Cannot proceed because user is not allowed!");
             }
 
-            IdentityUser user;
+            IdentityUser? user;
             if(result.Succeeded)
             {
                 user=await UserManager.FindByLoginAsync(loginInfo.LoginProvider , loginInfo.ProviderKey);
@@ -309,6 +314,11 @@ namespace PaperBellStore.Blazor.Pages.Account
 
         protected virtual async Task ReplaceEmailToUsernameOfInputIfNeeds()
         {
+            if (LoginInput == null)
+            {
+                return;
+            }
+
             if(!ValidationHelper.IsValidEmailAddress(LoginInput.UserNameOrEmailAddress))
             {
                 return;
@@ -326,7 +336,7 @@ namespace PaperBellStore.Blazor.Pages.Account
                 return;
             }
 
-            LoginInput.UserNameOrEmailAddress=userByEmail.UserName;
+            LoginInput.UserNameOrEmailAddress=userByEmail.UserName ?? string.Empty;
         }
 
         protected virtual async Task CheckLocalLoginAsync()
@@ -341,21 +351,21 @@ namespace PaperBellStore.Blazor.Pages.Account
         {
             [Required]
             [DynamicStringLength(typeof(IdentityUserConsts) , nameof(IdentityUserConsts.MaxEmailLength))]
-            public string UserNameOrEmailAddress { get; set; }
+            public string UserNameOrEmailAddress { get; set; } = string.Empty;
 
             [Required]
             [DynamicStringLength(typeof(IdentityUserConsts) , nameof(IdentityUserConsts.MaxPasswordLength))]
             [DataType(DataType.Password)]
             [DisableAuditing]
-            public string Password { get; set; }
+            public string Password { get; set; } = string.Empty;
 
             public bool RememberMe { get; set; }
         }
 
         public class ExternalProviderModel
         {
-            public string DisplayName { get; set; }
-            public string AuthenticationScheme { get; set; }
+            public string DisplayName { get; set; } = string.Empty;
+            public string AuthenticationScheme { get; set; } = string.Empty;
         }
     }
 }

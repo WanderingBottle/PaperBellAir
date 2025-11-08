@@ -126,7 +126,7 @@ namespace PaperBellStore.Blazor.Sinks
             // 性能优化：批量计算哈希值
             var hashToEvents = new Dictionary<string, List<(LogEvent Event, DateTime Timestamp)>>();
             var hashToUpdate = new Dictionary<string, (Guid LogId, DateTime LastOccurrence, int Count)>();
-            var newLogs = new List<(LogEvent Event, string MessageHash, DateTime Timestamp)>();
+            var newLogs = new List<(LogEvent Event, string? MessageHash, DateTime Timestamp)>();
 
             foreach (var logEvent in events)
             {
@@ -214,7 +214,7 @@ namespace PaperBellStore.Blazor.Sinks
         private async Task ProcessBatchWithoutDeduplicationAsync(NpgsqlConnection connection, List<LogEvent> events)
         {
             // 使用日志事件的时间戳（已转换为本地时间）
-            var newLogs = events.Select(e => (e, string.Empty, e.Timestamp.ToLocalTime().DateTime)).ToList();
+            var newLogs = events.Select(e => (e, (string?)string.Empty, e.Timestamp.ToLocalTime().DateTime)).ToList();
             await InsertLogsBatchAsync(connection, newLogs, DateTime.Now);
         }
 
@@ -340,19 +340,19 @@ namespace PaperBellStore.Blazor.Sinks
                         command.Parameters.AddWithValue("id", logId);
                         command.Parameters.AddWithValue("timestamp", timestamp);
                         command.Parameters.AddWithValue("level", level);
-                        command.Parameters.AddWithValue("message", (object)message ?? DBNull.Value);
-                        command.Parameters.AddWithValue("exception", (object)exception ?? DBNull.Value);
+                        command.Parameters.AddWithValue("message", (object?)message ?? DBNull.Value);
+                        command.Parameters.AddWithValue("exception", (object?)exception ?? DBNull.Value);
 
                         // JSONB 字段需要明确指定类型
                         var propertiesParam = new NpgsqlParameter("properties", NpgsqlDbType.Jsonb)
                         {
-                            Value = (object)properties ?? DBNull.Value
+                            Value = (object?)properties ?? DBNull.Value
                         };
                         command.Parameters.Add(propertiesParam);
 
                         var logEventParam = new NpgsqlParameter("logEvent", NpgsqlDbType.Jsonb)
                         {
-                            Value = (object)logEventJson ?? DBNull.Value
+                            Value = (object?)logEventJson ?? DBNull.Value
                         };
                         command.Parameters.Add(logEventParam);
 
@@ -365,7 +365,10 @@ namespace PaperBellStore.Blazor.Sinks
                         await command.ExecuteNonQueryAsync();
 
                         // 更新缓存
-                        _hashCache[messageHash] = (logId, timestamp);
+                        if (messageHash != null)
+                        {
+                            _hashCache[messageHash] = (logId, timestamp);
+                        }
                     }
                 }
                 else
@@ -390,19 +393,19 @@ namespace PaperBellStore.Blazor.Sinks
                         command.Parameters.AddWithValue("id", logId);
                         command.Parameters.AddWithValue("timestamp", timestamp);
                         command.Parameters.AddWithValue("level", level);
-                        command.Parameters.AddWithValue("message", (object)message ?? DBNull.Value);
-                        command.Parameters.AddWithValue("exception", (object)exception ?? DBNull.Value);
+                        command.Parameters.AddWithValue("message", (object?)message ?? DBNull.Value);
+                        command.Parameters.AddWithValue("exception", (object?)exception ?? DBNull.Value);
 
                         // JSONB 字段需要明确指定类型
                         var propertiesParam = new NpgsqlParameter("properties", NpgsqlDbType.Jsonb)
                         {
-                            Value = (object)properties ?? DBNull.Value
+                            Value = (object?)properties ?? DBNull.Value
                         };
                         command.Parameters.Add(propertiesParam);
 
                         var logEventParam = new NpgsqlParameter("logEvent", NpgsqlDbType.Jsonb)
                         {
-                            Value = (object)logEventJson ?? DBNull.Value
+                            Value = (object?)logEventJson ?? DBNull.Value
                         };
                         command.Parameters.Add(logEventParam);
 
