@@ -40,6 +40,15 @@
         "ChoosePhoto": "选择照片",
         "WelcometoPaperBell": "欢迎来到PaperBell!",
         "UserAccount": "用户名",
-        "Rememberyouraccountandpassword": "记住你的账号和密码"
+        "Rememberyouraccountandpassword": "记住你的账号和密码",
+        "Menu:HangfireDashboard": "任务调度中心",
+        "Menu:LogTestGroup": "日志测试",
+        "Menu:LogTest": "日志测试",
+        "Permission:HangfireDashboard": "任务调度中心",
+        "Permission:HangfireDashboard.View": "查看任务调度中心",
+        "Permission:HangfireDashboard.Trigger": "立即执行任务",
+        "Permission:HangfireDashboard.Delete": "删除任务",
+        "Permission:HangfireDashboard.Create": "创建任务",
+        "Permission:HangfireDashboard.Edit": "编辑任务"
     }
 }

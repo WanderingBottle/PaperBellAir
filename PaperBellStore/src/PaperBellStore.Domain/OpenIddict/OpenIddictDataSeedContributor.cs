@@ -60,8 +60,11 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
     {
         if (await _openIddictScopeRepository.FindByNameAsync("PaperBellStore") == null)
         {
-            await _scopeManager.CreateAsync(new OpenIddictScopeDescriptor {
-                Name = "PaperBellStore", DisplayName = "PaperBellStore API", Resources = { "PaperBellStore" }
+            await _scopeManager.CreateAsync(new OpenIddictScopeDescriptor
+            {
+                Name = "PaperBellStore",
+                DisplayName = "PaperBellStore API",
+                Resources = { "PaperBellStore" }
             });
         }
     }
@@ -85,31 +88,34 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         if (!consoleAndAngularClientId.IsNullOrWhiteSpace())
         {
             var consoleAndAngularClientRootUrl = configurationSection["PaperBellStore_App:RootUrl"]?.TrimEnd('/');
-            await CreateApplicationAsync(
-                applicationType: OpenIddictConstants.ApplicationTypes.Web,
-                name: consoleAndAngularClientId!,
-                type: OpenIddictConstants.ClientTypes.Public,
-                consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Console Test / Angular Application",
-                secret: null,
-                grantTypes: new List<string> {
-                    OpenIddictConstants.GrantTypes.AuthorizationCode,
-                    OpenIddictConstants.GrantTypes.Password,
-                    OpenIddictConstants.GrantTypes.ClientCredentials,
-                    OpenIddictConstants.GrantTypes.RefreshToken,
-                    "LinkLogin",
-                    "Impersonation"
-                },
-                scopes: commonScopes,
-                redirectUris: new List<string> { consoleAndAngularClientRootUrl },
-                postLogoutRedirectUris: new List<string> { consoleAndAngularClientRootUrl },
-                clientUri: consoleAndAngularClientRootUrl,
-                logoUri: "/images/clients/angular.svg"
-            );
+            if (!consoleAndAngularClientRootUrl.IsNullOrWhiteSpace())
+            {
+                await CreateApplicationAsync(
+                    applicationType: OpenIddictConstants.ApplicationTypes.Web,
+                    name: consoleAndAngularClientId!,
+                    type: OpenIddictConstants.ClientTypes.Public,
+                    consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                    displayName: "Console Test / Angular Application",
+                    secret: null,
+                    grantTypes: new List<string> {
+                        OpenIddictConstants.GrantTypes.AuthorizationCode,
+                        OpenIddictConstants.GrantTypes.Password,
+                        OpenIddictConstants.GrantTypes.ClientCredentials,
+                        OpenIddictConstants.GrantTypes.RefreshToken,
+                        "LinkLogin",
+                        "Impersonation"
+                    },
+                    scopes: commonScopes,
+                    redirectUris: new List<string> { consoleAndAngularClientRootUrl! },
+                    postLogoutRedirectUris: new List<string> { consoleAndAngularClientRootUrl! },
+                    clientUri: consoleAndAngularClientRootUrl,
+                    logoUri: "/images/clients/angular.svg"
+                );
+            }
         }
 
-        
-        
+
+
 
 
 
@@ -119,20 +125,22 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         if (!swaggerClientId.IsNullOrWhiteSpace())
         {
             var swaggerRootUrl = configurationSection["PaperBellStore_Swagger:RootUrl"]?.TrimEnd('/');
-
-            await CreateApplicationAsync(
-                applicationType: OpenIddictConstants.ApplicationTypes.Web,
-                name: swaggerClientId!,
-                type: OpenIddictConstants.ClientTypes.Public,
-                consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Swagger Application",
-                secret: null,
-                grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
-                scopes: commonScopes,
-                redirectUris: new List<string> { $"{swaggerRootUrl}/swagger/oauth2-redirect.html" },
-                clientUri: swaggerRootUrl.EnsureEndsWith('/') + "swagger",
-                logoUri: "/images/clients/swagger.svg"
-            );
+            if (!swaggerRootUrl.IsNullOrWhiteSpace())
+            {
+                await CreateApplicationAsync(
+                    applicationType: OpenIddictConstants.ApplicationTypes.Web,
+                    name: swaggerClientId!,
+                    type: OpenIddictConstants.ClientTypes.Public,
+                    consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                    displayName: "Swagger Application",
+                    secret: null,
+                    grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
+                    scopes: commonScopes,
+                    redirectUris: new List<string> { $"{swaggerRootUrl}/swagger/oauth2-redirect.html" },
+                    clientUri: swaggerRootUrl!.EnsureEndsWith('/') + "swagger",
+                    logoUri: "/images/clients/swagger.svg"
+                );
+            }
         }
 
 
@@ -167,7 +175,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         var client = await _openIddictApplicationRepository.FindByClientIdAsync(name);
 
-        var application = new AbpApplicationDescriptor {
+        var application = new AbpApplicationDescriptor
+        {
             ApplicationType = applicationType,
             ClientId = name,
             ClientType = type,
@@ -303,9 +312,9 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                     application.RedirectUris.Add(uri);
                 }
             }
-            
+
         }
-        
+
         if (!postLogoutRedirectUris.IsNullOrEmpty())
         {
             foreach (var postLogoutRedirectUri in postLogoutRedirectUris!.Where(postLogoutRedirectUri => !postLogoutRedirectUri.IsNullOrWhiteSpace()))

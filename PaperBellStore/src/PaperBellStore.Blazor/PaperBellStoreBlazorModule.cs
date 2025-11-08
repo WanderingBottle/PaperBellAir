@@ -56,6 +56,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using Hangfire.Dashboard;
 using PaperBellStore.Blazor.Filters;
+using PaperBellStore.Blazor.Middleware;
 using PaperBellStore.Blazor.RecurringJobs;
 
 namespace PaperBellStore.Blazor;
@@ -296,20 +297,16 @@ public class PaperBellStoreBlazorModule : AbpModule
     private void ConfigureHangfire(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
+        var connectionString = configuration.GetConnectionString("Default");
 
-        // 配置 Hangfire
+        // 配置 Hangfire（使用推荐的方法）
         context.Services.AddHangfire(config =>
         {
-            config.UsePostgreSqlStorage(
-                configuration.GetConnectionString("Default"),
-                new PostgreSqlStorageOptions
-                {
-                    SchemaName = "hangfire",  // 使用独立的 Schema
-                    QueuePollInterval = TimeSpan.FromSeconds(15),  // 轮询间隔
-                    JobExpirationCheckInterval = TimeSpan.FromHours(1),  // 作业过期检查间隔
-                    PrepareSchemaIfNecessary = true,  // 自动创建表结构
-                    EnableTransactionScopeEnlistment = true  // 启用事务范围
-                });
+            config.UsePostgreSqlStorage(options =>
+            {
+                // 使用推荐的方法设置连接字符串
+                options.UseNpgsqlConnection(connectionString);
+            });
 
             // 配置序列化器
             config.UseSimpleAssemblyNameTypeSerializer();
@@ -362,6 +359,10 @@ public class PaperBellStoreBlazorModule : AbpModule
         app.UseUnitOfWork();
         app.UseDynamicClaims();
         app.UseAuthorization();
+
+        // 添加 Hangfire 操作授权中间件（在 Hangfire Dashboard 之前）
+        app.UseMiddleware<HangfireOperationAuthorizationMiddleware>();
+
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
@@ -377,7 +378,7 @@ public class PaperBellStoreBlazorModule : AbpModule
             Authorization = new[] { new HangfireAuthorizationFilter() },
             StatsPollingInterval = 2000,  // 统计信息轮询间隔（毫秒）
             DisplayStorageConnectionString = false,  // 不显示连接字符串
-            IsReadOnlyFunc = (DashboardContext ctx) => false  // 是否只读
+            IsReadOnlyFunc = HangfireReadOnlyFilter.IsReadOnly  // 根据权限动态控制只读模式
         });
 
         app.UseConfiguredEndpoints(builder =>

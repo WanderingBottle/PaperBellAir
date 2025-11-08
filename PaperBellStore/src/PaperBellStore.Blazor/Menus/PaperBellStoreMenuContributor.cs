@@ -58,6 +58,15 @@ public class PaperBellStoreMenuContributor : IMenuContributor
         // 将日志测试菜单添加到Administration组下
         administration.AddItem(logTestManagement);
 
+        // 添加 Hangfire Dashboard 菜单项
+        administration.AddItem(new ApplicationMenuItem(
+            PaperBellStoreMenus.HangfireDashboard,
+            l["Menu:HangfireDashboard"],
+            "/hangfire",
+            icon: "fas fa-tasks",
+            order: 4
+        ));
+
         if (MultiTenancyConsts.IsEnabled)
         {
             administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);

@@ -7,6 +7,15 @@
         "Welcome": "Welcome",
         "WelcometoPaperBell": "Welcome to PaperBell!",
         "UserAccount": "User Account",
-        "Rememberyouraccountandpassword": "Remember your account and password"
+        "Rememberyouraccountandpassword": "Remember your account and password",
+        "Menu:HangfireDashboard": "Job Scheduler",
+        "Menu:LogTestGroup": "Log Test",
+        "Menu:LogTest": "Log Test",
+        "Permission:HangfireDashboard": "Job Scheduler",
+        "Permission:HangfireDashboard.View": "View Job Scheduler",
+        "Permission:HangfireDashboard.Trigger": "Trigger Jobs",
+        "Permission:HangfireDashboard.Delete": "Delete Jobs",
+        "Permission:HangfireDashboard.Create": "Create Jobs",
+        "Permission:HangfireDashboard.Edit": "Edit Jobs"
     }
 }
