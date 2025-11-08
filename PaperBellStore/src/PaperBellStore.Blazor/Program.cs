@@ -47,6 +47,7 @@ public class Program
 #endif
                         .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                         .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+                        .MinimumLevel.Override("Hangfire", LogEventLevel.Information)  // 过滤 Hangfire 的 Debug 日志
                         .Enrich.FromLogContext();
 
                     // 配置控制台输出（完整输出，不受级别和屏蔽影响）

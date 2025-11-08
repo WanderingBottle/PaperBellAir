@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
@@ -57,6 +60,9 @@ using Hangfire.PostgreSql;
 using Hangfire.Dashboard;
 using PaperBellStore.Blazor.Filters;
 using PaperBellStore.Blazor.Middleware;
+using Volo.Abp.EventBus.RabbitMq;
+using Volo.Abp.EventBus.Distributed;
+using PaperBellStore.MessageQueue;
 // using PaperBellStore.Blazor.RecurringJobs; // SampleRecurringJob 已移除
 
 namespace PaperBellStore.Blazor;
@@ -76,6 +82,9 @@ namespace PaperBellStore.Blazor;
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpFeatureManagementBlazorServerModule),
     typeof(AbpSettingManagementBlazorServerModule)
+   // 注意：AbpEventBusRabbitMqModule 已移除
+   // 如果需要在启用 RabbitMQ 时使用，请取消下面的注释
+   // typeof(AbpEventBusRabbitMqModule)
    )]
 public class PaperBellStoreBlazorModule : AbpModule
 {
@@ -124,12 +133,21 @@ public class PaperBellStoreBlazorModule : AbpModule
         {
             options.IsBlazorWebApp = true;
         });
+
+        // 注意：AbpEventBusRabbitMqModule 已从 DependsOn 中移除
+        // 因此不需要在这里配置 RabbitMQ 选项
+        // 如果将来需要启用 RabbitMQ，请在 DependsOn 中取消注释 AbpEventBusRabbitMqModule
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+
+        // 注意：AbpEventBusRabbitMqModule 已从 DependsOn 中移除
+        // 如果启用 RabbitMQ，模块需要通过其他方式加载
+        // 由于 ABP 模块系统不支持运行时动态加载，我们需要在 DependsOn 中保留模块
+        // 但通过配置来阻止其初始化连接
 
         // Add services to the container.
         context.Services.AddRazorComponents()
@@ -166,6 +184,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         ConfigureRouter(context);
         ConfigureMenu(context);
         ConfigureHangfire(context);
+        ConfigureRabbitMQ(context);
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
@@ -221,6 +240,27 @@ public class PaperBellStoreBlazorModule : AbpModule
     private void ConfigureHealthChecks(ServiceConfigurationContext context)
     {
         context.Services.AddPaperBellStoreHealthChecks();
+
+        // 添加 RabbitMQ 健康检查
+        var configuration = context.Services.GetConfiguration();
+        var messageQueueConfig = configuration.GetSection("MessageQueue");
+        var rabbitMQEnabled = messageQueueConfig.GetValue<bool>("RabbitMQ:Enabled", true);
+
+        if (rabbitMQEnabled)
+        {
+            var rabbitMQConfig = messageQueueConfig.GetSection("RabbitMQ");
+            var hostName = rabbitMQConfig["HostName"] ?? "localhost";
+            var port = rabbitMQConfig.GetValue<int>("Port", 5672);
+            var userName = rabbitMQConfig["UserName"] ?? "guest";
+            var password = rabbitMQConfig["Password"] ?? "guest";
+            var virtualHost = rabbitMQConfig["VirtualHost"] ?? "/";
+
+            context.Services.AddHealthChecks()
+                .AddRabbitMQ(
+                    rabbitConnectionString: $"amqp://{userName}:{password}@{hostName}:{port}/{virtualHost}",
+                    name: "rabbitmq",
+                    tags: new[] { "rabbitmq", "eventbus" });
+        }
     }
 
     private void ConfigureVirtualFileSystem(IWebHostEnvironment hostingEnvironment)
@@ -331,15 +371,84 @@ public class PaperBellStoreBlazorModule : AbpModule
         context.Services.AddHangfireServer(options =>
         {
             options.ServerName = "PaperBellStore-Server";  // 服务器名称
-            options.WorkerCount = Environment.ProcessorCount * 5;  // 工作线程数
+            // Worker 数量配置说明：
+            // - 如果当前没有定时任务或后台任务，可以设置为 1（最小数量）
+            // - 如果有任务需要执行，建议设置为 CPU 核心数 × 2 到 × 5
+            // - 不能设置为 0，否则 Hangfire Server 无法启动
+            // - 当前使用中等负载配置：CPU 核心数 × 3
+            options.WorkerCount = Environment.ProcessorCount * 3;  // 中等负载配置
             options.Queues = new[] { "default", "critical", "low" };  // 队列名称
         });
+    }
+
+    private void ConfigureRabbitMQ(ServiceConfigurationContext context)
+    {
+        var configuration = context.Services.GetConfiguration();
+        var messageQueueConfig = configuration.GetSection("MessageQueue");
+        var rabbitMQEnabled = messageQueueConfig.GetValue<bool>("RabbitMQ:Enabled", true);
+
+        if (rabbitMQEnabled)
+        {
+            // 配置 RabbitMQ 连接
+            // ABP RabbitMQ 模块从配置中读取连接信息
+            // 使用配置绑定方式，从 MessageQueue:RabbitMQ 读取并映射到 RabbitMQ:Connections:Default
+            var rabbitMQConfig = messageQueueConfig.GetSection("RabbitMQ");
+
+            // 从 MessageQueue:RabbitMQ 读取配置并映射到 RabbitMQ:Connections:Default
+            var hostName = rabbitMQConfig["HostName"] ?? "localhost";
+            var port = rabbitMQConfig.GetValue<int>("Port", 5672);
+            var userName = rabbitMQConfig["UserName"] ?? "guest";
+            var password = rabbitMQConfig["Password"] ?? "guest";
+            var virtualHost = rabbitMQConfig["VirtualHost"] ?? "/";
+
+            // 同时使用配置绑定，确保模块可以读取配置
+            // 创建一个临时的配置字典来绑定
+            var rabbitMQConnectionConfig = new Dictionary<string, string?>
+            {
+                ["RabbitMQ:Connections:Default:HostName"] = hostName,
+                ["RabbitMQ:Connections:Default:Port"] = port.ToString(),
+                ["RabbitMQ:Connections:Default:UserName"] = userName,
+                ["RabbitMQ:Connections:Default:Password"] = password,
+                ["RabbitMQ:Connections:Default:VirtualHost"] = virtualHost
+            };
+
+            var tempConfig = new ConfigurationBuilder()
+                .AddInMemoryCollection(rabbitMQConnectionConfig)
+                .Build();
+
+            context.Services.Configure<AbpRabbitMqEventBusOptions>(
+                tempConfig.GetSection("RabbitMQ"));
+
+            // 配置事件总线
+            Configure<AbpDistributedEventBusOptions>(options =>
+            {
+                // 可以配置事件名称映射等
+            });
+        }
+        else
+        {
+            // 当 RabbitMQ 被禁用时，不需要配置任何选项
+            // 因为 AbpEventBusRabbitMqModule 已从 DependsOn 中移除，模块不会被加载
+        }
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var env = context.GetEnvironment();
         var app = context.GetApplicationBuilder();
+        var configuration = context.GetConfiguration();
+
+        // 检查 RabbitMQ 是否被禁用
+        var messageQueueConfig = configuration.GetSection("MessageQueue");
+        var rabbitMQEnabled = messageQueueConfig.GetValue<bool>("RabbitMQ:Enabled", true);
+
+        // 如果 RabbitMQ 被禁用，尝试停止相关的后台服务
+        if (!rabbitMQEnabled)
+        {
+            // 注意：ABP 的 RabbitMQ 模块可能会在后台启动服务
+            // 如果可能，我们可以在这里尝试停止这些服务
+            // 但由于模块已经初始化，这可能无法完全阻止
+        }
 
         app.UseForwardedHeaders();
 

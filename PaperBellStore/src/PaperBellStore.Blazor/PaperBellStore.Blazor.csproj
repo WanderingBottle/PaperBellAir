@@ -29,6 +29,12 @@
     <PackageReference Include="Hangfire.Core" Version="1.8.17" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.17" />
     <PackageReference Include="Hangfire.PostgreSql" Version="1.20.6" />
+    <!-- ABP EventBus RabbitMQ 模块 -->
+    <PackageReference Include="Volo.Abp.EventBus.RabbitMQ" Version="9.2.1" />
+    <!-- RabbitMQ 健康检查 -->
+    <PackageReference Include="AspNetCore.HealthChecks.RabbitMQ" Version="8.0.1" />
+    <!-- MQTT 客户端 -->
+    <PackageReference Include="MQTTnet" Version="4.3.3.952" />
   </ItemGroup>
 
 	<ItemGroup>
