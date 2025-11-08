@@ -171,7 +171,12 @@ namespace PaperBellStore.Blazor
             context.Services.AddHangfireServer(options =>
             {
                 options.ServerName = "PaperBellStore-Server";
-                options.WorkerCount = Environment.ProcessorCount * 5;  // 工作线程数
+                // ⭐ Worker 数量配置说明（详见 8.1 节）：
+                // - 无任务或仅 Dashboard：设置为 1
+                // - 轻量任务：CPU核心数 × 2
+                // - 中等负载（推荐）：CPU核心数 × 3 ⭐ 当前使用此配置
+                // - 高负载：CPU核心数 × 5
+                options.WorkerCount = Environment.ProcessorCount * 3;  // 中等负载配置
                 options.Queues = new[] { "default", "critical", "low" };  // 队列名称
             });
         }
@@ -457,7 +462,8 @@ private void ConfigureHangfire(ServiceConfigurationContext context)
     context.Services.AddHangfireServer(options =>
     {
         options.ServerName = "PaperBellStore-Server";
-        options.WorkerCount = Environment.ProcessorCount * 5;
+        // ⭐ 中等负载配置（推荐），详见 8.1 节
+        options.WorkerCount = Environment.ProcessorCount * 3;
         options.Queues = new[] { "default", "critical", "low" };
 
         // Hangfire Server 会自动执行清理任务
@@ -712,7 +718,8 @@ private void ConfigureHangfire(ServiceConfigurationContext context)
     context.Services.AddHangfireServer(options =>
     {
         options.ServerName = "PaperBellStore-Server";
-        options.WorkerCount = Environment.ProcessorCount * 5;
+        // ⭐ 中等负载配置（推荐），详见 8.1 节
+        options.WorkerCount = Environment.ProcessorCount * 3;
         options.Queues = new[] { "default", "critical", "low" };
     });
 }
@@ -1116,14 +1123,133 @@ var jobId = client.Create(job, new EnqueuedState("critical"));
 
 ## 8. 性能优化
 
-### 8.1 工作线程数
+### 8.1 工作线程数（WorkerCount）配置 ⭐
+
+**重要说明**：Worker 是 Hangfire 执行任务的核心组件，Worker 数量直接影响任务处理能力和资源占用。
+
+#### 8.1.1 Worker 的作用
+
+- ✅ **执行定时任务**（RecurringJob）
+- ✅ **执行立即任务**（BackgroundJob.Enqueue）
+- ✅ **执行延迟任务**（BackgroundJob.Schedule）
+- ✅ **处理任务队列**
+
+**注意**：
+
+- ⚠️ Worker **不能设置为 0**，否则 Hangfire Server 无法启动
+- ⚠️ 即使没有任务，也需要至少 **1 个 Worker**（如果只使用 Dashboard 查看）
+- ⚠️ Worker 启动时会输出 Debug 日志："Execution loop Worker:xxx has started"
+
+#### 8.1.2 Worker 数量配置建议
+
+**根据任务负载选择合适的配置**：
 
 ```csharp
 context.Services.AddHangfireServer(options =>
 {
-    // 根据服务器 CPU 核心数设置
-    options.WorkerCount = Environment.ProcessorCount * 5;
+    options.ServerName = "PaperBellStore-Server";
+
+    // ⭐ 根据实际情况选择合适的 Worker 数量：
+
+    // 方案 1：无任务或仅使用 Dashboard（最小配置）
+    // options.WorkerCount = 1;
+
+    // 方案 2：轻量任务（少量定时任务，执行频率低）
+    // options.WorkerCount = Environment.ProcessorCount * 2;
+
+    // 方案 3：中等负载（推荐）⭐ - 当前项目使用此配置
+    options.WorkerCount = Environment.ProcessorCount * 3;
+
+    // 方案 4：高负载（大量任务，执行频率高）
+    // options.WorkerCount = Environment.ProcessorCount * 5;
+
+    options.Queues = new[] { "default", "critical", "low" };
 });
+```
+
+**配置选择指南**：
+
+| 场景                     | Worker 数量     | 说明                                          |
+| ------------------------ | --------------- | --------------------------------------------- |
+| **无任务或仅 Dashboard** | `1`             | 最小配置，减少资源占用                        |
+| **轻量任务**             | `CPU核心数 × 2` | 少量定时任务，执行频率低（如每天执行 1-2 次） |
+| **中等负载** ⭐          | `CPU核心数 × 3` | **推荐配置**，适用于大多数场景                |
+| **高负载**               | `CPU核心数 × 5` | 大量任务，执行频率高（如每分钟执行）          |
+
+**当前项目配置**：
+
+- ✅ 使用 **中等负载配置**：`Environment.ProcessorCount * 3`
+- ✅ 适用于大多数业务场景
+- ✅ 平衡性能和资源占用
+
+#### 8.1.3 如何判断是否需要调整 Worker 数量
+
+**需要增加 Worker 的情况**：
+
+- 任务执行时间较长（> 1 分钟）
+- 任务执行频率高（每分钟多次）
+- 任务队列经常积压
+- CPU 使用率较低（< 50%）
+
+**需要减少 Worker 的情况**：
+
+- 没有任务或任务很少
+- 服务器资源紧张
+- CPU 使用率过高（> 80%）
+- 任务执行频率很低（每天几次）
+
+#### 8.1.4 Worker 启动日志说明
+
+Worker 启动时会输出 Debug 级别的日志：
+
+```
+[DBG] Execution loop Worker:c825e0de has started in 435.049 ms
+[DBG] Execution loop Worker:72035740 has started in 435.0498 ms
+...
+```
+
+**说明**：
+
+- 这些日志是 **正常的**，表示 Worker 线程正在启动
+- 日志数量 = Worker 数量（例如：4 核 CPU × 3 = 12 个 Worker = 12 条日志）
+- 如果不想看到这些日志，可以在 `Program.cs` 中过滤 Hangfire 的 Debug 日志：
+
+```csharp
+.MinimumLevel.Override("Hangfire", LogEventLevel.Information)  // 过滤 Hangfire 的 Debug 日志
+```
+
+#### 8.1.5 配置示例
+
+**完整配置示例**：
+
+```csharp
+private void ConfigureHangfire(ServiceConfigurationContext context)
+{
+    var configuration = context.Services.GetConfiguration();
+    var connectionString = configuration.GetConnectionString("Default");
+
+    context.Services.AddHangfire(config =>
+    {
+        config.UsePostgreSqlStorage(options =>
+        {
+            options.UseNpgsqlConnection(connectionString);
+        });
+
+        config.UseSimpleAssemblyNameTypeSerializer();
+        config.UseRecommendedSerializerSettings();
+    });
+
+    // 添加 Hangfire 服务器
+    context.Services.AddHangfireServer(options =>
+    {
+        options.ServerName = "PaperBellStore-Server";
+
+        // ⭐ 中等负载配置（推荐）
+        options.WorkerCount = Environment.ProcessorCount * 3;
+
+        options.Queues = new[] { "default", "critical", "low" };
+    });
+}
 ```
 
 ### 8.2 队列分离
