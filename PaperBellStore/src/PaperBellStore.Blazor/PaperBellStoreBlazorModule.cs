@@ -517,20 +517,15 @@ public class PaperBellStoreBlazorModule : AbpModule
 
     private void RegisterRecurringJobs(ApplicationInitializationContext context)
     {
-        // 示例：注册定时任务
-        // 可以根据实际需求添加更多任务
-
-        // SampleRecurringJob 已移除，以下代码已注释
-        // 如果需要添加新的定时任务，请在此处添加
-
-        // 示例：每天 23:30 执行（已移除）
-        // RecurringJob.AddOrUpdate<SampleRecurringJob>(
-        //     "sample-job-daily",
-        //     job => job.ExecuteAsync(),
-        //     Cron.Daily(23, 30),
-        //     new RecurringJobOptions
-        //     {
-        //         TimeZone = TimeZoneInfo.Local
-        //     });
+        // 注册日志清理定时任务
+        // 每天凌晨 2:00 执行日志清理任务
+        RecurringJob.AddOrUpdate<RecurringJobs.LogCleanupRecurringJob>(
+            "log-cleanup-daily",
+            job => job.ExecuteAsync(),
+            Cron.Daily(2, 0),  // 每天凌晨 2:00 执行
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Local
+            });
     }
 }
