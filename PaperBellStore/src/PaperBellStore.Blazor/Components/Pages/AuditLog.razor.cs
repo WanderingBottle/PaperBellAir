@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
@@ -50,6 +51,11 @@ public partial class AuditLog : IAsyncDisposable
     private int totalPages => (int)Math.Ceiling((double)totalCount / pageSize);
     private bool isLoading = false;
 
+    // 刷新按钮倒计时
+    private int refreshCooldownSeconds = 0;
+    private const int RefreshCooldownDuration = 3; // 3秒冷却时间
+    private CancellationTokenSource? refreshCooldownCts;
+
     // 过滤条件
     private DateTime? startDate;
     private DateTime? endDate;
@@ -83,6 +89,15 @@ public partial class AuditLog : IAsyncDisposable
     /// </summary>
     private async Task LoadAuditLogs()
     {
+        // 如果正在冷却中，直接返回
+        if (refreshCooldownSeconds > 0)
+        {
+            return;
+        }
+
+        // 启动冷却倒计时
+        StartRefreshCooldown();
+
         try
         {
             isLoading = true;
@@ -398,10 +413,76 @@ public partial class AuditLog : IAsyncDisposable
     }
 
     /// <summary>
+    /// 启动刷新按钮冷却倒计时
+    /// </summary>
+    private void StartRefreshCooldown()
+    {
+        // 取消之前的倒计时
+        if (refreshCooldownCts != null)
+        {
+            refreshCooldownCts.Cancel();
+            refreshCooldownCts.Dispose();
+        }
+
+        refreshCooldownCts = new CancellationTokenSource();
+        refreshCooldownSeconds = RefreshCooldownDuration;
+
+        // 启动倒计时任务
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (refreshCooldownSeconds > 0 && !refreshCooldownCts.Token.IsCancellationRequested)
+                {
+                    await Task.Delay(1000, refreshCooldownCts.Token);
+                    if (!refreshCooldownCts.Token.IsCancellationRequested)
+                    {
+                        refreshCooldownSeconds--;
+                        // 在 UI 线程上更新状态
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // 倒计时被取消，正常情况
+            }
+            finally
+            {
+                if (!refreshCooldownCts.Token.IsCancellationRequested)
+                {
+                    refreshCooldownSeconds = 0;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }, refreshCooldownCts.Token);
+    }
+
+    /// <summary>
+    /// 获取刷新按钮文本
+    /// </summary>
+    private string GetRefreshButtonText()
+    {
+        if (refreshCooldownSeconds > 0)
+        {
+            return $"刷新 ({refreshCooldownSeconds})";
+        }
+        return "刷新";
+    }
+
+    /// <summary>
     /// 页面卸载时清理
     /// </summary>
     public override async ValueTask DisposeAsync()
     {
+        // 取消并释放倒计时
+        if (refreshCooldownCts != null)
+        {
+            refreshCooldownCts.Cancel();
+            refreshCooldownCts.Dispose();
+            refreshCooldownCts = null;
+        }
+
         await base.DisposeAsync();
     }
 }
