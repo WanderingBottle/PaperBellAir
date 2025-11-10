@@ -93,11 +93,14 @@ document.querySelector('.header');
 }}
 
 if (topBar) {{
-// 只移除我们自己的面包屑，不影响其他页面的原生面包屑
-const existingCloned = document.getElementById('{_topbarBreadcrumbId}');
-if (existingCloned) {{
-existingCloned.remove();
+// 清理所有自定义面包屑（以 -topbar 结尾的ID），确保不会留下旧页面的面包屑
+const allBreadcrumbs = topBar.querySelectorAll('.lpx-breadcrumb');
+allBreadcrumbs.forEach(bc => {{
+const id = bc.id;
+if (id && id.endsWith('-topbar')) {{
+bc.remove();
 }}
+}});
 
 // 克隆面包屑元素（深度克隆以包含所有子元素）
 const clonedBreadcrumb = breadcrumb.cloneNode(true);
@@ -189,13 +192,56 @@ console.error('Error removing breadcrumb:', error);
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        // 如果导航到其他页面，移除面包屑
+        // 如果导航到其他页面，立即移除所有自定义面包屑
         if (!string.IsNullOrEmpty(_currentPagePath) && !e.Location.Contains(_currentPagePath))
         {
             _ = Task.Run(async () =>
             {
-                await Task.Delay(100); // 等待一下确保页面切换完成
-                await RemoveFromTopBarAsync();
+                // 立即清理所有自定义面包屑，不等待
+                try
+                {
+                    await _jsRuntime.InvokeVoidAsync("eval", @"
+(function() {
+try {
+// 查找顶栏容器
+let topBar = null;
+const wrapper = document.querySelector('.lpx-wrapper') || document.querySelector('[class*=""lpx-wrapper""]');
+if (wrapper) {
+topBar = wrapper.querySelector('.lpx-header') ||
+wrapper.querySelector('[class*=""lpx-header""]') ||
+wrapper.querySelector('.lpx-topbar') ||
+wrapper.querySelector('[class*=""header""]');
+}
+
+if (!topBar) {
+topBar = document.querySelector('.lpx-header') ||
+document.querySelector('.lpx-topbar') ||
+document.querySelector('.lpx-navbar') ||
+document.querySelector('[class*=""lpx-header""]') ||
+document.querySelector('.navbar') ||
+document.querySelector('.header');
+}
+
+if (topBar) {
+// 清理所有自定义面包屑（以 -topbar 结尾的ID）
+const allBreadcrumbs = topBar.querySelectorAll('.lpx-breadcrumb');
+allBreadcrumbs.forEach(bc => {
+const id = bc.id;
+if (id && id.endsWith('-topbar')) {
+bc.remove();
+}
+});
+}
+} catch (error) {
+console.error('Error removing breadcrumbs:', error);
+}
+})();
+");
+                }
+                catch
+                {
+                    // 忽略错误
+                }
             });
         }
 
