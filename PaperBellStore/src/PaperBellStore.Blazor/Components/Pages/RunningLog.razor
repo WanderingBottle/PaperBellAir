@@ -70,8 +70,9 @@
 					}
 				</MudText>
 				<MudButton Variant="Variant.Outlined" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Primary"
-					StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadLogs">
-					刷新
+					StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadLogs"
+					Disabled="@(refreshCooldownSeconds > 0 || isLoading)">
+					@GetRefreshButtonText()
 				</MudButton>
 			</MudStack>
 
