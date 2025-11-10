@@ -1,0 +1,36 @@
+﻿@using Volo.Abp.UI.Navigation
+
+<!-- 面包屑导航 - 将被 JavaScript 移动到顶栏，使用原生样式 -->
+<ul id="@BreadcrumbId" class="lpx-breadcrumb" style="display: none;">
+	@if(HomeMenu!=null)
+	{
+		<li class="lpx-breadcrumb-item">
+			<a href="@(HomeMenu.Url??"/")">
+				@if(!string.IsNullOrEmpty(HomeMenu.Icon))
+				{
+					<i class="@HomeMenu.Icon"></i>
+				}
+			</a>
+		</li>
+	}
+	@if(ParentMenu!=null)
+	{
+		<li class="lpx-breadcrumb-item">
+			<span>@ParentMenu.DisplayName</span>
+		</li>
+	}
+	@if(CurrentMenu!=null)
+	{
+		<li class="lpx-breadcrumb-item">
+			<span>@CurrentMenu.DisplayName</span>
+		</li>
+	}
+</ul>
+
+@code {
+	[Parameter] public string BreadcrumbId { get; set; } = string.Empty;
+	[Parameter] public ApplicationMenuItem? HomeMenu { get; set; }
+	[Parameter] public ApplicationMenuItem? ParentMenu { get; set; }
+	[Parameter] public ApplicationMenuItem? CurrentMenu { get; set; }
+}
+

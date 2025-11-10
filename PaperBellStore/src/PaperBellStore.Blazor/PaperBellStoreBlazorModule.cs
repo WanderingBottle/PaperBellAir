@@ -68,19 +68,19 @@ using PaperBellStore.MessageQueue;
 namespace PaperBellStore.Blazor;
 
 [DependsOn(
-    typeof(PaperBellStoreApplicationModule),
-    typeof(AbpStudioClientAspNetCoreModule),
-    typeof(PaperBellStoreEntityFrameworkCoreModule),
-    typeof(PaperBellStoreHttpApiModule),
-    typeof(AbpAutofacModule),
-    typeof(AbpSwashbuckleModule),
-    typeof(AbpIdentityBlazorServerModule),
-    typeof(AbpTenantManagementBlazorServerModule),
-    typeof(AbpAccountWebOpenIddictModule),
-    typeof(AbpAspNetCoreComponentsServerLeptonXLiteThemeModule),
-    typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
-    typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpFeatureManagementBlazorServerModule),
+    typeof(PaperBellStoreApplicationModule) ,
+    typeof(AbpStudioClientAspNetCoreModule) ,
+    typeof(PaperBellStoreEntityFrameworkCoreModule) ,
+    typeof(PaperBellStoreHttpApiModule) ,
+    typeof(AbpAutofacModule) ,
+    typeof(AbpSwashbuckleModule) ,
+    typeof(AbpIdentityBlazorServerModule) ,
+    typeof(AbpTenantManagementBlazorServerModule) ,
+    typeof(AbpAccountWebOpenIddictModule) ,
+    typeof(AbpAspNetCoreComponentsServerLeptonXLiteThemeModule) ,
+    typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule) ,
+    typeof(AbpAspNetCoreSerilogModule) ,
+    typeof(AbpFeatureManagementBlazorServerModule) ,
     typeof(AbpSettingManagementBlazorServerModule)
    // 注意：AbpEventBusRabbitMqModule 已移除
    // 如果需要在启用 RabbitMQ 时使用，请取消下面的注释
@@ -96,11 +96,11 @@ public class PaperBellStoreBlazorModule : AbpModule
         context.Services.PreConfigure<AbpMvcDataAnnotationsLocalizationOptions>(options =>
         {
             options.AddAssemblyResource(
-                typeof(PaperBellStoreResource),
-                typeof(PaperBellStoreDomainModule).Assembly,
-                typeof(PaperBellStoreDomainSharedModule).Assembly,
-                typeof(PaperBellStoreApplicationModule).Assembly,
-                typeof(PaperBellStoreApplicationContractsModule).Assembly,
+                typeof(PaperBellStoreResource) ,
+                typeof(PaperBellStoreDomainModule).Assembly ,
+                typeof(PaperBellStoreDomainSharedModule).Assembly ,
+                typeof(PaperBellStoreApplicationModule).Assembly ,
+                typeof(PaperBellStoreApplicationContractsModule).Assembly ,
                 typeof(PaperBellStoreBlazorModule).Assembly
             );
         });
@@ -115,23 +115,23 @@ public class PaperBellStoreBlazorModule : AbpModule
             });
         });
 
-        if (!hostingEnvironment.IsDevelopment())
+        if(!hostingEnvironment.IsDevelopment())
         {
             PreConfigure<AbpOpenIddictAspNetCoreOptions>(options =>
             {
-                options.AddDevelopmentEncryptionAndSigningCertificate = false;
+                options.AddDevelopmentEncryptionAndSigningCertificate=false;
             });
 
             PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
             {
-                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
+                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx" , configuration["AuthServer:CertificatePassPhrase"]!);
                 serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
             });
         }
 
         PreConfigure<AbpAspNetCoreComponentsWebOptions>(options =>
         {
-            options.IsBlazorWebApp = true;
+            options.IsBlazorWebApp=true;
         });
 
         // 注意：AbpEventBusRabbitMqModule 已从 DependsOn 中移除
@@ -153,24 +153,26 @@ public class PaperBellStoreBlazorModule : AbpModule
         context.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
-        if (!configuration.GetValue<bool>("App:DisablePII"))
+        if(!configuration.GetValue<bool>("App:DisablePII"))
         {
-            Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
-            Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
+            Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII=true;
+            Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact=true;
         }
 
-        if (!configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata"))
+        if(!configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata"))
         {
             Configure<OpenIddictServerAspNetCoreOptions>(options =>
             {
-                options.DisableTransportSecurityRequirement = true;
+                options.DisableTransportSecurityRequirement=true;
             });
 
             Configure<ForwardedHeadersOptions>(options =>
             {
-                options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+                options.ForwardedHeaders=ForwardedHeaders.XForwardedProto;
             });
         }
+        // 注册面包屑服务（每个组件实例一个）
+        context.Services.AddScoped<Services.BreadcrumbService>();
 
         ConfigureAuthentication(context);
         ConfigureUrls(configuration);
@@ -192,7 +194,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
         context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
         {
-            options.IsDynamicClaimsEnabled = true;
+            options.IsDynamicClaimsEnabled=true;
         });
     }
 
@@ -200,8 +202,8 @@ public class PaperBellStoreBlazorModule : AbpModule
     {
         Configure<AppUrlOptions>(options =>
         {
-            options.Applications["MVC"].RootUrl = configuration["App:SelfUrl"];
-            options.RedirectAllowedUrls.AddRange(configuration["App:RedirectAllowedUrls"]?.Split(',') ?? Array.Empty<string>());
+            options.Applications["MVC"].RootUrl=configuration["App:SelfUrl"];
+            options.RedirectAllowedUrls.AddRange(configuration["App:RedirectAllowedUrls"]?.Split(',')??Array.Empty<string>());
         });
     }
 
@@ -211,7 +213,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         {
             // MVC UI
             options.StyleBundles.Configure(
-                LeptonXLiteThemeBundles.Styles.Global,
+                LeptonXLiteThemeBundles.Styles.Global ,
                 bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
@@ -219,7 +221,7 @@ public class PaperBellStoreBlazorModule : AbpModule
             );
 
             options.ScriptBundles.Configure(
-                LeptonXLiteThemeBundles.Scripts.Global,
+                LeptonXLiteThemeBundles.Scripts.Global ,
                 bundle =>
                 {
                     bundle.AddFiles("/global-scripts.js");
@@ -228,7 +230,7 @@ public class PaperBellStoreBlazorModule : AbpModule
 
             // Blazor UI
             options.StyleBundles.Configure(
-                BlazorLeptonXLiteThemeBundles.Styles.Global,
+                BlazorLeptonXLiteThemeBundles.Styles.Global ,
                 bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
@@ -244,35 +246,35 @@ public class PaperBellStoreBlazorModule : AbpModule
         // 添加 RabbitMQ 健康检查
         var configuration = context.Services.GetConfiguration();
         var messageQueueConfig = configuration.GetSection("MessageQueue");
-        var rabbitMQEnabled = messageQueueConfig.GetValue<bool>("RabbitMQ:Enabled", true);
+        var rabbitMQEnabled = messageQueueConfig.GetValue<bool>("RabbitMQ:Enabled" , true);
 
-        if (rabbitMQEnabled)
+        if(rabbitMQEnabled)
         {
             var rabbitMQConfig = messageQueueConfig.GetSection("RabbitMQ");
-            var hostName = rabbitMQConfig["HostName"] ?? "localhost";
-            var port = rabbitMQConfig.GetValue<int>("Port", 5672);
-            var userName = rabbitMQConfig["UserName"] ?? "guest";
-            var password = rabbitMQConfig["Password"] ?? "guest";
-            var virtualHost = rabbitMQConfig["VirtualHost"] ?? "/";
+            var hostName = rabbitMQConfig["HostName"]??"localhost";
+            var port = rabbitMQConfig.GetValue<int>("Port" , 5672);
+            var userName = rabbitMQConfig["UserName"]??"guest";
+            var password = rabbitMQConfig["Password"]??"guest";
+            var virtualHost = rabbitMQConfig["VirtualHost"]??"/";
 
             context.Services.AddHealthChecks()
                 .AddRabbitMQ(
-                    rabbitConnectionString: $"amqp://{userName}:{password}@{hostName}:{port}/{virtualHost}",
-                    name: "rabbitmq",
-                    tags: new[] { "rabbitmq", "eventbus" });
+                    rabbitConnectionString: $"amqp://{userName}:{password}@{hostName}:{port}/{virtualHost}" ,
+                    name: "rabbitmq" ,
+                    tags: new[] { "rabbitmq" , "eventbus" });
         }
     }
 
     private void ConfigureVirtualFileSystem(IWebHostEnvironment hostingEnvironment)
     {
-        if (hostingEnvironment.IsDevelopment())
+        if(hostingEnvironment.IsDevelopment())
         {
             Configure<AbpVirtualFileSystemOptions>(options =>
             {
-                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}PaperBellStore.Domain.Shared"));
-                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}PaperBellStore.Domain"));
-                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}PaperBellStore.Application.Contracts"));
-                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}PaperBellStore.Application"));
+                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath , $"..{Path.DirectorySeparatorChar}PaperBellStore.Domain.Shared"));
+                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath , $"..{Path.DirectorySeparatorChar}PaperBellStore.Domain"));
+                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath , $"..{Path.DirectorySeparatorChar}PaperBellStore.Application.Contracts"));
+                options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath , $"..{Path.DirectorySeparatorChar}PaperBellStore.Application"));
                 options.FileSets.ReplaceEmbeddedByPhysical<PaperBellStoreBlazorModule>(hostingEnvironment.ContentRootPath);
             });
         }
@@ -283,8 +285,8 @@ public class PaperBellStoreBlazorModule : AbpModule
         services.AddAbpSwaggerGen(
             options =>
             {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "PaperBellStore API", Version = "v1" });
-                options.DocInclusionPredicate((docName, description) => true);
+                options.SwaggerDoc("v1" , new OpenApiInfo { Title="PaperBellStore API" , Version="v1" });
+                options.DocInclusionPredicate((docName , description) => true);
                 options.CustomSchemaIds(type => type.FullName);
             }
         );
@@ -314,7 +316,7 @@ public class PaperBellStoreBlazorModule : AbpModule
     {
         Configure<AbpRouterOptions>(options =>
         {
-            options.AppAssembly = typeof(PaperBellStoreBlazorModule).Assembly;
+            options.AppAssembly=typeof(PaperBellStoreBlazorModule).Assembly;
         });
     }
 
@@ -370,14 +372,14 @@ public class PaperBellStoreBlazorModule : AbpModule
         // 添加 Hangfire 服务器
         context.Services.AddHangfireServer(options =>
         {
-            options.ServerName = "PaperBellStore-Server";  // 服务器名称
+            options.ServerName="PaperBellStore-Server";  // 服务器名称
             // Worker 数量配置说明：
             // - 如果当前没有定时任务或后台任务，可以设置为 1（最小数量）
             // - 如果有任务需要执行，建议设置为 CPU 核心数 × 2 到 × 5
             // - 不能设置为 0，否则 Hangfire Server 无法启动
             // - 当前使用中等负载配置：CPU 核心数 × 3
-            options.WorkerCount = Environment.ProcessorCount * 3;  // 中等负载配置
-            options.Queues = new[] { "default", "critical", "low" };  // 队列名称
+            options.WorkerCount=Environment.ProcessorCount*3;  // 中等负载配置
+            options.Queues=new[] { "default" , "critical" , "low" };  // 队列名称
         });
     }
 
@@ -385,9 +387,9 @@ public class PaperBellStoreBlazorModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
         var messageQueueConfig = configuration.GetSection("MessageQueue");
-        var rabbitMQEnabled = messageQueueConfig.GetValue<bool>("RabbitMQ:Enabled", true);
+        var rabbitMQEnabled = messageQueueConfig.GetValue<bool>("RabbitMQ:Enabled" , true);
 
-        if (rabbitMQEnabled)
+        if(rabbitMQEnabled)
         {
             // 配置 RabbitMQ 连接
             // ABP RabbitMQ 模块从配置中读取连接信息
@@ -395,21 +397,21 @@ public class PaperBellStoreBlazorModule : AbpModule
             var rabbitMQConfig = messageQueueConfig.GetSection("RabbitMQ");
 
             // 从 MessageQueue:RabbitMQ 读取配置并映射到 RabbitMQ:Connections:Default
-            var hostName = rabbitMQConfig["HostName"] ?? "localhost";
-            var port = rabbitMQConfig.GetValue<int>("Port", 5672);
-            var userName = rabbitMQConfig["UserName"] ?? "guest";
-            var password = rabbitMQConfig["Password"] ?? "guest";
-            var virtualHost = rabbitMQConfig["VirtualHost"] ?? "/";
+            var hostName = rabbitMQConfig["HostName"]??"localhost";
+            var port = rabbitMQConfig.GetValue<int>("Port" , 5672);
+            var userName = rabbitMQConfig["UserName"]??"guest";
+            var password = rabbitMQConfig["Password"]??"guest";
+            var virtualHost = rabbitMQConfig["VirtualHost"]??"/";
 
             // 同时使用配置绑定，确保模块可以读取配置
             // 创建一个临时的配置字典来绑定
-            var rabbitMQConnectionConfig = new Dictionary<string, string?>
+            var rabbitMQConnectionConfig = new Dictionary<string , string?>
             {
-                ["RabbitMQ:Connections:Default:HostName"] = hostName,
-                ["RabbitMQ:Connections:Default:Port"] = port.ToString(),
-                ["RabbitMQ:Connections:Default:UserName"] = userName,
-                ["RabbitMQ:Connections:Default:Password"] = password,
-                ["RabbitMQ:Connections:Default:VirtualHost"] = virtualHost
+                ["RabbitMQ:Connections:Default:HostName"]=hostName ,
+                ["RabbitMQ:Connections:Default:Port"]=port.ToString() ,
+                ["RabbitMQ:Connections:Default:UserName"]=userName ,
+                ["RabbitMQ:Connections:Default:Password"]=password ,
+                ["RabbitMQ:Connections:Default:VirtualHost"]=virtualHost
             };
 
             var tempConfig = new ConfigurationBuilder()
@@ -440,10 +442,10 @@ public class PaperBellStoreBlazorModule : AbpModule
 
         // 检查 RabbitMQ 是否被禁用
         var messageQueueConfig = configuration.GetSection("MessageQueue");
-        var rabbitMQEnabled = messageQueueConfig.GetValue<bool>("RabbitMQ:Enabled", true);
+        var rabbitMQEnabled = messageQueueConfig.GetValue<bool>("RabbitMQ:Enabled" , true);
 
         // 如果 RabbitMQ 被禁用，尝试停止相关的后台服务
-        if (!rabbitMQEnabled)
+        if(!rabbitMQEnabled)
         {
             // 注意：ABP 的 RabbitMQ 模块可能会在后台启动服务
             // 如果可能，我们可以在这里尝试停止这些服务
@@ -452,14 +454,14 @@ public class PaperBellStoreBlazorModule : AbpModule
 
         app.UseForwardedHeaders();
 
-        if (env.IsDevelopment())
+        if(env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
 
         app.UseAbpRequestLocalization();
 
-        if (!env.IsDevelopment())
+        if(!env.IsDevelopment())
         {
             app.UseErrorPage();
             app.UseHsts();
@@ -474,7 +476,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         app.UseAuthentication();
         app.UseAbpOpenIddictValidation();
 
-        if (MultiTenancyConsts.IsEnabled)
+        if(MultiTenancyConsts.IsEnabled)
         {
             app.UseMultiTenancy();
         }
@@ -489,19 +491,19 @@ public class PaperBellStoreBlazorModule : AbpModule
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "PaperBellStore API");
+            options.SwaggerEndpoint("/swagger/v1/swagger.json" , "PaperBellStore API");
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
 
         // 配置 Hangfire Dashboard
-        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        app.UseHangfireDashboard("/hangfire" , new DashboardOptions
         {
-            DashboardTitle = "PaperBellStore 任务调度中心",
-            Authorization = new[] { new HangfireAuthorizationFilter() },
-            StatsPollingInterval = 2000,  // 统计信息轮询间隔（毫秒）
-            DisplayStorageConnectionString = false,  // 不显示连接字符串
-            IsReadOnlyFunc = HangfireReadOnlyFilter.IsReadOnly  // 根据权限动态控制只读模式
+            DashboardTitle="PaperBellStore 任务调度中心" ,
+            Authorization=new[] { new HangfireAuthorizationFilter() } ,
+            StatsPollingInterval=2000 ,  // 统计信息轮询间隔（毫秒）
+            DisplayStorageConnectionString=false ,  // 不显示连接字符串
+            IsReadOnlyFunc=HangfireReadOnlyFilter.IsReadOnly  // 根据权限动态控制只读模式
         });
 
         app.UseConfiguredEndpoints(builder =>
@@ -520,12 +522,12 @@ public class PaperBellStoreBlazorModule : AbpModule
         // 注册日志清理定时任务
         // 每天凌晨 2:00 执行日志清理任务
         RecurringJob.AddOrUpdate<RecurringJobs.LogCleanupRecurringJob>(
-            "log-cleanup-daily",
-            job => job.ExecuteAsync(),
-            Cron.Daily(2, 0),  // 每天凌晨 2:00 执行
+            "log-cleanup-daily" ,
+            job => job.ExecuteAsync() ,
+            Cron.Daily(2 , 0) ,  // 每天凌晨 2:00 执行
             new RecurringJobOptions
             {
-                TimeZone = TimeZoneInfo.Local
+                TimeZone=TimeZoneInfo.Local
             });
     }
 }

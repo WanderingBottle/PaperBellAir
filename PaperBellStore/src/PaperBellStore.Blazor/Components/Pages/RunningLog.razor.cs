@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
+using PaperBellStore.Blazor.Menus;
 using PaperBellStore.Data;
 using PaperBellStore.EntityFrameworkCore;
 
@@ -31,12 +32,17 @@ public partial class RunningLog : IAsyncDisposable
     [Inject]
     protected IUnitOfWorkManager UnitOfWorkManager { get; set; } = default!;
 
+    protected override string BreadcrumbId => "log-test-breadcrumb-container";
+    protected override string CurrentPagePath => "/running-log";
+    protected override string[] MenuItemPaths => new[] { PaperBellStoreMenus.Home, PaperBellStoreMenus.RunningLogGroup,
+                PaperBellStoreMenus.RunningLog };
+
     // 日志列表
     private List<AppLog>? logs;
     private int totalCount = 0;
     private int currentPage = 1;
     private int pageSize = 20;
-    private int totalPages => (int)Math.Ceiling((double)totalCount/pageSize);
+    private int totalPages => (int)Math.Ceiling((double)totalCount / pageSize);
     private bool isLoading = false;
 
     // 过滤条件
@@ -59,18 +65,18 @@ public partial class RunningLog : IAsyncDisposable
     {
         await base.OnInitializedAsync();
         // 默认查询最近7天的日志
-        endDate=DateTime.Now;
-        startDate=DateTime.Now.AddDays(-7);
+        endDate = DateTime.Now;
+        startDate = DateTime.Now.AddDays(-7);
         await LoadLogs();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if(firstRender)
-        {
-            await Task.Delay(100);
-            await InsertBreadcrumb();
-        }
+        // 先调用基类方法，让 BreadcrumbService 处理面包屑移动
+        await base.OnAfterRenderAsync(firstRender);
+
+        // 如果需要额外的处理，可以在这里添加
+        // 注意：基类已经调用了 BreadcrumbService.MoveToTopBarAsync()
     }
 
     /// <summary>
@@ -80,7 +86,7 @@ public partial class RunningLog : IAsyncDisposable
     {
         try
         {
-            isLoading=true;
+            isLoading = true;
             StateHasChanged();
 
             // 在 Unit of Work 范围内使用 DbContext
@@ -89,47 +95,47 @@ public partial class RunningLog : IAsyncDisposable
             var query = dbContext.AppLogs.AsQueryable();
 
             // 按级别过滤
-            if(!string.IsNullOrEmpty(selectedLevel))
+            if (!string.IsNullOrEmpty(selectedLevel))
             {
-                query=query.Where(x => x.Level==selectedLevel);
+                query = query.Where(x => x.Level == selectedLevel);
             }
 
             // 按时间范围过滤
-            if(startDate.HasValue)
+            if (startDate.HasValue)
             {
-                query=query.Where(x => x.Timestamp>=startDate.Value);
+                query = query.Where(x => x.Timestamp >= startDate.Value);
             }
-            if(endDate.HasValue)
+            if (endDate.HasValue)
             {
-                query=query.Where(x => x.Timestamp<=endDate.Value.AddDays(1)); // 包含结束日期当天
+                query = query.Where(x => x.Timestamp <= endDate.Value.AddDays(1)); // 包含结束日期当天
             }
 
             // 搜索消息
-            if(!string.IsNullOrEmpty(searchText))
+            if (!string.IsNullOrEmpty(searchText))
             {
-                query=query.Where(x => x.Message!=null&&x.Message.Contains(searchText));
+                query = query.Where(x => x.Message != null && x.Message.Contains(searchText));
             }
 
             // 获取总数
-            totalCount=await query.CountAsync();
+            totalCount = await query.CountAsync();
 
             // 分页查询
-            logs=await query
+            logs = await query
                 .OrderByDescending(x => x.Timestamp)
-                .Skip((currentPage-1)*pageSize)
+                .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             await uow.CompleteAsync();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            Logger.LogError(ex , "加载日志列表失败");
-            logs=new List<AppLog>();
+            Logger.LogError(ex, "加载日志列表失败");
+            logs = new List<AppLog>();
         }
         finally
         {
-            isLoading=false;
+            isLoading = false;
             StateHasChanged();
         }
     }
@@ -141,21 +147,21 @@ public partial class RunningLog : IAsyncDisposable
     {
         try
         {
-            isWriting=true;
-            writeResult="";
+            isWriting = true;
+            writeResult = "";
             StateHasChanged();
 
             // 将 Serilog 的级别名称映射到 .NET 的 LogLevel
             // Serilog 的 Fatal 对应 .NET 的 Critical
             // Serilog 的 Verbose 对应 .NET 的 Trace
             var logLevelName = testLogLevel;
-            if(logLevelName=="Fatal")
+            if (logLevelName == "Fatal")
             {
-                logLevelName="Critical";
+                logLevelName = "Critical";
             }
-            else if(logLevelName=="Verbose")
+            else if (logLevelName == "Verbose")
             {
-                logLevelName="Trace";
+                logLevelName = "Trace";
             }
 
             var logLevel = Enum.Parse<LogLevel>(logLevelName);
@@ -163,39 +169,39 @@ public partial class RunningLog : IAsyncDisposable
                 ? $"测试日志 - {DateTime.Now:yyyy-MM-dd HH:mm:ss}"
                 : testLogMessage;
 
-            if(includeException)
+            if (includeException)
             {
                 try
                 {
                     throw new Exception("这是一条测试异常信息");
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    Logger.Log(logLevel , ex , message);
+                    Logger.Log(logLevel, ex, message);
                 }
             }
             else
             {
-                Logger.Log(logLevel , message);
+                Logger.Log(logLevel, message);
             }
 
-            writeResult=$"日志写入成功！级别: {testLogLevel}, 消息: {message}";
+            writeResult = $"日志写入成功！级别: {testLogLevel}, 消息: {message}";
 
             // 等待一下让日志写入数据库
             await Task.Delay(500);
 
             // 刷新日志列表
-            currentPage=1;
+            currentPage = 1;
             await LoadLogs();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            writeResult=$"日志写入失败: {ex.Message}";
-            Logger.LogError(ex , "写入测试日志失败");
+            writeResult = $"日志写入失败: {ex.Message}";
+            Logger.LogError(ex, "写入测试日志失败");
         }
         finally
         {
-            isWriting=false;
+            isWriting = false;
             StateHasChanged();
         }
     }
@@ -205,11 +211,11 @@ public partial class RunningLog : IAsyncDisposable
     /// </summary>
     private async Task ResetFilters()
     {
-        selectedLevel="";
-        endDate=DateTime.Now;
-        startDate=DateTime.Now.AddDays(-7);
-        searchText="";
-        currentPage=1;
+        selectedLevel = "";
+        endDate = DateTime.Now;
+        startDate = DateTime.Now.AddDays(-7);
+        searchText = "";
+        currentPage = 1;
         await LoadLogs();
     }
 
@@ -218,9 +224,9 @@ public partial class RunningLog : IAsyncDisposable
     /// </summary>
     private async Task ChangePage(int page)
     {
-        if(page>=1&&page<=totalPages)
+        if (page >= 1 && page <= totalPages)
         {
-            currentPage=page;
+            currentPage = page;
             await LoadLogs();
         }
     }
@@ -230,7 +236,7 @@ public partial class RunningLog : IAsyncDisposable
     /// </summary>
     private void ShowLogDetail(AppLog log)
     {
-        selectedLog=log;
+        selectedLog = log;
         StateHasChanged();
     }
 
@@ -239,7 +245,7 @@ public partial class RunningLog : IAsyncDisposable
     /// </summary>
     private void CloseLogDetail()
     {
-        selectedLog=null;
+        selectedLog = null;
         StateHasChanged();
     }
 
@@ -261,83 +267,12 @@ public partial class RunningLog : IAsyncDisposable
     }
 
     /// <summary>
-    /// 插入面包屑到顶栏
-    /// </summary>
-    private async Task InsertBreadcrumb()
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("eval" , @"
-                (function() {
-                    function insertBreadcrumb() {
-                        const topbar = document.querySelector('.lpx-topbar') || 
-                                     document.querySelector('.lpx-header');
-                        
-                        if (!topbar) {
-                            setTimeout(insertBreadcrumb, 200);
-                            return;
-                        }
-
-                        const sourceBreadcrumb = document.getElementById('log-test-breadcrumb-container');
-                        if (!sourceBreadcrumb) return;
-
-                        const existing = document.getElementById('breadcrumb-in-topbar');
-                        if (existing) existing.remove();
-
-                        const hamburger = topbar.querySelector('button[aria-label*=""menu""]') || 
-                                         topbar.querySelector('.lpx-navbar-toggle');
-                        const rightMenu = topbar.querySelector('.lpx-navbar-end') ||
-                                         topbar.querySelector('[class*=""navbar-end""]');
-
-                        const breadcrumbContent = sourceBreadcrumb.cloneNode(true);
-                        breadcrumbContent.id = 'breadcrumb-in-topbar';
-                        breadcrumbContent.style.display = 'block';
-                        const breadcrumbOl = breadcrumbContent.querySelector('.lpx-breadcrumb');
-
-                        if (hamburger && rightMenu && hamburger.parentElement === rightMenu.parentElement) {
-                            const wrapper = document.createElement('div');
-                            wrapper.style.cssText = 'display: flex; align-items: center; flex: 1; margin: 0 20px;';
-                            wrapper.appendChild(breadcrumbOl);
-                            hamburger.parentNode.insertBefore(wrapper, rightMenu);
-                        } else {
-                            topbar.insertBefore(breadcrumbOl, topbar.childNodes[Math.floor(topbar.childNodes.length / 2)]);
-                        }
-                    }
-                    
-                    insertBreadcrumb();
-                    
-                    const observer = new MutationObserver(function() {
-                        if (!document.getElementById('breadcrumb-in-topbar')) {
-                            insertBreadcrumb();
-                        }
-                    });
-                    observer.observe(document.body, { childList: true, subtree: true });
-                    setTimeout(() => observer.disconnect(), 3000);
-                })();
-            ");
-        }
-        catch
-        {
-            // 忽略错误
-        }
-    }
-
-    /// <summary>
     /// 页面卸载时清理
     /// </summary>
-    public async ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("eval" , @"
-                const breadcrumb = document.getElementById('breadcrumb-in-topbar');
-                if (breadcrumb) breadcrumb.remove();
-            ");
-        }
-        catch
-        {
-            // 忽略清理错误
-        }
+        // 调用基类方法，让 BreadcrumbService 清理面包屑
+        await base.DisposeAsync();
     }
 }
 

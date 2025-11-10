@@ -1,90 +1,17 @@
 @page "/running-log"
-@inherits PaperBellStoreComponentBase
+@using PaperBellStore.Blazor.Services
+@inherits BreadcrumbComponentBase
 @implements IAsyncDisposable
 
 <PageTitle>运行日志</PageTitle>
 
-@* 隐藏的面包屑，将通过JS插入到顶栏 *@
-<div id="log-test-breadcrumb-container" style="display: none;">
-	<nav aria-label="breadcrumb" style="margin: 0;">
-		<ol class="lpx-breadcrumb"
-			style="background: transparent; padding: 0; margin: 0; list-style: none; display: flex; align-items: center;">
-			<li class="lpx-breadcrumb-item">
-				<a href="/" style="text-decoration: none; color: #686B6E; display: flex; align-items: center;">
-					<i class="fas fa-home" style="font-size: 11.6px;"></i>
-				</a>
-			</li>
-			<li class="lpx-breadcrumb-item">
-				<span style="color: #686B6E; font-size: 11.6px; font-family: 'Inter', sans-serif;">@L["Menu:RunningLogGroup"]</span>
-			</li>
-			<li class="lpx-breadcrumb-item active">
-				<span style="color: #686B6E; font-size: 11.6px; font-family: 'Inter', sans-serif;">@L["Menu:RunningLog"]</span>
-			</li>
-		</ol>
-	</nav>
-</div>
+<PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
 
 <div class="container-fluid">
 	<div class="row mb-3">
 		<div class="col-12">
 			<div class="card">
-				@* <div class="card-header">
-					<h3 class="card-title">
-						<i class="fas fa-file-alt me-2"></i>@L["Menu:RunningLog"]
-					</h3>
-				</div> *@
 				<div class="card-body">
-					@* 测试写入日志区域 *@
-					@* <div class="mb-4">
-						<h5 class="mb-3">
-							<i class="fas fa-plus-circle me-2"></i>测试写入日志
-						</h5>
-						<div class="row">
-							<div class="col-md-6 mb-3">
-								<label class="form-label">日志级别</label>
-								<select class="form-select" @bind="testLogLevel" @bind:event="onchange">
-									<option value="Verbose">Verbose</option>
-									<option value="Debug">Debug</option>
-									<option value="Information">Information</option>
-									<option value="Warning">Warning</option>
-									<option value="Error">Error</option>
-									<option value="Fatal">Fatal</option>
-								</select>
-							</div>
-							<div class="col-md-6 mb-3">
-								<label class="form-label">日志消息</label>
-								<input type="text" class="form-control" @bind="testLogMessage" placeholder="输入测试日志消息" />
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-md-6 mb-3">
-								<label class="form-label">
-									<input type="checkbox" class="form-check-input me-2" @bind="includeException" />
-									包含异常信息
-								</label>
-							</div>
-						</div>
-						<button class="btn btn-primary" @onclick="WriteTestLog" disabled="@isWriting">
-							<i class="fas fa-paper-plane me-2"></i>
-							@if(isWriting)
-							{
-								<span>写入中...</span>
-							}
-							else
-							{
-								<span>写入测试日志</span>
-							}
-						</button>
-						@if(!string.IsNullOrEmpty(writeResult))
-						{
-							<div class="alert @(writeResult.Contains("成功") ? "alert-success" : "alert-danger") mt-2" role="alert">
-								@writeResult
-							</div>
-						}
-					</div> *@
-
-					@* <hr /> *@
-
 					@* 过滤和搜索区域 *@
 					<div class="mb-3">
 						<h5 class="mb-3">
