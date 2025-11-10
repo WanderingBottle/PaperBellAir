@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
+using MudBlazor;
+
 using PaperBellStore.Blazor.Menus;
 using PaperBellStore.Data;
 using PaperBellStore.EntityFrameworkCore;
@@ -32,6 +34,9 @@ public partial class RunningLog : IAsyncDisposable
     [Inject]
     protected IUnitOfWorkManager UnitOfWorkManager { get; set; } = default!;
 
+    [Inject]
+    protected IDialogService DialogService { get; set; } = default!;
+
     protected override string BreadcrumbId => "log-test-breadcrumb-container";
     protected override string CurrentPagePath => "/running-log";
     protected override string[] MenuItemPaths => new[] { PaperBellStoreMenus.Home, PaperBellStoreMenus.RunningLogGroup,
@@ -46,7 +51,7 @@ public partial class RunningLog : IAsyncDisposable
     private bool isLoading = false;
 
     // 过滤条件
-    private string selectedLevel = "";
+    private string? selectedLevel = null;
     private DateTime? startDate;
     private DateTime? endDate;
     private string searchText = "";
@@ -58,8 +63,6 @@ public partial class RunningLog : IAsyncDisposable
     private bool isWriting = false;
     private string writeResult = "";
 
-    // 日志详情
-    private AppLog? selectedLog = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -211,7 +214,7 @@ public partial class RunningLog : IAsyncDisposable
     /// </summary>
     private async Task ResetFilters()
     {
-        selectedLevel = "";
+        selectedLevel = null;
         endDate = DateTime.Now;
         startDate = DateTime.Now.AddDays(-7);
         searchText = "";
@@ -234,35 +237,37 @@ public partial class RunningLog : IAsyncDisposable
     /// <summary>
     /// 显示日志详情
     /// </summary>
-    private void ShowLogDetail(AppLog log)
+    private async Task ShowLogDetail(AppLog log)
     {
-        selectedLog = log;
-        StateHasChanged();
+        var parameters = new DialogParameters
+        {
+            ["Log"] = log
+        };
+
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true
+        };
+
+        await DialogService.ShowAsync<LogDetailDialog>("日志详情", parameters, options);
     }
 
     /// <summary>
-    /// 关闭日志详情
+    /// 获取日志级别的颜色
     /// </summary>
-    private void CloseLogDetail()
-    {
-        selectedLog = null;
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// 获取日志级别的Badge样式类
-    /// </summary>
-    private string GetLevelBadgeClass(string? level)
+    private Color GetLevelColor(string? level)
     {
         return level switch
         {
-            "Verbose" => "bg-secondary",
-            "Debug" => "bg-info",
-            "Information" => "bg-primary",
-            "Warning" => "bg-warning",
-            "Error" => "bg-danger",
-            "Fatal" => "bg-dark",
-            _ => "bg-secondary"
+            "Verbose" => Color.Secondary,
+            "Debug" => Color.Info,
+            "Information" => Color.Primary,
+            "Warning" => Color.Warning,
+            "Error" => Color.Error,
+            "Fatal" => Color.Dark,
+            _ => Color.Secondary
         };
     }
 

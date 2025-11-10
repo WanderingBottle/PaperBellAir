@@ -1,0 +1,103 @@
+@using MudBlazor
+@using PaperBellStore.Data
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">日志详情</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudText><strong>时间:</strong> @Log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudText>
+                    <strong>级别:</strong>
+                    <MudChip T="string" Size="@MudBlazor.Size.Small" Color="@GetLevelColor(Log.Level)">@Log.Level
+                    </MudChip>
+                </MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText><strong>消息:</strong></MudText>
+                <MudPaper Elevation="0" Class="pa-3 mt-2" Style="max-height: 200px; overflow-y: auto;">
+                    <MudText>@Log.Message</MudText>
+                </MudPaper>
+            </MudItem>
+            @if (!string.IsNullOrEmpty(Log.Exception))
+            {
+                <MudItem xs="12">
+                    <MudText><strong>异常信息:</strong></MudText>
+                    <MudPaper Elevation="0" Class="pa-3 mt-2"
+                        Style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
+                        <MudText Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">@Log.Exception</MudText>
+                    </MudPaper>
+                </MudItem>
+            }
+            @if (Log.OccurrenceCount > 1)
+            {
+                <MudItem xs="12" sm="4">
+                    <MudText><strong>首次出现:</strong> @Log.FirstOccurrence?.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudText><strong>最后出现:</strong> @Log.LastOccurrence?.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudText>
+                        <strong>出现次数:</strong>
+                        <MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Warning">
+                            @Log.OccurrenceCount 次</MudChip>
+                    </MudText>
+                </MudItem>
+            }
+            @if (!string.IsNullOrEmpty(Log.Properties))
+            {
+                <MudItem xs="12">
+                    <MudText><strong>属性 (JSON):</strong></MudText>
+                    <MudPaper Elevation="0" Class="pa-3 mt-2"
+                        Style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
+                        <MudText Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">@Log.Properties</MudText>
+                    </MudPaper>
+                </MudItem>
+            }
+            @if (!string.IsNullOrEmpty(Log.LogEvent))
+            {
+                <MudItem xs="12">
+                    <MudText><strong>日志事件 (JSON):</strong></MudText>
+                    <MudPaper Elevation="0" Class="pa-3 mt-2"
+                        Style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
+                        <MudText Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">@Log.LogEvent</MudText>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">关闭</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter]
+    public AppLog Log { get; set; } = default!;
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+
+    private MudBlazor.Color GetLevelColor(string? level)
+    {
+        return level switch
+        {
+            "Verbose" => MudBlazor.Color.Secondary,
+            "Debug" => MudBlazor.Color.Info,
+            "Information" => MudBlazor.Color.Primary,
+            "Warning" => MudBlazor.Color.Warning,
+            "Error" => MudBlazor.Color.Error,
+            "Fatal" => MudBlazor.Color.Dark,
+            _ => MudBlazor.Color.Secondary
+        };
+    }
+}

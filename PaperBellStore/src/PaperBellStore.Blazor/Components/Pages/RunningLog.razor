@@ -1,5 +1,7 @@
 @page "/running-log"
 @using PaperBellStore.Blazor.Services
+@using MudBlazor
+@using PaperBellStore.Data
 @inherits BreadcrumbComponentBase
 @implements IAsyncDisposable
 
@@ -7,241 +9,139 @@
 
 <PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
 
-<div class="container-fluid">
-	<div class="row mb-3">
-		<div class="col-12">
-			<div class="card">
-				<div class="card-body">
-					@* 过滤和搜索区域 *@
-					<div class="mb-3">
-						<h5 class="mb-3">
-							<i class="fas fa-filter me-2"></i>过滤和搜索
-						</h5>
-						<div class="row">
-							<div class="col-md-3 mb-2">
-								<label class="form-label">日志级别</label>
-								<select class="form-select" @bind="selectedLevel" @bind:event="onchange">
-									<option value="">全部</option>
-									<option value="Verbose">Verbose</option>
-									<option value="Debug">Debug</option>
-									<option value="Information">Information</option>
-									<option value="Warning">Warning</option>
-									<option value="Error">Error</option>
-									<option value="Fatal">Fatal</option>
-								</select>
-							</div>
-							<div class="col-md-3 mb-2">
-								<label class="form-label">开始时间</label>
-								<input type="datetime-local" class="form-control" @bind="startDate" @bind:event="onchange" />
-							</div>
-							<div class="col-md-3 mb-2">
-								<label class="form-label">结束时间</label>
-								<input type="datetime-local" class="form-control" @bind="endDate" @bind:event="onchange" />
-							</div>
-							<div class="col-md-3 mb-2">
-								<label class="form-label">搜索消息</label>
-								<input type="text" class="form-control" @bind="searchText" @bind:event="oninput" placeholder="搜索日志消息..." />
-							</div>
-						</div>
-						<div class="row mt-2">
-							<div class="col-12">
-								<button class="btn btn-secondary me-2" @onclick="ResetFilters">
-									<i class="fas fa-redo me-2"></i>重置过滤
-								</button>
-								<button class="btn btn-primary" @onclick="LoadLogs">
-									<i class="fas fa-search me-2"></i>搜索
-								</button>
-							</div>
-						</div>
-					</div>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+	<MudCard Elevation="3">
+		<MudCardContent>
+			@* 过滤和搜索区域 *@
+			<MudText Typo="Typo.h5" Class="mb-4">
+				<MudIcon Icon="@Icons.Material.Filled.Filter" Size="@MudBlazor.Size.Small" Class="mr-2" />
+				过滤和搜索
+			</MudText>
 
-					<hr />
+			<MudGrid Spacing="3">
+				<MudItem xs="12" sm="6" md="3">
+					<MudSelect T="string" @bind-Value="selectedLevel" Label="日志级别" Variant="Variant.Outlined" Clearable>
+						<MudSelectItem T="string" Value="@((string?)null)">全部</MudSelectItem>
+						<MudSelectItem T="string" Value="@("Verbose")">Verbose</MudSelectItem>
+						<MudSelectItem T="string" Value="@("Debug")">Debug</MudSelectItem>
+						<MudSelectItem T="string" Value="@("Information")">Information</MudSelectItem>
+						<MudSelectItem T="string" Value="@("Warning")">Warning</MudSelectItem>
+						<MudSelectItem T="string" Value="@("Error")">Error</MudSelectItem>
+						<MudSelectItem T="string" Value="@("Fatal")">Fatal</MudSelectItem>
+					</MudSelect>
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudDatePicker @bind-Date="startDate" Label="开始时间" Variant="Variant.Outlined"
+						DateFormat="yyyy-MM-dd HH:mm" TimeEditable="true" />
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudDatePicker @bind-Date="endDate" Label="结束时间" Variant="Variant.Outlined"
+						DateFormat="yyyy-MM-dd HH:mm" TimeEditable="true" />
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudTextField @bind-Value="searchText" Label="搜索消息" Variant="Variant.Outlined"
+						Placeholder="搜索日志消息..." Adornment="Adornment.Start"
+						AdornmentIcon="@Icons.Material.Filled.Search" />
+				</MudItem>
+			</MudGrid>
 
-					@* 日志列表区域 *@
-					<div>
-						<div class="d-flex justify-content-between align-items-center mb-3">
-							<h5 class="mb-0">
-								<i class="fas fa-list me-2"></i>日志列表
-								@if(totalCount>0)
+			<MudStack Row="true" Spacing="2" Class="mt-3">
+				<MudButton Variant="Variant.Outlined" Color="@MudBlazor.Color.Secondary"
+					StartIcon="@Icons.Material.Filled.Refresh" OnClick="ResetFilters">
+					重置过滤
+				</MudButton>
+				<MudButton Variant="Variant.Filled" Color="@MudBlazor.Color.Primary"
+					StartIcon="@Icons.Material.Filled.Search" OnClick="LoadLogs">
+					搜索
+				</MudButton>
+			</MudStack>
+
+			<MudDivider Class="my-4" />
+
+			@* 日志列表区域 *@
+			<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="@MudBlazor.AlignItems.Center" Class="mb-3">
+				<MudText Typo="Typo.h5">
+					<MudIcon Icon="@Icons.Material.Filled.List" Size="@MudBlazor.Size.Small" Class="mr-2" />
+					日志列表
+					@if (totalCount > 0)
+					{
+						<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Primary" Class="ml-2">共
+							@totalCount 条</MudChip>
+					}
+				</MudText>
+				<MudButton Variant="Variant.Outlined" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Primary"
+					StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadLogs">
+					刷新
+				</MudButton>
+			</MudStack>
+
+			@if (isLoading)
+			{
+				<MudProgressLinear Color="@MudBlazor.Color.Primary" Indeterminate="true" Class="my-2" />
+				<MudText Class="text-center py-4">加载中...</MudText>
+			}
+			else if (logs == null || !logs.Any())
+			{
+				<MudAlert Severity="Severity.Info" Class="mt-3">
+					<MudIcon Icon="@Icons.Material.Filled.Info" Size="@MudBlazor.Size.Small" Class="mr-2" />
+					暂无日志数据
+				</MudAlert>
+			}
+			else
+			{
+				<MudDataGrid Items="@logs" Hover="true" Striped="true" Dense="true" ReadOnly="true"
+					FilterMode="@MudBlazor.DataGridFilterMode.Simple" Class="mt-3" NoDataContent="暂无数据" Loading="@isLoading"
+					HideFooter="true">
+					<Columns>
+						<PropertyColumn Property="@(x => x.Timestamp)" Title="时间" Format="yyyy-MM-dd HH:mm:ss"
+							Sortable="true" />
+						<PropertyColumn Property="@(x => x.Level)" Title="级别" Sortable="true">
+							<CellTemplate>
+								<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@GetLevelColor(context.Item.Level)">
+									@context.Item.Level</MudChip>
+							</CellTemplate>
+						</PropertyColumn>
+						<PropertyColumn Property="@(x => x.Message)" Title="消息" Sortable="false">
+							<CellTemplate>
+								<MudTooltip Text="@context.Item.Message">
+									<MudText
+										Style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+										@context.Item.Message
+									</MudText>
+								</MudTooltip>
+							</CellTemplate>
+						</PropertyColumn>
+						<PropertyColumn Property="@(x => x.OccurrenceCount)" Title="出现次数" Sortable="true">
+							<CellTemplate>
+								@if (context.Item.OccurrenceCount > 1)
 								{
-									<span class="badge bg-primary ms-2">共 @totalCount 条</span>
+									<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Warning">
+										@context.Item.OccurrenceCount 次</MudChip>
 								}
-							</h5>
-							<button class="btn btn-sm btn-outline-primary" @onclick="LoadLogs">
-								<i class="fas fa-sync-alt me-2"></i>刷新
-							</button>
-						</div>
+								else
+								{
+									<MudText>-</MudText>
+								}
+							</CellTemplate>
+						</PropertyColumn>
+						<TemplateColumn Title="操作" Sortable="false">
+							<CellTemplate>
+								<MudButton Variant="Variant.Text" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Info"
+									StartIcon="@Icons.Material.Filled.Visibility"
+									OnClick="() => ShowLogDetail(context.Item)">
+									详情
+								</MudButton>
+							</CellTemplate>
+						</TemplateColumn>
+					</Columns>
+				</MudDataGrid>
 
-						@if(isLoading)
-						{
-							<div class="text-center py-4">
-								<div class="spinner-border text-primary" role="status">
-									<span class="visually-hidden">加载中...</span>
-								</div>
-							</div>
-						}
-						else if(logs==null||!logs.Any())
-						{
-							<div class="alert alert-info" role="alert">
-								<i class="fas fa-info-circle me-2"></i>暂无日志数据
-							</div>
-						}
-						else
-						{
-							<div class="table-responsive">
-								<table class="table table-striped table-hover">
-									<thead>
-										<tr>
-											<th>时间</th>
-											<th>级别</th>
-											<th>消息</th>
-											<th>出现次数</th>
-											<th>操作</th>
-										</tr>
-									</thead>
-									<tbody>
-										@foreach(var log in logs)
-										{
-											<tr>
-												<td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
-												<td>
-													<span class="badge @GetLevelBadgeClass(log.Level)">
-														@log.Level
-													</span>
-												</td>
-												<td>
-													<div style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@log.Message">
-														@log.Message
-													</div>
-												</td>
-												<td>
-													@if(log.OccurrenceCount>1)
-													{
-														<span class="badge bg-warning">@log.OccurrenceCount 次</span>
-													}
-													else
-													{
-														<span>-</span>
-													}
-												</td>
-												<td>
-													<button class="btn btn-sm btn-outline-info" @onclick="() => ShowLogDetail(log)">
-														<i class="fas fa-eye me-1"></i>详情
-													</button>
-												</td>
-											</tr>
-										}
-									</tbody>
-								</table>
-							</div>
-
-							@* 分页 *@
-							<nav aria-label="日志分页">
-								<ul class="pagination justify-content-center">
-									<li class="page-item @(currentPage<=1 ? "disabled" : "")">
-										<a class="page-link" href="#" @onclick="() => ChangePage(currentPage-1)" @onclick:preventDefault>上一页</a>
-									</li>
-									@for(int i = Math.Max(1 , currentPage-2); i<=Math.Min(totalPages , currentPage+2); i++)
-									{
-										<li class="page-item @(i==currentPage ? "active" : "")">
-											<a class="page-link" href="#" @onclick="() => ChangePage(i)" @onclick:preventDefault>@i</a>
-										</li>
-									}
-									<li class="page-item @(currentPage>=totalPages ? "disabled" : "")">
-										<a class="page-link" href="#" @onclick="() => ChangePage(currentPage+1)" @onclick:preventDefault>下一页</a>
-									</li>
-								</ul>
-							</nav>
-						}
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
-
-@* 日志详情模态框 *@
-@if(selectedLog!=null)
-{
-	<div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
-		<div class="modal-dialog modal-lg" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title">日志详情</h5>
-					<button type="button" class="btn-close" @onclick="CloseLogDetail"></button>
-				</div>
-				<div class="modal-body">
-					<div class="row mb-3">
-						<div class="col-md-6">
-							<strong>时间:</strong> @selectedLog.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")
-						</div>
-						<div class="col-md-6">
-							<strong>级别:</strong>
-							<span class="badge @GetLevelBadgeClass(selectedLog.Level)">@selectedLog.Level</span>
-						</div>
-					</div>
-					<div class="row mb-3">
-						<div class="col-12">
-							<strong>消息:</strong>
-							<div class="border p-2 mt-1" style="max-height: 200px; overflow-y: auto;">
-								@selectedLog.Message
-							</div>
-						</div>
-					</div>
-					@if(!string.IsNullOrEmpty(selectedLog.Exception))
-					{
-						<div class="row mb-3">
-							<div class="col-12">
-								<strong>异常信息:</strong>
-								<div class="border p-2 mt-1" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
-									<pre style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">@selectedLog.Exception</pre>
-								</div>
-							</div>
-						</div>
-					}
-					@if(selectedLog.OccurrenceCount>1)
-					{
-						<div class="row mb-3">
-							<div class="col-md-4">
-								<strong>首次出现:</strong> @selectedLog.FirstOccurrence?.ToString("yyyy-MM-dd HH:mm:ss")
-							</div>
-							<div class="col-md-4">
-								<strong>最后出现:</strong> @selectedLog.LastOccurrence?.ToString("yyyy-MM-dd HH:mm:ss")
-							</div>
-							<div class="col-md-4">
-								<strong>出现次数:</strong> <span class="badge bg-warning">@selectedLog.OccurrenceCount</span>
-							</div>
-						</div>
-					}
-					@if(!string.IsNullOrEmpty(selectedLog.Properties))
-					{
-						<div class="row mb-3">
-							<div class="col-12">
-								<strong>属性 (JSON):</strong>
-								<div class="border p-2 mt-1" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
-									<pre style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">@selectedLog.Properties</pre>
-								</div>
-							</div>
-						</div>
-					}
-					@if(!string.IsNullOrEmpty(selectedLog.LogEvent))
-					{
-						<div class="row mb-3">
-							<div class="col-12">
-								<strong>日志事件 (JSON):</strong>
-								<div class="border p-2 mt-1" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
-									<pre style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">@selectedLog.LogEvent</pre>
-								</div>
-							</div>
-						</div>
-					}
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" @onclick="CloseLogDetail">关闭</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="modal-backdrop fade show" @onclick="CloseLogDetail"></div>
-}
-
+				@* 自定义分页（因为 MudDataGrid 的分页需要服务器端分页支持） *@
+				<MudStack Row="true" Justify="@MudBlazor.Justify.Center" Class="mt-4">
+					<MudPagination Count="@totalPages" Selected="@currentPage"
+						SelectedChanged="@((int page) => ChangePage(page))" BoundaryCount="2" MiddleCount="2" />
+				</MudStack>
+			}
+		</MudCardContent>
+	</MudCard>
+</MudContainer>
