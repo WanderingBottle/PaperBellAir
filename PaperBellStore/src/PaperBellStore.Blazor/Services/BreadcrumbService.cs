@@ -41,7 +41,7 @@ namespace PaperBellStore.Blazor.Services
         /// <param name="currentPagePath">当前页面路径（用于判断是否离开页面）</param>
         /// <param name="menuItems">菜单项路径数组，例如：["Home", "ProjectManagement", "ProjectManagement.Projects"]</param>
         /// <param name="onLocationChanged">位置变化时的回调</param>
-        public async Task InitializeAsync(
+        public Task InitializeAsync(
             string breadcrumbId,
             string currentPagePath,
             string[] menuItems,
@@ -54,6 +54,8 @@ namespace PaperBellStore.Blazor.Services
 
             // 订阅导航事件
             _navigation.LocationChanged += OnLocationChanged;
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

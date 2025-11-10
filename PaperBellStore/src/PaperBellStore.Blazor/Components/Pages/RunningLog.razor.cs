@@ -29,9 +29,6 @@ public partial class RunningLog : IAsyncDisposable
     protected new ILogger<RunningLog> Logger { get; set; } = default!;
 
     [Inject]
-    protected IJSRuntime JSRuntime { get; set; } = default!;
-
-    [Inject]
     protected IUnitOfWorkManager UnitOfWorkManager { get; set; } = default!;
 
     [Inject]
@@ -60,7 +57,6 @@ public partial class RunningLog : IAsyncDisposable
     private string testLogLevel = "Information";
     private string testLogMessage = "这是一条测试日志消息";
     private bool includeException = false;
-    private bool isWriting = false;
     private string writeResult = "";
 
 
@@ -150,7 +146,6 @@ public partial class RunningLog : IAsyncDisposable
     {
         try
         {
-            isWriting = true;
             writeResult = "";
             StateHasChanged();
 
@@ -204,7 +199,6 @@ public partial class RunningLog : IAsyncDisposable
         }
         finally
         {
-            isWriting = false;
             StateHasChanged();
         }
     }
