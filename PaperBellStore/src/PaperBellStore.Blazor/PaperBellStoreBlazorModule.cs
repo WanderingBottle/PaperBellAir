@@ -19,6 +19,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using PaperBellStore.Blazor.Components;
 using PaperBellStore.Blazor.Menus;
+using PaperBellStore.Blazor.Services;
 using PaperBellStore.EntityFrameworkCore;
 using PaperBellStore.Localization;
 using PaperBellStore.MultiTenancy;
@@ -167,6 +168,9 @@ public class PaperBellStoreBlazorModule : AbpModule
         ConfigureBlazorise(context);
         ConfigureRouter(context);
         ConfigureMenu(context);
+
+        // 注册面包屑服务（每个组件实例一个）
+        context.Services.AddScoped<Services.BreadcrumbService>();
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)

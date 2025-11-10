@@ -9,48 +9,17 @@
 @using MudBlazor
 @using MudBlazor.Extensions
 @using Microsoft.AspNetCore.Components
-@using Microsoft.AspNetCore.Components.Routing
-@using Microsoft.JSInterop
-@using Volo.Abp.Localization
-@using Volo.Abp.UI.Navigation
+@using PaperBellStore.Blazor.Components
 @using PaperBellStore.Blazor.Menus
 @inject IOwnerAppService OwnerAppService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IStringLocalizer<ProjectManageResource> ProjectL
 @inject IStringLocalizer<PaperBellStoreResource> L
-@inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
-@inject IMenuManager MenuManager
-@implements IAsyncDisposable
 @rendermode InteractiveServer
+@inherits BreadcrumbComponentBase
 
-<!-- 面包屑导航 - 将被 JavaScript 移动到顶栏，使用原生样式 -->
-<ul id="owner-breadcrumb" class="lpx-breadcrumb" style="display: none;">
-	@if (_homeMenu != null)
-	{
-		<li class="lpx-breadcrumb-item">
-			<a href="@(_homeMenu.Url ?? "/")">
-				@if (!string.IsNullOrEmpty(_homeMenu.Icon))
-				{
-					<i class="@_homeMenu.Icon"></i>
-				}
-			</a>
-		</li>
-	}
-	@if (_projectManagementMenu != null)
-	{
-		<li class="lpx-breadcrumb-item">
-			<span>@_projectManagementMenu.DisplayName</span>
-		</li>
-	}
-	@if (_ownersMenu != null)
-	{
-		<li class="lpx-breadcrumb-item">
-			<span>@_ownersMenu.DisplayName</span>
-		</li>
-	}
-</ul>
+<PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
 
 <div class="pa-4">
 	<MudText Typo="Typo.h5" GutterBottom="true">负责人列表</MudText>
@@ -197,9 +166,11 @@
 	private string _search = string.Empty;
 	private SearchMode _searchMode = SearchMode.Fuzzy;
 	private ExactSearchModel _exactSearch = new();
-	private ApplicationMenuItem _homeMenu;
-	private ApplicationMenuItem _projectManagementMenu;
-	private ApplicationMenuItem _ownersMenu;
+
+	protected override string BreadcrumbId => "owner-breadcrumb";
+	protected override string CurrentPagePath => "/owners";
+	protected override string[] MenuItemPaths => new[] { PaperBellStoreMenus.Home, "ProjectManagement",
+"ProjectManagement.Owners" };
 
 	private enum SearchMode
 	{
@@ -493,181 +464,4 @@
 		};
 	}
 
-	protected override async Task OnInitializedAsync()
-	{
-		// 从菜单配置中自动获取菜单项信息（包括图标）
-		var menu = await MenuManager.GetAsync(StandardMenus.Main);
-
-		// 获取首页菜单
-		_homeMenu = menu.Items.FirstOrDefault(x => x.Name == PaperBellStoreMenus.Home);
-
-		// 获取项目管理父菜单
-		_projectManagementMenu = menu.Items.FirstOrDefault(x => x.Name == "ProjectManagement");
-
-		// 获取负责人列表子菜单
-		if (_projectManagementMenu != null)
-		{
-			_ownersMenu = _projectManagementMenu.Items.FirstOrDefault(x => x.Name == "ProjectManagement.Owners");
-		}
-
-		// 监听导航事件，当离开当前页面时移除面包屑
-		Navigation.LocationChanged += OnLocationChanged;
-
-		await base.OnInitializedAsync();
-	}
-
-	private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-	{
-		// 如果导航到其他页面（不是负责人列表页面），移除面包屑
-		if (!e.Location.Contains("/owners"))
-		{
-			_ = Task.Run(async () =>
-			{
-				await Task.Delay(100); // 等待一下确保页面切换完成
-				await JSRuntime.InvokeVoidAsync("eval", @"
-(function() {
-try {
-const breadcrumb = document.getElementById('owner-breadcrumb-topbar');
-if (breadcrumb) {
-breadcrumb.remove();
-}
-} catch (error) {
-console.error('Error removing breadcrumb:', error);
-}
-})();
-");
-			});
-		}
-	}
-
-	protected override async Task OnAfterRenderAsync(bool firstRender)
-	{
-		if (firstRender)
-		{
-			// 等待 DOM 完全渲染后移动面包屑到顶栏
-			await Task.Delay(200);
-
-			// 直接注入并执行脚本，而不是依赖全局脚本文件
-			await JSRuntime.InvokeVoidAsync("eval", @"
-(function() {
-try {
-const breadcrumb = document.getElementById('owner-breadcrumb');
-if (!breadcrumb) {
-return;
-}
-
-// 查找顶栏容器
-let topBar = null;
-const wrapper = document.querySelector('.lpx-wrapper') || document.querySelector('[class*=""lpx-wrapper""]');
-if (wrapper) {
-topBar = wrapper.querySelector('.lpx-header') ||
-wrapper.querySelector('[class*=""lpx-header""]') ||
-wrapper.querySelector('.lpx-topbar') ||
-wrapper.querySelector('[class*=""header""]');
-}
-
-if (!topBar) {
-topBar = document.querySelector('.lpx-header') ||
-document.querySelector('.lpx-topbar') ||
-document.querySelector('.lpx-navbar') ||
-document.querySelector('[class*=""lpx-header""]') ||
-document.querySelector('.navbar') ||
-document.querySelector('.header');
-}
-
-if (topBar) {
-// 只移除我们自己的面包屑，不影响其他页面的原生面包屑
-const existingCloned = document.getElementById('owner-breadcrumb-topbar');
-if (existingCloned) {
-existingCloned.remove();
-}
-
-// 克隆面包屑元素（深度克隆以包含所有子元素）
-const clonedBreadcrumb = breadcrumb.cloneNode(true);
-clonedBreadcrumb.id = 'owner-breadcrumb-topbar';
-
-// 移除克隆元素和所有子元素的内联样式，确保使用原生CSS样式
-clonedBreadcrumb.removeAttribute('style');
-const allItems = clonedBreadcrumb.querySelectorAll('*');
-allItems.forEach(item => {
-item.removeAttribute('style');
-});
-
-// 查找原生面包屑的位置，插入到相同位置
-const nativeBreadcrumb = topBar.querySelector('.lpx-breadcrumb');
-
-if (nativeBreadcrumb && nativeBreadcrumb.id !== 'owner-breadcrumb-topbar') {
-// 如果存在原生面包屑，插入到它之前或之后（根据实际情况）
-// 通常我们的面包屑应该替换原生面包屑的位置
-nativeBreadcrumb.parentNode.insertBefore(clonedBreadcrumb, nativeBreadcrumb);
-// 或者插入到原生面包屑之后
-// nativeBreadcrumb.parentNode.insertBefore(clonedBreadcrumb, nativeBreadcrumb.nextSibling);
-} else {
-// 如果没有原生面包屑，查找合适的插入位置
-const topBarInner = topBar.querySelector('.lpx-header-inner') ||
-topBar.querySelector('[class*=""header-inner""]') ||
-topBar.querySelector('.navbar-collapse');
-
-const logo = topBar.querySelector('.lpx-logo') ||
-topBar.querySelector('[class*=""logo""]') ||
-topBar.querySelector('.navbar-brand');
-
-const nav = topBar.querySelector('.lpx-nav') ||
-topBar.querySelector('[class*=""nav""]') ||
-topBar.querySelector('.navbar-nav');
-
-if (topBarInner) {
-const insertTarget = topBarInner.firstChild;
-if (insertTarget) {
-topBarInner.insertBefore(clonedBreadcrumb, insertTarget);
-} else {
-topBarInner.appendChild(clonedBreadcrumb);
-}
-} else if (logo && logo.parentElement === topBar) {
-topBar.insertBefore(clonedBreadcrumb, logo.nextSibling);
-} else if (nav && nav.parentElement === topBar) {
-topBar.insertBefore(clonedBreadcrumb, nav);
-} else {
-topBar.insertBefore(clonedBreadcrumb, topBar.firstChild);
-}
-}
-
-// 隐藏原始面包屑
-breadcrumb.style.display = 'none';
-}
-} catch (error) {
-console.error('Error moving breadcrumb to top bar:', error);
-}
-})();
-");
-		}
-		await base.OnAfterRenderAsync(firstRender);
-	}
-
-	public async ValueTask DisposeAsync()
-	{
-		// 取消订阅导航事件
-		Navigation.LocationChanged -= OnLocationChanged;
-
-		// 移除面包屑
-		try
-		{
-			await JSRuntime.InvokeVoidAsync("eval", @"
-(function() {
-try {
-const breadcrumb = document.getElementById('owner-breadcrumb-topbar');
-if (breadcrumb) {
-breadcrumb.remove();
-}
-} catch (error) {
-console.error('Error removing breadcrumb:', error);
-}
-})();
-");
-		}
-		catch
-		{
-			// 忽略错误，可能页面已经卸载
-		}
-	}
 }
