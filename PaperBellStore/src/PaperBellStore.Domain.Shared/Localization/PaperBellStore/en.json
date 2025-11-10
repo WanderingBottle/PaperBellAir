@@ -11,6 +11,7 @@
         "Menu:HangfireDashboard": "Job Scheduler",
         "Menu:RunningLogGroup": "Log Management",
         "Menu:RunningLog": "Running Log",
+        "Menu:AuditLog": "Audit Log",
         "Permission:HangfireDashboard": "Job Scheduler",
         "Permission:HangfireDashboard.View": "View Job Scheduler",
         "Permission:HangfireDashboard.Trigger": "Trigger Jobs",

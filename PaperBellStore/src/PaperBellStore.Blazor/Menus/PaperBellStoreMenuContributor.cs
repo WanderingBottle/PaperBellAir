@@ -14,7 +14,7 @@ public class PaperBellStoreMenuContributor : IMenuContributor
 {
     public async Task ConfigureMenuAsync(MenuConfigurationContext context)
     {
-        if(context.Menu.Name==StandardMenus.Main)
+        if (context.Menu.Name == StandardMenus.Main)
         {
             await ConfigureMainMenuAsync(context);
         }
@@ -25,34 +25,42 @@ public class PaperBellStoreMenuContributor : IMenuContributor
         var l = context.GetLocalizer<PaperBellStoreResource>();
 
         context.Menu.Items.Insert(
-            0 ,
+            0,
             new ApplicationMenuItem(
-                PaperBellStoreMenus.Home ,
-                l["Menu:Home"] ,
-                "/" ,
-                icon: "fas fa-home" ,
+                PaperBellStoreMenus.Home,
+                l["Menu:Home"],
+                "/",
+                icon: "fas fa-home",
                 order: 1
             )
         );
 
         //Administration
         var administration = context.Menu.GetAdministration();
-        administration.Order=6;
+        administration.Order = 6;
 
         // 添加日志测试菜单
         var logTestManagement = new ApplicationMenuItem(
-            PaperBellStoreMenus.RunningLogGroup ,
-            l["Menu:RunningLogGroup"] ,
-            icon: "fas fa-file-alt" ,
+            PaperBellStoreMenus.RunningLogGroup,
+            l["Menu:RunningLogGroup"],
+            icon: "fas fa-file-alt",
             order: 2
         );
 
         // 添加日志测试页面作为子菜单项
         logTestManagement.AddItem(new ApplicationMenuItem(
-            PaperBellStoreMenus.RunningLog ,
-            l["Menu:RunningLog"] ,
-            "/running-log" ,
+            PaperBellStoreMenus.RunningLog,
+            l["Menu:RunningLog"],
+            "/running-log",
             icon: "fas fa-bug"
+        ));
+
+        // 添加审计日志页面作为子菜单项
+        logTestManagement.AddItem(new ApplicationMenuItem(
+            PaperBellStoreMenus.AuditLog,
+            l["Menu:AuditLog"],
+            "/audit-log",
+            icon: "fas fa-shield-alt"
         ));
 
         // 将日志测试菜单添加到Administration组下
@@ -60,21 +68,21 @@ public class PaperBellStoreMenuContributor : IMenuContributor
 
         // 添加 Hangfire Dashboard 菜单项
         administration.AddItem(new ApplicationMenuItem(
-            PaperBellStoreMenus.HangfireDashboard ,
-            l["Menu:HangfireDashboard"] ,
-            "/hangfire" ,
-            icon: "fas fa-tasks" ,
+            PaperBellStoreMenus.HangfireDashboard,
+            l["Menu:HangfireDashboard"],
+            "/hangfire",
+            icon: "fas fa-tasks",
             order: 4
         ));
 
-        if(MultiTenancyConsts.IsEnabled)
+        if (MultiTenancyConsts.IsEnabled)
         {
-            administration.SetSubItemOrder(TenantManagementMenuNames.GroupName , 1);
+            administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
         }
         // 注意：如果多租户未启用，租户管理菜单项可能不存在，因此不尝试移除
 
-        administration.SetSubItemOrder(IdentityMenuNames.GroupName , 2);
-        administration.SetSubItemOrder(SettingManagementMenus.GroupName , 3);
+        administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
+        administration.SetSubItemOrder(SettingManagementMenus.GroupName, 3);
 
         return Task.CompletedTask;
     }

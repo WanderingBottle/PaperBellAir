@@ -44,6 +44,7 @@
         "Menu:HangfireDashboard": "任务调度中心",
         "Menu:RunningLogGroup": "日志管理",
         "Menu:RunningLog": "运行日志",
+        "Menu:AuditLog": "审计日志",
         "Permission:HangfireDashboard": "任务调度中心",
         "Permission:HangfireDashboard.View": "查看任务调度中心",
         "Permission:HangfireDashboard.Trigger": "立即执行任务",

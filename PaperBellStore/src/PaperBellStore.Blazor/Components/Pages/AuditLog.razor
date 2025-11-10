@@ -1,0 +1,306 @@
+@page "/audit-log"
+@using PaperBellStore.Blazor.Services
+@using MudBlazor
+@inherits BreadcrumbComponentBase
+@implements IAsyncDisposable
+
+<PageTitle>审计日志</PageTitle>
+
+<PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+	<MudCard Elevation="3">
+		<MudCardContent>
+			@* 过滤和搜索区域 *@
+			<MudText Typo="Typo.h5" Class="mb-4">
+				<MudIcon Icon="@Icons.Material.Filled.Filter" Size="@MudBlazor.Size.Small" Class="mr-2" />
+				过滤和搜索
+			</MudText>
+
+			<MudGrid Spacing="3">
+				<MudItem xs="12" sm="6" md="3">
+					<MudDatePicker @bind-Date="startDate" Label="开始时间" Variant="Variant.Outlined"
+						DateFormat="yyyy-MM-dd HH:mm" TimeEditable="true" />
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudDatePicker @bind-Date="endDate" Label="结束时间" Variant="Variant.Outlined"
+						DateFormat="yyyy-MM-dd HH:mm" TimeEditable="true" />
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudTextField @bind-Value="userName" Label="用户名" Variant="Variant.Outlined" Placeholder="搜索用户名..."
+						Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person" />
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudSelect T="string" @bind-Value="httpMethod" Label="HTTP方法" Variant="Variant.Outlined" Clearable>
+						<MudSelectItem T="string" Value="@((string?)null)">全部</MudSelectItem>
+						<MudSelectItem T="string" Value="@("GET")">GET</MudSelectItem>
+						<MudSelectItem T="string" Value="@("POST")">POST</MudSelectItem>
+						<MudSelectItem T="string" Value="@("PUT")">PUT</MudSelectItem>
+						<MudSelectItem T="string" Value="@("DELETE")">DELETE</MudSelectItem>
+						<MudSelectItem T="string" Value="@("PATCH")">PATCH</MudSelectItem>
+					</MudSelect>
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudTextField T="int?" @bind-Value="httpStatusCode" Label="HTTP状态码" Variant="Variant.Outlined"
+						Placeholder="如: 200, 404, 500" InputType="InputType.Number" />
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudTextField @bind-Value="urlKeyword" Label="URL关键词" Variant="Variant.Outlined"
+						Placeholder="搜索URL..." Adornment="Adornment.Start"
+						AdornmentIcon="@Icons.Material.Filled.Search" />
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudTextField @bind-Value="clientIpAddress" Label="客户端IP" Variant="Variant.Outlined"
+						Placeholder="搜索IP地址..." Adornment="Adornment.Start"
+						AdornmentIcon="@Icons.Material.Filled.Computer" />
+				</MudItem>
+				<MudItem xs="12" sm="6" md="3">
+					<MudCheckBox @bind-Value="onlyExceptions" Label="仅显示异常" Color="@MudBlazor.Color.Error" />
+				</MudItem>
+			</MudGrid>
+
+			<MudStack Row="true" Spacing="2" Class="mt-3">
+				<MudButton Variant="Variant.Outlined" Color="@MudBlazor.Color.Secondary"
+					StartIcon="@Icons.Material.Filled.Refresh" OnClick="ResetFilters">
+					重置过滤
+				</MudButton>
+				<MudButton Variant="Variant.Filled" Color="@MudBlazor.Color.Primary"
+					StartIcon="@Icons.Material.Filled.Search" OnClick="LoadAuditLogs">
+					搜索
+				</MudButton>
+			</MudStack>
+
+			<MudDivider Class="my-4" />
+
+			@* 审计日志列表区域 *@
+			<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="@MudBlazor.AlignItems.Center" Class="mb-3">
+				<MudText Typo="Typo.h5">
+					<MudIcon Icon="@Icons.Material.Filled.List" Size="@MudBlazor.Size.Small" Class="mr-2" />
+					审计日志列表
+					@if (totalCount > 0)
+					{
+						<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Primary" Class="ml-2">共
+							@totalCount 条</MudChip>
+					}
+				</MudText>
+				<MudButton Variant="Variant.Outlined" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Primary"
+					StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAuditLogs">
+					刷新
+				</MudButton>
+			</MudStack>
+
+			@if (isLoading)
+			{
+				<MudProgressLinear Color="@MudBlazor.Color.Primary" Indeterminate="true" Class="my-2" />
+				<MudText Class="text-center py-4">加载中...</MudText>
+			}
+			else if (auditLogs == null || !auditLogs.Any())
+			{
+				<MudAlert Severity="Severity.Info" Class="mt-3">
+					<MudIcon Icon="@Icons.Material.Filled.Info" Size="@MudBlazor.Size.Small" Class="mr-2" />
+					暂无审计日志数据
+				</MudAlert>
+			}
+			else
+			{
+				<MudDataGrid Items="@auditLogs" Hover="true" Striped="true" Dense="true" ReadOnly="true"
+					FilterMode="@MudBlazor.DataGridFilterMode.Simple" Class="mt-3" NoDataContent="暂无数据" Loading="@isLoading"
+					HideFooter="true" RowClick="@((DataGridRowClickEventArgs<AuditLogDto> args) => OnRowClick(args))">
+					<Columns>
+						<PropertyColumn Property="@(x => x.ExecutionTime)" Title="执行时间" Format="yyyy-MM-dd HH:mm:ss"
+							Sortable="true" />
+						<TemplateColumn Title="系统标签" Sortable="false">
+							<CellTemplate>
+								@if (context.Item.IsSystem)
+								{
+									<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Dark"
+										Variant="Variant.Outlined">
+										<MudIcon Icon="@Icons.Material.Filled.Computer" Size="@MudBlazor.Size.Small"
+											Class="mr-1" />
+										系统
+									</MudChip>
+								}
+								else
+								{
+									<MudText>-</MudText>
+								}
+							</CellTemplate>
+						</TemplateColumn>
+						<PropertyColumn Property="@(x => x.UserName)" Title="用户名" Sortable="true">
+							<CellTemplate>
+								@if (!string.IsNullOrEmpty(context.Item.UserName))
+								{
+									<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Info">
+										@context.Item.UserName</MudChip>
+								}
+								else
+								{
+									<MudText>-</MudText>
+								}
+							</CellTemplate>
+						</PropertyColumn>
+						<PropertyColumn Property="@(x => x.HttpMethod)" Title="HTTP方法" Sortable="true">
+							<CellTemplate>
+								@if (!string.IsNullOrEmpty(context.Item.HttpMethod))
+								{
+									<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Secondary">
+										@context.Item.HttpMethod</MudChip>
+								}
+								else
+								{
+									<MudText>-</MudText>
+								}
+							</CellTemplate>
+						</PropertyColumn>
+						<PropertyColumn Property="@(x => x.Url)" Title="URL" Sortable="false">
+							<CellTemplate>
+								<MudTooltip Text="@context.Item.Url">
+									<MudText
+										Style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+										@context.Item.Url
+									</MudText>
+								</MudTooltip>
+							</CellTemplate>
+						</PropertyColumn>
+						<PropertyColumn Property="@(x => x.HttpStatusCode)" Title="状态码" Sortable="true">
+							<CellTemplate>
+								@if (context.Item.HttpStatusCode.HasValue)
+								{
+									<MudChip T="string" Size="@MudBlazor.Size.Small"
+										Color="@GetStatusCodeColor(context.Item.HttpStatusCode)">
+										@context.Item.HttpStatusCode.Value</MudChip>
+								}
+								else
+								{
+									<MudText>-</MudText>
+								}
+							</CellTemplate>
+						</PropertyColumn>
+						<PropertyColumn Property="@(x => x.ExecutionDuration)" Title="执行时长(ms)" Sortable="true" />
+						<PropertyColumn Property="@(x => x.ClientIpAddress)" Title="客户端IP" Sortable="true">
+							<CellTemplate>
+								@if (!string.IsNullOrEmpty(context.Item.ClientIpAddress))
+								{
+									<MudText>@context.Item.ClientIpAddress</MudText>
+								}
+								else
+								{
+									<MudText>-</MudText>
+								}
+							</CellTemplate>
+						</PropertyColumn>
+						<TemplateColumn Title="异常" Sortable="false">
+							<CellTemplate>
+								@if (context.Item.HasException)
+								{
+									<MudIcon Icon="@Icons.Material.Filled.Error" Color="@MudBlazor.Color.Error"
+										Size="@MudBlazor.Size.Small" />
+								}
+								else
+								{
+									<MudText>-</MudText>
+								}
+							</CellTemplate>
+						</TemplateColumn>
+						<TemplateColumn Title="操作" Sortable="false">
+							<CellTemplate>
+								<MudButton Variant="Variant.Text" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Info"
+									StartIcon="@Icons.Material.Filled.Visibility"
+									OnClick="() => ShowAuditLogDetail(context.Item)" OnClick:StopPropagation="true">
+									详情
+								</MudButton>
+							</CellTemplate>
+						</TemplateColumn>
+					</Columns>
+				</MudDataGrid>
+
+				@* 自定义分页 *@
+				<MudStack Row="true" Justify="@MudBlazor.Justify.Center" Class="mt-4">
+					<MudPagination Count="@totalPages" Selected="@currentPage"
+						SelectedChanged="@((int page) => ChangePage(page))" BoundaryCount="2" MiddleCount="2" />
+				</MudStack>
+			}
+		</MudCardContent>
+	</MudCard>
+
+	@* 操作日志详情区域（可折叠） *@
+	@if (selectedAuditLogId.HasValue && selectedAuditLogActions != null && selectedAuditLogActions.Any())
+	{
+		<MudCard Elevation="3" Class="mt-4">
+			<MudCardContent>
+				<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="@MudBlazor.AlignItems.Center" Class="mb-3">
+					<MudText Typo="Typo.h5">
+						<MudIcon Icon="@Icons.Material.Filled.PlayArrow" Size="@MudBlazor.Size.Small" Class="mr-2" />
+						操作日志详情
+						<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Primary" Class="ml-2">
+							@selectedAuditLogActions.Count 条操作</MudChip>
+					</MudText>
+					<MudButton Variant="Variant.Text" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Secondary"
+						StartIcon="@Icons.Material.Filled.Close"
+						OnClick="() => { selectedAuditLogId = null; selectedAuditLogActions = null; StateHasChanged(); }">
+						关闭
+					</MudButton>
+				</MudStack>
+
+				<MudDataGrid Items="@selectedAuditLogActions" Hover="true" Striped="true" Dense="true" ReadOnly="true"
+					FilterMode="@MudBlazor.DataGridFilterMode.Simple" NoDataContent="暂无操作数据" HideFooter="true">
+					<Columns>
+						<TemplateColumn Title="系统标签" Sortable="false">
+							<CellTemplate>
+								@if (context.Item.IsSystem)
+								{
+									<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Dark"
+										Variant="Variant.Outlined">
+										<MudIcon Icon="@Icons.Material.Filled.Computer" Size="@MudBlazor.Size.Small"
+											Class="mr-1" />
+										系统
+									</MudChip>
+								}
+								else
+								{
+									<MudText>-</MudText>
+								}
+							</CellTemplate>
+						</TemplateColumn>
+						<PropertyColumn Property="@(x => x.ServiceName)" Title="服务名称" Sortable="true">
+							<CellTemplate>
+								<MudText Style="font-family: monospace; font-size: 0.9em;">@context.Item.ServiceName
+								</MudText>
+							</CellTemplate>
+						</PropertyColumn>
+						<PropertyColumn Property="@(x => x.MethodName)" Title="方法名称" Sortable="true">
+							<CellTemplate>
+								<MudText Style="font-family: monospace; font-size: 0.9em;">@context.Item.MethodName
+								</MudText>
+							</CellTemplate>
+						</PropertyColumn>
+						<PropertyColumn Property="@(x => x.ExecutionTime)" Title="执行时间" Format="yyyy-MM-dd HH:mm:ss.fff"
+							Sortable="true" />
+						<PropertyColumn Property="@(x => x.ExecutionDuration)" Title="执行时长(ms)" Sortable="true" />
+						<TemplateColumn Title="参数" Sortable="false">
+							<CellTemplate>
+								@if (!string.IsNullOrEmpty(context.Item.Parameters))
+								{
+									<MudExpansionPanels Elevation="0" MultiExpansion="false">
+										<MudExpansionPanel Text="查看参数" Icon="@Icons.Material.Filled.Code">
+											<MudPaper Elevation="0" Class="pa-2"
+												Style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85em; background-color: #f5f5f5;">
+												<MudText Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">
+													@FormatJson(context.Item.Parameters)
+												</MudText>
+											</MudPaper>
+										</MudExpansionPanel>
+									</MudExpansionPanels>
+								}
+								else
+								{
+									<MudText>-</MudText>
+								}
+							</CellTemplate>
+						</TemplateColumn>
+					</Columns>
+				</MudDataGrid>
+			</MudCardContent>
+		</MudCard>
+	}
+</MudContainer>
