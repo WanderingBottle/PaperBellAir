@@ -2,25 +2,28 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
+
 using PaperBellStore.Data;
 using PaperBellStore.EntityFrameworkCore;
+
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.Uow;
 
 namespace PaperBellStore.Blazor.Components.Pages;
 
-public partial class LogTest : IAsyncDisposable
+public partial class RunningLog : IAsyncDisposable
 {
     [Inject]
     protected IDbContextProvider<LogDbContext> LogDbContextProvider { get; set; } = default!;
 
     [Inject]
-    protected new ILogger<LogTest> Logger { get; set; } = default!;
+    protected new ILogger<RunningLog> Logger { get; set; } = default!;
 
     [Inject]
     protected IJSRuntime JSRuntime { get; set; } = default!;
@@ -33,7 +36,7 @@ public partial class LogTest : IAsyncDisposable
     private int totalCount = 0;
     private int currentPage = 1;
     private int pageSize = 20;
-    private int totalPages => (int)Math.Ceiling((double)totalCount / pageSize);
+    private int totalPages => (int)Math.Ceiling((double)totalCount/pageSize);
     private bool isLoading = false;
 
     // 过滤条件
@@ -56,14 +59,14 @@ public partial class LogTest : IAsyncDisposable
     {
         await base.OnInitializedAsync();
         // 默认查询最近7天的日志
-        endDate = DateTime.Now;
-        startDate = DateTime.Now.AddDays(-7);
+        endDate=DateTime.Now;
+        startDate=DateTime.Now.AddDays(-7);
         await LoadLogs();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if(firstRender)
         {
             await Task.Delay(100);
             await InsertBreadcrumb();
@@ -77,7 +80,7 @@ public partial class LogTest : IAsyncDisposable
     {
         try
         {
-            isLoading = true;
+            isLoading=true;
             StateHasChanged();
 
             // 在 Unit of Work 范围内使用 DbContext
@@ -86,47 +89,47 @@ public partial class LogTest : IAsyncDisposable
             var query = dbContext.AppLogs.AsQueryable();
 
             // 按级别过滤
-            if (!string.IsNullOrEmpty(selectedLevel))
+            if(!string.IsNullOrEmpty(selectedLevel))
             {
-                query = query.Where(x => x.Level == selectedLevel);
+                query=query.Where(x => x.Level==selectedLevel);
             }
 
             // 按时间范围过滤
-            if (startDate.HasValue)
+            if(startDate.HasValue)
             {
-                query = query.Where(x => x.Timestamp >= startDate.Value);
+                query=query.Where(x => x.Timestamp>=startDate.Value);
             }
-            if (endDate.HasValue)
+            if(endDate.HasValue)
             {
-                query = query.Where(x => x.Timestamp <= endDate.Value.AddDays(1)); // 包含结束日期当天
+                query=query.Where(x => x.Timestamp<=endDate.Value.AddDays(1)); // 包含结束日期当天
             }
 
             // 搜索消息
-            if (!string.IsNullOrEmpty(searchText))
+            if(!string.IsNullOrEmpty(searchText))
             {
-                query = query.Where(x => x.Message != null && x.Message.Contains(searchText));
+                query=query.Where(x => x.Message!=null&&x.Message.Contains(searchText));
             }
 
             // 获取总数
-            totalCount = await query.CountAsync();
+            totalCount=await query.CountAsync();
 
             // 分页查询
-            logs = await query
+            logs=await query
                 .OrderByDescending(x => x.Timestamp)
-                .Skip((currentPage - 1) * pageSize)
+                .Skip((currentPage-1)*pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             await uow.CompleteAsync();
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
-            Logger.LogError(ex, "加载日志列表失败");
-            logs = new List<AppLog>();
+            Logger.LogError(ex , "加载日志列表失败");
+            logs=new List<AppLog>();
         }
         finally
         {
-            isLoading = false;
+            isLoading=false;
             StateHasChanged();
         }
     }
@@ -138,21 +141,21 @@ public partial class LogTest : IAsyncDisposable
     {
         try
         {
-            isWriting = true;
-            writeResult = "";
+            isWriting=true;
+            writeResult="";
             StateHasChanged();
 
             // 将 Serilog 的级别名称映射到 .NET 的 LogLevel
             // Serilog 的 Fatal 对应 .NET 的 Critical
             // Serilog 的 Verbose 对应 .NET 的 Trace
             var logLevelName = testLogLevel;
-            if (logLevelName == "Fatal")
+            if(logLevelName=="Fatal")
             {
-                logLevelName = "Critical";
+                logLevelName="Critical";
             }
-            else if (logLevelName == "Verbose")
+            else if(logLevelName=="Verbose")
             {
-                logLevelName = "Trace";
+                logLevelName="Trace";
             }
 
             var logLevel = Enum.Parse<LogLevel>(logLevelName);
@@ -160,39 +163,39 @@ public partial class LogTest : IAsyncDisposable
                 ? $"测试日志 - {DateTime.Now:yyyy-MM-dd HH:mm:ss}"
                 : testLogMessage;
 
-            if (includeException)
+            if(includeException)
             {
                 try
                 {
                     throw new Exception("这是一条测试异常信息");
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
-                    Logger.Log(logLevel, ex, message);
+                    Logger.Log(logLevel , ex , message);
                 }
             }
             else
             {
-                Logger.Log(logLevel, message);
+                Logger.Log(logLevel , message);
             }
 
-            writeResult = $"日志写入成功！级别: {testLogLevel}, 消息: {message}";
+            writeResult=$"日志写入成功！级别: {testLogLevel}, 消息: {message}";
 
             // 等待一下让日志写入数据库
             await Task.Delay(500);
 
             // 刷新日志列表
-            currentPage = 1;
+            currentPage=1;
             await LoadLogs();
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
-            writeResult = $"日志写入失败: {ex.Message}";
-            Logger.LogError(ex, "写入测试日志失败");
+            writeResult=$"日志写入失败: {ex.Message}";
+            Logger.LogError(ex , "写入测试日志失败");
         }
         finally
         {
-            isWriting = false;
+            isWriting=false;
             StateHasChanged();
         }
     }
@@ -202,11 +205,11 @@ public partial class LogTest : IAsyncDisposable
     /// </summary>
     private async Task ResetFilters()
     {
-        selectedLevel = "";
-        endDate = DateTime.Now;
-        startDate = DateTime.Now.AddDays(-7);
-        searchText = "";
-        currentPage = 1;
+        selectedLevel="";
+        endDate=DateTime.Now;
+        startDate=DateTime.Now.AddDays(-7);
+        searchText="";
+        currentPage=1;
         await LoadLogs();
     }
 
@@ -215,9 +218,9 @@ public partial class LogTest : IAsyncDisposable
     /// </summary>
     private async Task ChangePage(int page)
     {
-        if (page >= 1 && page <= totalPages)
+        if(page>=1&&page<=totalPages)
         {
-            currentPage = page;
+            currentPage=page;
             await LoadLogs();
         }
     }
@@ -227,7 +230,7 @@ public partial class LogTest : IAsyncDisposable
     /// </summary>
     private void ShowLogDetail(AppLog log)
     {
-        selectedLog = log;
+        selectedLog=log;
         StateHasChanged();
     }
 
@@ -236,7 +239,7 @@ public partial class LogTest : IAsyncDisposable
     /// </summary>
     private void CloseLogDetail()
     {
-        selectedLog = null;
+        selectedLog=null;
         StateHasChanged();
     }
 
@@ -264,7 +267,7 @@ public partial class LogTest : IAsyncDisposable
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("eval", @"
+            await JSRuntime.InvokeVoidAsync("eval" , @"
                 (function() {
                     function insertBreadcrumb() {
                         const topbar = document.querySelector('.lpx-topbar') || 
@@ -326,7 +329,7 @@ public partial class LogTest : IAsyncDisposable
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("eval", @"
+            await JSRuntime.InvokeVoidAsync("eval" , @"
                 const breadcrumb = document.getElementById('breadcrumb-in-topbar');
                 if (breadcrumb) breadcrumb.remove();
             ");
