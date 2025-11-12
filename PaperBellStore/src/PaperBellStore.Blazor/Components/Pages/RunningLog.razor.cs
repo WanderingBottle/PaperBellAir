@@ -464,6 +464,21 @@ public partial class RunningLog : IAsyncDisposable
     }
 
     /// <summary>
+    /// 获取截断后的日志消息
+    /// </summary>
+    private static string GetShortMessage(string? message, int maxLength = 120)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return "-";
+        }
+
+        return message.Length <= maxLength
+            ? message
+            : $"{message[..maxLength]}…";
+    }
+
+    /// <summary>
     /// 页面卸载时清理
     /// </summary>
     public override async ValueTask DisposeAsync()

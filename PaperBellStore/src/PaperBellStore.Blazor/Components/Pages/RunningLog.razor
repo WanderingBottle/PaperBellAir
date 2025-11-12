@@ -121,7 +121,7 @@
 			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Message)" Caption="消息" Width="calc(100% - 520px)">
 				<DisplayTemplate>
 					<Tooltip Text="@context.Message">
-						<div class="running-log-message">@context.Message</div>
+						<div class="running-log-message">@GetShortMessage(context.Message)</div>
 					</Tooltip>
 				</DisplayTemplate>
 			</DataGridColumn>

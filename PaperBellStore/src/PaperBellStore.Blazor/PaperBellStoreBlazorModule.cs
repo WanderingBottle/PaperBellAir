@@ -525,5 +525,16 @@ public class PaperBellStoreBlazorModule : AbpModule
             {
                 TimeZone = TimeZoneInfo.Local
             });
+
+        // 注册审计日志清理定时任务
+        // 每天凌晨 3:00 清理过期审计日志
+        RecurringJob.AddOrUpdate<RecurringJobs.AuditLogCleanupRecurringJob>(
+            "audit-log-cleanup-daily",
+            job => job.ExecuteAsync(),
+            Cron.Daily(3, 0),
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Local
+            });
     }
 }
