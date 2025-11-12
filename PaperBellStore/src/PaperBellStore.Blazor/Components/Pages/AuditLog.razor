@@ -31,11 +31,10 @@
 		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
 			<Field>
 				<FieldLabel>用户名</FieldLabel>
-				<TextEdit @bind-Text="userName" Placeholder="搜索用户名...">
-					<Feedback>
-						<Icon Name="IconName.User" />
-					</Feedback>
-				</TextEdit>
+				<div class="search-input-wrapper">
+					<TextEdit @bind-Text="userName" Placeholder="搜索用户名..." Class="search-input" />
+					<Icon Name="IconName.User" Class="search-input-icon" />
+				</div>
 			</Field>
 		</Column>
 		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
@@ -61,21 +60,19 @@
 		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
 			<Field>
 				<FieldLabel>URL关键词</FieldLabel>
-				<TextEdit @bind-Text="urlKeyword" Placeholder="搜索URL...">
-					<Feedback>
-						<Icon Name="IconName.Search" />
-					</Feedback>
-				</TextEdit>
+				<div class="search-input-wrapper">
+					<TextEdit @bind-Text="urlKeyword" Placeholder="搜索URL..." Class="search-input" />
+					<Icon Name="IconName.Search" Class="search-input-icon" />
+				</div>
 			</Field>
 		</Column>
 		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
 			<Field>
 				<FieldLabel>客户端IP</FieldLabel>
-				<TextEdit @bind-Text="clientIpAddress" Placeholder="搜索IP地址...">
-					<Feedback>
-						<Icon Name="IconName.Desktop" />
-					</Feedback>
-				</TextEdit>
+				<div class="search-input-wrapper">
+					<TextEdit @bind-Text="clientIpAddress" Placeholder="搜索IP地址..." Class="search-input" />
+					<Icon Name="IconName.Desktop" Class="search-input-icon" />
+				</div>
 			</Field>
 		</Column>
 		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">

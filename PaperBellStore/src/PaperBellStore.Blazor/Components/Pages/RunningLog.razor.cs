@@ -75,6 +75,7 @@ public partial class RunningLog : IAsyncDisposable
         // 默认查询最近7天的日志
         endDate = DateTime.Now;
         startDate = DateTime.Now.AddDays(-7);
+        StartRefreshCooldown();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -409,18 +410,20 @@ public partial class RunningLog : IAsyncDisposable
             refreshCooldownCts.Dispose();
         }
 
-        refreshCooldownCts = new CancellationTokenSource();
+        var cts = new CancellationTokenSource();
+        refreshCooldownCts = cts;
         refreshCooldownSeconds = RefreshCooldownDuration;
+        _ = InvokeAsync(StateHasChanged);
 
         // 启动倒计时任务
         _ = Task.Run(async () =>
         {
             try
             {
-                while (refreshCooldownSeconds > 0 && !refreshCooldownCts.Token.IsCancellationRequested)
+                while (refreshCooldownSeconds > 0 && !cts.IsCancellationRequested)
                 {
-                    await Task.Delay(1000, refreshCooldownCts.Token);
-                    if (!refreshCooldownCts.Token.IsCancellationRequested)
+                    await Task.Delay(1000, cts.Token);
+                    if (!cts.IsCancellationRequested)
                     {
                         refreshCooldownSeconds--;
                         // 在 UI 线程上更新状态
@@ -434,13 +437,18 @@ public partial class RunningLog : IAsyncDisposable
             }
             finally
             {
-                if (!refreshCooldownCts.Token.IsCancellationRequested)
+                if (!cts.IsCancellationRequested)
                 {
                     refreshCooldownSeconds = 0;
                     await InvokeAsync(StateHasChanged);
                 }
+                if (ReferenceEquals(refreshCooldownCts, cts))
+                {
+                    refreshCooldownCts = null;
+                }
+                cts.Dispose();
             }
-        }, refreshCooldownCts.Token);
+        }, cts.Token);
     }
 
     /// <summary>

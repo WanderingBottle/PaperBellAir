@@ -98,3 +98,23 @@ body .modal.show .modal-dialog:has(.log-detail-modal) {
     word-break: break-all !important;
     white-space: pre-wrap !important;
 }
+
+/* 搜索输入框样式 */
+.search-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+    .search-input-wrapper .search-input {
+        width: 100%;
+        padding-right: 2.5rem;
+    }
+
+    .search-input-wrapper .search-input-icon {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--lpx-text-muted, #6c757d);
+        pointer-events: none;
+    }

@@ -3,6 +3,8 @@
 @using PaperBellStore.Blazor.Components
 @using PaperBellStore.Data
 @using System.Globalization
+@using Blazorise
+@using Blazorise.Components
 @using Blazorise.DataGrid
 @inherits BreadcrumbComponentBase
 @implements IAsyncDisposable
@@ -49,11 +51,10 @@
 		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
 			<Field>
 				<FieldLabel>搜索消息</FieldLabel>
-				<TextEdit @bind-Text="searchText" Placeholder="搜索日志消息...">
-					<Addon AddonType="AddonType.End">
-						<Icon Name="IconName.Search" />
-					</Addon>
-				</TextEdit>
+				<div class="search-input-wrapper">
+					<TextEdit @bind-Text="searchText" Placeholder="搜索日志消息..." Class="search-input" />
+					<Icon Name="IconName.Search" Class="search-input-icon" />
+				</div>
 			</Field>
 		</Column>
 	</Row>
