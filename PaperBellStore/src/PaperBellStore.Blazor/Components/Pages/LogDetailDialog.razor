@@ -1,10 +1,10 @@
 @using PaperBellStore.Data
 
-<ModalContent Size="@Size" Class="log-detail-modal" Style="max-width: 60vw; width: 56vw;">
+<ModalContent Size="@Size" Class="log-detail-modal">
 	<ModalHeader>
 		<ModalTitle>日志详情</ModalTitle>
 	</ModalHeader>
-	<ModalBody Style="overflow-x: hidden !important; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important;">
+	<ModalBody Class="log-detail-body">
 		<Row>
 			<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
 				<Text><strong>时间:</strong> @Log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</Text>
@@ -13,30 +13,26 @@
 				<Text><strong>级别:</strong></Text>
 				<Badge Color="@GetLevelColor(Log.Level)">@Log.Level</Badge>
 			</Column>
-			<Column ColumnSize="ColumnSize.Is12" Style="max-width: 100%; overflow: hidden;">
+			<Column ColumnSize="ColumnSize.Is12" Class="detail-section">
 				<Text><strong>消息:</strong></Text>
-				<Card Style="max-width: 100% !important; overflow: hidden !important;">
-					<CardBody Style="max-height: 200px; overflow-y: auto !important; overflow-x: hidden !important; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important; box-sizing: border-box !important;">
-						<div Style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-all !important; overflow-wrap: break-word !important; max-width: 100% !important;">
-							@Log.Message
-						</div>
+				<Card Class="detail-card">
+					<CardBody Class="detail-card-body">
+						<div class="detail-text">@Log.Message</div>
 					</CardBody>
 				</Card>
 			</Column>
-			@if(!string.IsNullOrEmpty(Log.Exception))
+			@if (!string.IsNullOrEmpty(Log.Exception))
 			{
-				<Column ColumnSize="ColumnSize.Is12" Style="max-width: 100%; overflow: hidden;">
+				<Column ColumnSize="ColumnSize.Is12" Class="detail-section">
 					<Text><strong>异常信息:</strong></Text>
-					<Card Style="max-width: 100% !important; overflow: hidden !important;">
-						<CardBody Style="max-height: 200px; overflow-y: auto !important; overflow-x: hidden !important; font-family: monospace; font-size: 0.9em; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important; box-sizing: border-box !important;">
-							<div Style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-all !important; overflow-wrap: break-word !important; margin: 0; max-width: 100% !important;">
-								@Log.Exception
-							</div>
+					<Card Class="detail-card">
+						<CardBody Class="detail-card-body detail-card-body-mono">
+							<div class="detail-text">@Log.Exception</div>
 						</CardBody>
 					</Card>
 				</Column>
 			}
-			@if(Log.OccurrenceCount>1)
+			@if (Log.OccurrenceCount > 1)
 			{
 				<Column ColumnSize="ColumnSize.Is12.OnMobile.Is4.OnDesktop">
 					<Text><strong>首次出现:</strong> @Log.FirstOccurrence?.ToString("yyyy-MM-dd HH:mm:ss")</Text>
@@ -51,28 +47,24 @@
 					</Badge>
 				</Column>
 			}
-			@if(!string.IsNullOrEmpty(Log.Properties))
+			@if (!string.IsNullOrEmpty(Log.Properties))
 			{
-				<Column ColumnSize="ColumnSize.Is12" Style="max-width: 100%; overflow: hidden;">
+				<Column ColumnSize="ColumnSize.Is12" Class="detail-section">
 					<Text><strong>属性 (JSON):</strong></Text>
-					<Card Style="max-width: 100% !important; overflow: hidden !important;">
-						<CardBody Style="max-height: 200px; overflow-y: auto !important; overflow-x: hidden !important; font-family: monospace; font-size: 0.9em; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important; box-sizing: border-box !important;">
-							<div Style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-all !important; overflow-wrap: break-word !important; margin: 0; max-width: 100% !important;">
-								@Log.Properties
-							</div>
+					<Card Class="detail-card">
+						<CardBody Class="detail-card-body detail-card-body-mono">
+							<div class="detail-text">@Log.Properties</div>
 						</CardBody>
 					</Card>
 				</Column>
 			}
-			@if(!string.IsNullOrEmpty(Log.LogEvent))
+			@if (!string.IsNullOrEmpty(Log.LogEvent))
 			{
-				<Column ColumnSize="ColumnSize.Is12" Style="max-width: 100%; overflow: hidden;">
+				<Column ColumnSize="ColumnSize.Is12" Class="detail-section">
 					<Text><strong>日志事件 (JSON):</strong></Text>
-					<Card Style="max-width: 100% !important; overflow: hidden !important;">
-						<CardBody Style="max-height: 200px; overflow-y: auto !important; overflow-x: hidden !important; font-family: monospace; font-size: 0.9em; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important; box-sizing: border-box !important;">
-							<div Style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-all !important; overflow-wrap: break-word !important; margin: 0; max-width: 100% !important;">
-								@Log.LogEvent
-							</div>
+					<Card Class="detail-card">
+						<CardBody Class="detail-card-body detail-card-body-mono">
+							<div class="detail-text">@Log.LogEvent</div>
 						</CardBody>
 					</Card>
 				</Column>
@@ -97,7 +89,7 @@
 
 	private async Task Cancel()
 	{
-		if(ModalInstance!=null&&ModalService!=null)
+		if (ModalInstance != null && ModalService != null)
 		{
 			await ModalService.Hide(ModalInstance);
 		}

@@ -13,7 +13,7 @@
 
 <PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
 
-<div class="mt-2" style="width: 100%; max-width: 100%; padding: 0 15px; overflow-x: hidden; box-sizing: border-box;">
+<div class="running-log-page">
 	@* 过滤和搜索区域 *@
 	<h5 class="mb-4">
 		<Icon Name="IconName.Filter" Size="IconSize.Small" Class="mr-2" />
@@ -101,7 +101,7 @@
 	</Row>
 
 	<DataGrid TItem="AppLog" @ref="dataGrid" Data="@logItems" ReadData="@OnReadData" TotalItems="@totalCount"
-		Hoverable="true" Striped="true" ShowPager="true" PageSize="20" Class="mt-3" Style="width: 100%; table-layout: fixed;">
+		Hoverable="true" Striped="true" ShowPager="true" PageSize="20" Class="running-log-grid">
 		<EmptyTemplate>
 			<Text>暂无数据</Text>
 		</EmptyTemplate>
@@ -121,9 +121,7 @@
 			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Message)" Caption="消息" Width="calc(100% - 520px)">
 				<DisplayTemplate>
 					<Tooltip Text="@context.Message">
-						<Text Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 100%;">
-							@context.Message
-						</Text>
+						<div class="running-log-message">@context.Message</div>
 					</Tooltip>
 				</DisplayTemplate>
 			</DataGridColumn>

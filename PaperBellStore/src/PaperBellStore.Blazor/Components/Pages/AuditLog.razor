@@ -1,6 +1,9 @@
 @page "/audit-log"
-@using PaperBellStore.Blazor.Services
+@using Blazorise
+@using Blazorise.Components
 @using Blazorise.DataGrid
+@using PaperBellStore.Blazor.Components
+@using PaperBellStore.Blazor.Services
 @inherits BreadcrumbComponentBase
 @implements IAsyncDisposable
 
@@ -8,358 +11,272 @@
 
 <PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
 
-<div class="mt-4" style="width: 100%; max-width: 100%; padding: 0 15px; overflow-x: hidden; box-sizing: border-box;">
-	@* 过滤和搜索区域 *@
-	<h5 class="mb-4">
-		<Icon Name="IconName.Filter" Size="IconSize.Small" Class="mr-2" />
-		过滤和搜索
-	</h5>
+<div class="audit-log-page mt-4">
+    @* 过滤条件 *@
+    <h5 class="mb-4 d-flex align-items-center">
+        <Icon Name="IconName.Filter" Size="IconSize.Small" Class="mr-2" />
+        过滤和搜索
+    </h5>
 
-	<Row>
-		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
-			<Field>
-				<FieldLabel>开始日期</FieldLabel>
-				<DateEdit @bind-Date="startDate" />
-			</Field>
-		</Column>
-		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
-			<Field>
-				<FieldLabel>结束日期</FieldLabel>
-				<DateEdit @bind-Date="endDate" />
-			</Field>
-		</Column>
-		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
-			<Field>
-				<FieldLabel>用户名</FieldLabel>
-				<div class="search-input-wrapper">
-					<TextEdit @bind-Text="userName" Placeholder="搜索用户名..." Class="search-input" />
-					<Icon Name="IconName.User" Class="search-input-icon" />
-				</div>
-			</Field>
-		</Column>
-		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
-			<Field>
-				<FieldLabel>HTTP方法</FieldLabel>
-				<Select TValue="string" SelectedValue="httpMethod"
-					SelectedValueChanged="@((string value) => httpMethod = value)">
-					<SelectItem TValue="string" Value="@((string?)null)">全部</SelectItem>
-					<SelectItem TValue="string" Value="@("GET")">GET</SelectItem>
-					<SelectItem TValue="string" Value="@("POST")">POST</SelectItem>
-					<SelectItem TValue="string" Value="@("PUT")">PUT</SelectItem>
-					<SelectItem TValue="string" Value="@("DELETE")">DELETE</SelectItem>
-					<SelectItem TValue="string" Value="@("PATCH")">PATCH</SelectItem>
-				</Select>
-			</Field>
-		</Column>
-		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
-			<Field>
-				<FieldLabel>HTTP状态码</FieldLabel>
-				<NumericEdit TValue="int?" @bind-Value="httpStatusCode" Placeholder="如: 200, 404, 500" />
-			</Field>
-		</Column>
-		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
-			<Field>
-				<FieldLabel>URL关键词</FieldLabel>
-				<div class="search-input-wrapper">
-					<TextEdit @bind-Text="urlKeyword" Placeholder="搜索URL..." Class="search-input" />
-					<Icon Name="IconName.Search" Class="search-input-icon" />
-				</div>
-			</Field>
-		</Column>
-		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
-			<Field>
-				<FieldLabel>客户端IP</FieldLabel>
-				<div class="search-input-wrapper">
-					<TextEdit @bind-Text="clientIpAddress" Placeholder="搜索IP地址..." Class="search-input" />
-					<Icon Name="IconName.Desktop" Class="search-input-icon" />
-				</div>
-			</Field>
-		</Column>
-		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
-			<Field>
-				<Check TValue="bool" @bind-Checked="onlyExceptions" Color="Color.Danger">
-					仅显示异常
-				</Check>
-			</Field>
-		</Column>
-	</Row>
+    <Row>
+        <Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+            <Field>
+                <FieldLabel>开始日期</FieldLabel>
+                <DateEdit @bind-Date="startDate" />
+            </Field>
+        </Column>
+        <Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+            <Field>
+                <FieldLabel>结束日期</FieldLabel>
+                <DateEdit @bind-Date="endDate" />
+            </Field>
+        </Column>
+        <Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+            <Field>
+                <FieldLabel>用户名</FieldLabel>
+                <TextEdit @bind-Text="userName" Placeholder="输入用户名..." />
+            </Field>
+        </Column>
+        <Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+            <Field>
+                <FieldLabel>HTTP 方法</FieldLabel>
+                <TextEdit @bind-Text="httpMethod" Placeholder="例如 GET / POST" />
+            </Field>
+        </Column>
+    </Row>
 
-	<Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mt-3">
-		<Column ColumnSize="ColumnSize.IsAuto">
-			<Row>
-				<Column ColumnSize="ColumnSize.IsAuto" Class="pr-2">
-					<Button Color="Color.Secondary" Clicked="ResetFilters">
-						<Icon Name="IconName.Sync" />
-						重置过滤
-					</Button>
-				</Column>
-				<Column ColumnSize="ColumnSize.IsAuto">
-					<Button Color="Color.Primary" Clicked="LoadAuditLogs">
-						<Icon Name="IconName.Search" />
-						搜索
-					</Button>
-				</Column>
-			</Row>
-		</Column>
-		<Column ColumnSize="ColumnSize.IsAuto">
-			<Button Color="Color.Primary" Clicked="LoadAuditLogs" Disabled="@(refreshCooldownSeconds > 0 || isLoading)">
-				<Icon Name="IconName.Sync" />
-				@GetRefreshButtonText()
-			</Button>
-		</Column>
-	</Row>
+    <Row>
+        <Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+            <Field>
+                <FieldLabel>HTTP 状态码</FieldLabel>
+                <NumericEdit TValue="int?" @bind-Value="httpStatusCode" Placeholder="例如 200" />
+            </Field>
+        </Column>
+        <Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+            <Field>
+                <FieldLabel>URL 关键字</FieldLabel>
+                <TextEdit @bind-Text="urlKeyword" Placeholder="URL 包含的关键字" />
+            </Field>
+        </Column>
+        <Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+            <Field>
+                <FieldLabel>客户端 IP</FieldLabel>
+                <TextEdit @bind-Text="clientIpAddress" Placeholder="客户端 IP 地址" />
+            </Field>
+        </Column>
+        <Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop" Class="d-flex align-items-end">
+            <Checkbox TValue="bool" Checked="@onlyExceptions" CheckedChanged="OnOnlyExceptionsChanged">仅显示异常</Checkbox>
+        </Column>
+    </Row>
 
-	<Divider Class="my-4" />
+    <Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mt-3">
+        <Column ColumnSize="ColumnSize.IsAuto">
+            <Row>
+                <Column ColumnSize="ColumnSize.IsAuto" Class="pr-2">
+                    <Button Color="Color.Secondary" Clicked="ResetFilters" Disabled="@isLoading">
+                        <Icon Name="IconName.Sync" />
+                        重置过滤
+                    </Button>
+                </Column>
+                <Column ColumnSize="ColumnSize.IsAuto">
+                    <Button Color="Color.Primary" Clicked="LoadAuditLogs" Disabled="@isLoading">
+                        <Icon Name="IconName.Search" />
+                        搜索
+                    </Button>
+                </Column>
+            </Row>
+        </Column>
+        <Column ColumnSize="ColumnSize.IsAuto">
+            <Button Color="Color.Primary" Clicked="LoadAuditLogs" Disabled="@(refreshCooldownSeconds > 0 || isLoading)">
+                <Icon Name="IconName.Sync" />
+                @GetRefreshButtonText()
+            </Button>
+        </Column>
+    </Row>
 
-	@* 审计日志列表区域 *@
-	<Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mb-3">
-		<Column ColumnSize="ColumnSize.IsAuto">
-			<h5>
-				<Icon Name="IconName.List" Size="IconSize.Small" Class="mr-2" />
-				审计日志列表
-				@if (totalCount > 0)
-				{
-					<Badge Color="Color.Primary" Pill="true" Class="ml-2">共 @totalCount 条</Badge>
-				}
-			</h5>
-		</Column>
-	</Row>
+    <Divider Class="my-4" />
 
-	@if (isLoading)
-	{
-		<Progress Color="Color.Primary" Animated="true" Class="my-2" />
-		<div class="text-center py-4">加载中...</div>
-	}
-	else if (auditLogs == null || !auditLogs.Any())
-	{
-		<Alert Color="Color.Info" Class="mt-3">
-			<Icon Name="IconName.Info" Size="IconSize.Small" Class="mr-2" />
-			暂无审计日志数据
-		</Alert>
-	}
-	else
-	{
-		<DataGrid TItem="AuditLogDto" Data="@auditLogs" Hoverable="true" Striped="true" Class="mt-3" ShowPager="false"
-			Style="width: 100%; table-layout: fixed;">
-			<EmptyTemplate>
-				<Text>暂无数据</Text>
-			</EmptyTemplate>
-			<DataGridColumns>
-				<DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.ExecutionTime)" Caption="执行时间"
-					Sortable="true" Width="12%">
-					<DisplayTemplate>
-						<Text>@context.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss")</Text>
-					</DisplayTemplate>
-				</DataGridColumn>
-				<DataGridColumn TItem="AuditLogDto" Caption="系统标签" Sortable="false" Width="8%">
-					<DisplayTemplate>
-						@if (context.IsSystem)
-						{
-							<Badge Color="Color.Dark" Pill="true">
-								<Icon Name="IconName.Desktop" Size="IconSize.Small" Class="mr-1" />
-								系统
-							</Badge>
-						}
-						else
-						{
-							<Text>-</Text>
-						}
-					</DisplayTemplate>
-				</DataGridColumn>
-				<DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.UserName)" Caption="用户名" Sortable="true"
-					Width="10%">
-					<DisplayTemplate>
-						@if (!string.IsNullOrEmpty(context.UserName))
-						{
-							<Badge Color="Color.Info" Pill="true">
-								@context.UserName
-							</Badge>
-						}
-						else
-						{
-							<Text>-</Text>
-						}
-					</DisplayTemplate>
-				</DataGridColumn>
-				<DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.HttpMethod)" Caption="HTTP方法" Sortable="true"
-					Width="8%">
-					<DisplayTemplate>
-						@if (!string.IsNullOrEmpty(context.HttpMethod))
-						{
-							<Badge Color="Color.Secondary" Pill="true">
-								@context.HttpMethod
-							</Badge>
-						}
-						else
-						{
-							<Text>-</Text>
-						}
-					</DisplayTemplate>
-				</DataGridColumn>
-				<DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.Url)" Caption="URL" Width="25%">
-					<DisplayTemplate>
-						<Tooltip Text="@context.Url">
-							<Text Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;">
-								@context.Url
-							</Text>
-						</Tooltip>
-					</DisplayTemplate>
-				</DataGridColumn>
-				<DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.HttpStatusCode)" Caption="状态码"
-					Sortable="true" Width="8%">
-					<DisplayTemplate>
-						@if (context.HttpStatusCode.HasValue)
-						{
-							<Badge Color="@GetStatusCodeColor(context.HttpStatusCode)" Pill="true">
-								@context.HttpStatusCode.Value
-							</Badge>
-						}
-						else
-						{
-							<Text>-</Text>
-						}
-					</DisplayTemplate>
-				</DataGridColumn>
-				<DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.ExecutionDuration)" Caption="执行时长(ms)"
-					Sortable="true" Width="10%" />
-				<DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.ClientIpAddress)" Caption="客户端IP"
-					Sortable="true" Width="10%">
-					<DisplayTemplate>
-						@if (!string.IsNullOrEmpty(context.ClientIpAddress))
-						{
-							<Text>@context.ClientIpAddress</Text>
-						}
-						else
-						{
-							<Text>-</Text>
-						}
-					</DisplayTemplate>
-				</DataGridColumn>
-				<DataGridColumn TItem="AuditLogDto" Caption="异常" Sortable="false" Width="5%">
-					<DisplayTemplate>
-						@if (context.HasException)
-						{
-							<Icon Name="IconName.ExclamationTriangle" Color="Color.Danger" Size="IconSize.Small" />
-						}
-						else
-						{
-							<Text>-</Text>
-						}
-					</DisplayTemplate>
-				</DataGridColumn>
-				<DataGridColumn TItem="AuditLogDto" Caption="操作" Sortable="false" Width="8%">
-					<DisplayTemplate>
-						<Button Color="Color.Info" Size="Size.Small" Clicked="@(() => ShowAuditLogDetail(context))">
-							<Icon Name="IconName.Eye" />
-							详情
-						</Button>
-					</DisplayTemplate>
-				</DataGridColumn>
-			</DataGridColumns>
-		</DataGrid>
+    @* 审计日志列表 *@
+    <Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mb-3">
+        <Column ColumnSize="ColumnSize.IsAuto">
+            <h5 class="d-flex align-items-center">
+                <Icon Name="IconName.List" Size="IconSize.Small" Class="mr-2" />
+                审计日志列表
+                @if (totalCount > 0)
+                {
+                    <Badge Color="Color.Primary" Pill="true" Class="ml-2">共 @totalCount 条</Badge>
+                }
+            </h5>
+        </Column>
+    </Row>
 
-		@* 自定义分页 *@
-		<Row JustifyContent="JustifyContent.Center" Class="mt-4">
-			<Column ColumnSize="ColumnSize.IsAuto">
-				<Pagination TotalItems="@totalCount" CurrentPage="@currentPage"
-					CurrentPageChanged="@((int page) => ChangePage(page))" />
-			</Column>
-		</Row>
-	}
+    <DataGrid TItem="AuditLogDto" Data="@(auditLogs ?? new List<AuditLogDto>())" RowClicked="@OnRowClick"
+        Hoverable="true" Striped="true" ShowPager="false" Class="audit-log-grid">
+        <EmptyTemplate>
+            <Text>暂无数据</Text>
+        </EmptyTemplate>
+        <DataGridColumns>
+            <DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.ExecutionTime)" Caption="时间" Sortable="false"
+                Width="170px">
+                <DisplayTemplate>
+                    <Text>@context.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss")</Text>
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.UserName)" Caption="用户名" Width="140px">
+                <DisplayTemplate>
+                    <Text>@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)</Text>
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.HttpMethod)" Caption="方法" Width="80px">
+                <DisplayTemplate>
+                    <Badge Color="Color.Dark" Pill="true">@context.HttpMethod</Badge>
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.Url)" Caption="请求地址"
+                Width="calc(100% - 640px)">
+                <DisplayTemplate>
+                    <Tooltip Text="@context.Url">
+                        <div class="text-truncate">@context.Url</div>
+                    </Tooltip>
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.HttpStatusCode)" Caption="状态码" Width="110px">
+                <DisplayTemplate>
+                    @if (context.HttpStatusCode.HasValue)
+                    {
+                        <Badge Color="@GetStatusCodeColor(context.HttpStatusCode)" Pill="true">
+                            @context.HttpStatusCode
+                        </Badge>
+                    }
+                    else
+                    {
+                        <Text>-</Text>
+                    }
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.ExecutionDuration)" Caption="耗时(ms)"
+                Width="110px">
+                <DisplayTemplate>
+                    <Text>@context.ExecutionDuration</Text>
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="AuditLogDto" Field="@nameof(AuditLogDto.ClientIpAddress)" Caption="客户端 IP"
+                Width="160px">
+                <DisplayTemplate>
+                    <Text>@(string.IsNullOrWhiteSpace(context.ClientIpAddress) ? "-" : context.ClientIpAddress)</Text>
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="AuditLogDto" Caption="异常" Width="90px">
+                <DisplayTemplate>
+                    @if (context.HasException)
+                    {
+                        <Badge Color="Color.Danger" Pill="true">是</Badge>
+                    }
+                    else
+                    {
+                        <Text>否</Text>
+                    }
+                </DisplayTemplate>
+            </DataGridColumn>
+            <DataGridColumn TItem="AuditLogDto" Caption="操作" Width="120px">
+                <DisplayTemplate>
+                    <Button Color="Color.Info" Size="Size.Small" Clicked="@(() => ShowAuditLogDetail(context))">
+                        <Icon Name="IconName.Eye" />
+                        详情
+                    </Button>
+                </DisplayTemplate>
+            </DataGridColumn>
+        </DataGridColumns>
+    </DataGrid>
 
-	@* 操作日志详情区域（可折叠） *@
-	@if (selectedAuditLogId.HasValue && selectedAuditLogActions != null && selectedAuditLogActions.Any())
-	{
-		<div class="mt-4">
-			<Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mb-3">
-				<Column ColumnSize="ColumnSize.IsAuto">
-					<h5>
-						<Icon Name="IconName.Play" Size="IconSize.Small" Class="mr-2" />
-						操作日志详情
-						<Badge Color="Color.Primary" Pill="true" Class="ml-2">
-							@selectedAuditLogActions.Count 条操作
-						</Badge>
-					</h5>
-				</Column>
-				<Column ColumnSize="ColumnSize.IsAuto">
-					<Button Color="Color.Secondary" Size="Size.Small"
-						Clicked="@(() => { selectedAuditLogId = null; selectedAuditLogActions = null; StateHasChanged(); })">
-						<Icon Name="IconName.Times" />
-						关闭
-					</Button>
-				</Column>
-			</Row>
+    @* 自定义分页 *@
+    @if (totalPages > 1)
+    {
+        <Pagination Class="mt-3">
+            <PaginationItem Disabled="@(currentPage == 1)">
+                <PaginationLink Clicked="@(() => ChangePage(currentPage - 1))">上一页</PaginationLink>
+            </PaginationItem>
+            @for (var pageNumber = 1; pageNumber <= totalPages; pageNumber++)
+            {
+                <PaginationItem Active="@(pageNumber == currentPage)">
+                    <PaginationLink Clicked="@(() => ChangePage(pageNumber))">@pageNumber</PaginationLink>
+                </PaginationItem>
+            }
+            <PaginationItem Disabled="@(currentPage == totalPages)">
+                <PaginationLink Clicked="@(() => ChangePage(currentPage + 1))">下一页</PaginationLink>
+            </PaginationItem>
+        </Pagination>
+    }
 
-			<DataGrid TItem="AuditLogActionDto" Data="@selectedAuditLogActions" Hoverable="true" Striped="true"
-				Responsive="true" ShowPager="false">
-				<EmptyTemplate>
-					<Text>暂无操作数据</Text>
-				</EmptyTemplate>
-				<DataGridColumns>
-					<DataGridColumn TItem="AuditLogActionDto" Caption="系统标签" Sortable="false">
-						<DisplayTemplate>
-							@if (context.IsSystem)
-							{
-								<Badge Color="Color.Dark" Pill="true">
-									<Icon Name="IconName.Desktop" Size="IconSize.Small" Class="mr-1" />
-									系统
-								</Badge>
-							}
-							else
-							{
-								<Text>-</Text>
-							}
-						</DisplayTemplate>
-					</DataGridColumn>
-					<DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.ServiceName)" Caption="服务名称"
-						Sortable="true">
-						<DisplayTemplate>
-							<Text Style="font-family: monospace; font-size: 0.9em;">@context.ServiceName</Text>
-						</DisplayTemplate>
-					</DataGridColumn>
-					<DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.MethodName)" Caption="方法名称"
-						Sortable="true">
-						<DisplayTemplate>
-							<Text Style="font-family: monospace; font-size: 0.9em;">@context.MethodName</Text>
-						</DisplayTemplate>
-					</DataGridColumn>
-					<DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.ExecutionTime)"
-						Caption="执行时间" Sortable="true">
-						<DisplayTemplate>
-							<Text>@context.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss.fff")</Text>
-						</DisplayTemplate>
-					</DataGridColumn>
-					<DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.ExecutionDuration)"
-						Caption="执行时长(ms)" Sortable="true" />
-					<DataGridColumn TItem="AuditLogActionDto" Caption="参数" Sortable="false">
-						<DisplayTemplate>
-							@if (!string.IsNullOrEmpty(context.Parameters))
-							{
-								<Collapse>
-									<CollapseHeader>
-										<Icon Name="IconName.Code" />
-										查看参数
-									</CollapseHeader>
-									<CollapseBody>
-										<Card>
-											<CardBody
-												Style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85em; background-color: #f5f5f5;">
-												<Text Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">
-													@FormatJson(context.Parameters)
-												</Text>
-											</CardBody>
-										</Card>
-									</CollapseBody>
-								</Collapse>
-							}
-							else
-							{
-								<Text>-</Text>
-							}
-						</DisplayTemplate>
-					</DataGridColumn>
-				</DataGridColumns>
-			</DataGrid>
-		</div>
-	}
+    @* 操作详情 *@
+    @if (selectedAuditLogId.HasValue && selectedAuditLogActions != null && selectedAuditLogActions.Any())
+    {
+        <Card Class="mt-4">
+            <CardHeader>
+                <CardTitle>操作详情</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <DataGrid TItem="AuditLogActionDto" Data="selectedAuditLogActions" Hoverable="true" Striped="true"
+                    ShowPager="false" Class="audit-log-action-grid">
+                    <EmptyTemplate>
+                        <Text>暂无操作记录</Text>
+                    </EmptyTemplate>
+                    <DataGridColumns>
+                        <DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.ExecutionTime)"
+                            Caption="时间" Width="170px">
+                            <DisplayTemplate>
+                                <Text>@context.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss")</Text>
+                            </DisplayTemplate>
+                        </DataGridColumn>
+                        <DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.ServiceName)"
+                            Caption="服务" Width="220px">
+                            <DisplayTemplate>
+                                <Text>@(string.IsNullOrWhiteSpace(context.ServiceName) ? "-" : context.ServiceName)</Text>
+                            </DisplayTemplate>
+                        </DataGridColumn>
+                        <DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.MethodName)" Caption="方法"
+                            Width="180px">
+                            <DisplayTemplate>
+                                <Text>@(string.IsNullOrWhiteSpace(context.MethodName) ? "-" : context.MethodName)</Text>
+                            </DisplayTemplate>
+                        </DataGridColumn>
+                        <DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.ExecutionDuration)"
+                            Caption="耗时(ms)" Width="120px">
+                            <DisplayTemplate>
+                                <Text>@context.ExecutionDuration</Text>
+                            </DisplayTemplate>
+                        </DataGridColumn>
+                        <DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.Parameters)" Caption="参数"
+                            Width="calc(100% - 690px)">
+                            <DisplayTemplate>
+                                @if (string.IsNullOrWhiteSpace(context.Parameters))
+                                {
+                                    <Text>-</Text>
+                                }
+                                else
+                                {
+                                    <Tooltip Text="@FormatJson(context.Parameters)">
+                                        <div class="text-truncate">@context.Parameters</div>
+                                    </Tooltip>
+                                }
+                            </DisplayTemplate>
+                        </DataGridColumn>
+                        <DataGridColumn TItem="AuditLogActionDto" Field="@nameof(AuditLogActionDto.IsSystem)" Caption="系统"
+                            Width="90px">
+                            <DisplayTemplate>
+                                @if (context.IsSystem)
+                                {
+                                    <Badge Color="Color.Warning" Pill="true">是</Badge>
+                                }
+                                else
+                                {
+                                    <Text>否</Text>
+                                }
+                            </DisplayTemplate>
+                        </DataGridColumn>
+                    </DataGridColumns>
+                </DataGrid>
+            </CardBody>
+        </Card>
+    }
 </div>

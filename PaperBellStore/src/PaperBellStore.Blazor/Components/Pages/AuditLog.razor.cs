@@ -315,6 +315,15 @@ public partial class AuditLog : IAsyncDisposable
     }
 
     /// <summary>
+    /// 切换“仅显示异常”开关
+    /// </summary>
+    private async Task OnOnlyExceptionsChanged(bool value)
+    {
+        onlyExceptions = value;
+        await LoadAuditLogs();
+    }
+
+    /// <summary>
     /// 显示审计日志详情对话框
     /// </summary>
     private async Task ShowAuditLogDetail(AuditLogDto auditLog)

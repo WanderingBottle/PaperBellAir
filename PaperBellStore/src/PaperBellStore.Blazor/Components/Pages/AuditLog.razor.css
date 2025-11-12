@@ -1,0 +1,19 @@
+.audit-log-page {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 15px;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+
+.audit-log-grid,
+.audit-log-action-grid {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.audit-log-grid ::deep table,
+.audit-log-action-grid ::deep table {
+  width: 100%;
+  table-layout: fixed;
+}

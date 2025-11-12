@@ -1,0 +1,41 @@
+.log-detail-modal {
+  width: 100%;
+}
+
+.log-detail-modal .modal-body {
+  overflow-x: hidden;
+  word-break: break-word;
+}
+
+.log-detail-body {
+  max-width: 100%;
+}
+
+.detail-section {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.detail-card {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.detail-card-body {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+.detail-card-body-mono {
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.detail-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}

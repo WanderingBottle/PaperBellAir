@@ -1,0 +1,26 @@
+.running-log-page {
+  margin-top: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 15px;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+
+.running-log-grid {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.running-log-grid ::deep table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.running-log-message {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
