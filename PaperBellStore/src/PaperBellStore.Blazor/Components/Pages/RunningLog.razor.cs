@@ -9,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
-using MudBlazor;
+using Blazorise;
+using Blazorise.DataGrid;
 
 using PaperBellStore.Blazor.Menus;
 using PaperBellStore.Data;
@@ -33,7 +34,7 @@ public partial class RunningLog : IAsyncDisposable
     protected IUnitOfWorkManager UnitOfWorkManager { get; set; } = default!;
 
     [Inject]
-    protected IDialogService DialogService { get; set; } = default!;
+    protected IModalService ModalService { get; set; } = default!;
 
     protected override string BreadcrumbId => "log-test-breadcrumb-container";
     protected override string CurrentPagePath => "/running-log";
@@ -41,12 +42,14 @@ public partial class RunningLog : IAsyncDisposable
                 PaperBellStoreMenus.RunningLog };
 
     // 日志列表
-    private List<AppLog>? logs;
     private int totalCount = 0;
-    private int currentPage = 1;
-    private int pageSize = 20;
-    private int totalPages => (int)Math.Ceiling((double)totalCount / pageSize);
     private bool isLoading = false;
+    private List<AppLog>? logItems; // 存储当前页的数据
+    protected DataGrid<AppLog>? dataGrid; // DataGrid 组件引用
+
+    // 分页状态（用于自定义分页器）
+    private int currentPageIndex = 0;
+    private int currentPageSize = 20;
 
     // 刷新按钮倒计时
     private int refreshCooldownSeconds = 0;
@@ -72,7 +75,6 @@ public partial class RunningLog : IAsyncDisposable
         // 默认查询最近7天的日志
         endDate = DateTime.Now;
         startDate = DateTime.Now.AddDays(-7);
-        await LoadLogs();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -82,26 +84,79 @@ public partial class RunningLog : IAsyncDisposable
 
         // 如果需要额外的处理，可以在这里添加
         // 注意：基类已经调用了 BreadcrumbService.MoveToTopBarAsync()
+
+        // 本地化分页器文本（每次渲染后都执行，因为分页器可能在数据加载后才显示）
+        await LocalizePager();
     }
 
     /// <summary>
-    /// 加载日志列表
+    /// 本地化分页器文本
     /// </summary>
-    private async Task LoadLogs()
+    private async Task LocalizePager()
     {
-        // 如果正在冷却中，直接返回
-        if (refreshCooldownSeconds > 0)
+        try
         {
-            return;
+            await JSRuntime.InvokeVoidAsync("localizeDataGridPager");
         }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "本地化分页器文本失败: {Message}", ex.Message);
+            // 如果 JS 函数不存在，使用 eval 方式
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", @"
+                    (function() {
+                        function localizeText() {
+                            var pager = document.querySelector('.mud-data-grid-pager');
+                            if (!pager) return;
+                            
+                            // 替换 'Rows per page' 文本
+                            var allElements = pager.querySelectorAll('*');
+                            allElements.forEach(function(el) {
+                                var text = el.textContent || el.innerText || '';
+                                if (text.includes('Rows per page')) {
+                                    el.textContent = text.replace('Rows per page', '每页行数');
+                                }
+                                // 替换 '1-10 of 100' 格式为 '1-10 共 100 条'
+                                if (text.match(/\d+-\d+\s+of\s+\d+/)) {
+                                    el.textContent = text.replace(/(\d+)-(\d+)\s+of\s+(\d+)/, '$1-$2 共 $3 条');
+                                }
+                            });
+                        }
+                        localizeText();
+                        // 使用 MutationObserver 监听 DOM 变化
+                        var observer = new MutationObserver(localizeText);
+                        var pager = document.querySelector('.mud-data-grid-pager');
+                        if (pager) {
+                            observer.observe(pager, { childList: true, subtree: true, characterData: true });
+                        }
+                    })();
+                ");
+            }
+            catch (Exception ex2)
+            {
+                Logger.LogWarning(ex2, "使用 eval 方式本地化分页器文本也失败");
+            }
+        }
+    }
 
-        // 启动冷却倒计时
-        StartRefreshCooldown();
-
+    /// <summary>
+    /// 服务器端数据加载（用于 Blazorise DataGrid）
+    /// </summary>
+    private async Task OnReadData(DataGridReadDataEventArgs<AppLog> e)
+    {
         try
         {
             isLoading = true;
             StateHasChanged();
+
+            // 获取分页信息
+            var page = e.Page;
+            var pageSize = e.PageSize;
+
+            // 同步分页状态
+            currentPageIndex = page;
+            currentPageSize = pageSize;
 
             // 在 Unit of Work 范围内使用 DbContext
             using var uow = UnitOfWorkManager.Begin(requiresNew: true);
@@ -133,24 +188,84 @@ public partial class RunningLog : IAsyncDisposable
             // 获取总数
             totalCount = await query.CountAsync();
 
+            // 应用排序
+            if (e.Columns != null && e.Columns.Any(c => c.SortDirection != SortDirection.Default))
+            {
+                var sortColumn = e.Columns.FirstOrDefault(c => c.SortDirection != SortDirection.Default);
+                if (sortColumn != null)
+                {
+                    query = sortColumn.Field switch
+                    {
+                        nameof(AppLog.Timestamp) => sortColumn.SortDirection == SortDirection.Descending
+                            ? query.OrderByDescending(x => x.Timestamp)
+                            : query.OrderBy(x => x.Timestamp),
+                        nameof(AppLog.Level) => sortColumn.SortDirection == SortDirection.Descending
+                            ? query.OrderByDescending(x => x.Level)
+                            : query.OrderBy(x => x.Level),
+                        nameof(AppLog.OccurrenceCount) => sortColumn.SortDirection == SortDirection.Descending
+                            ? query.OrderByDescending(x => x.OccurrenceCount)
+                            : query.OrderBy(x => x.OccurrenceCount),
+                        _ => query.OrderByDescending(x => x.Timestamp) // 默认按时间倒序
+                    };
+                }
+                else
+                {
+                    // 默认按时间倒序
+                    query = query.OrderByDescending(x => x.Timestamp);
+                }
+            }
+            else
+            {
+                // 默认按时间倒序
+                query = query.OrderByDescending(x => x.Timestamp);
+            }
+
             // 分页查询
-            logs = await query
-                .OrderByDescending(x => x.Timestamp)
-                .Skip((currentPage - 1) * pageSize)
+            var items = await query
+                .Skip(page * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             await uow.CompleteAsync();
+
+            // 存储数据到组件状态
+            logItems = items;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "加载日志列表失败");
-            logs = new List<AppLog>();
+            logItems = new List<AppLog>();
+            totalCount = 0;
         }
         finally
         {
             isLoading = false;
             StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// 加载日志列表（用于搜索按钮）
+    /// </summary>
+    private async Task LoadLogs()
+    {
+        // 如果正在冷却中，直接返回
+        if (refreshCooldownSeconds > 0)
+        {
+            return;
+        }
+
+        // 启动冷却倒计时
+        StartRefreshCooldown();
+
+        // 使用 Reload 方法刷新数据，保留分页状态
+        if (dataGrid != null)
+        {
+            await dataGrid.Reload();
+        }
+        else
+        {
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -204,7 +319,6 @@ public partial class RunningLog : IAsyncDisposable
             await Task.Delay(500);
 
             // 刷新日志列表
-            currentPage = 1;
             await LoadLogs();
         }
         catch (Exception ex)
@@ -227,19 +341,30 @@ public partial class RunningLog : IAsyncDisposable
         endDate = DateTime.Now;
         startDate = DateTime.Now.AddDays(-7);
         searchText = "";
-        currentPage = 1;
         await LoadLogs();
     }
 
     /// <summary>
-    /// 切换页码
+    /// 处理页码变化
     /// </summary>
-    private async Task ChangePage(int page)
+    private async Task OnPageChanged(int page)
     {
-        if (page >= 1 && page <= totalPages)
+        // DataGrid 会自动处理分页，我们只需要触发重新加载
+        if (dataGrid != null)
         {
-            currentPage = page;
-            await LoadLogs();
+            await dataGrid.Reload();
+        }
+    }
+
+    /// <summary>
+    /// 处理每页大小变化
+    /// </summary>
+    private async Task OnPageSizeChanged(int pageSize)
+    {
+        // DataGrid 会自动处理每页大小变化
+        if (dataGrid != null)
+        {
+            await dataGrid.Reload();
         }
     }
 
@@ -248,35 +373,27 @@ public partial class RunningLog : IAsyncDisposable
     /// </summary>
     private async Task ShowLogDetail(AppLog log)
     {
-        var parameters = new DialogParameters
+        await ModalService.Show<LogDetailDialog>(builder =>
         {
-            ["Log"] = log
-        };
-
-        var options = new DialogOptions
-        {
-            CloseOnEscapeKey = true,
-            MaxWidth = MaxWidth.Large,
-            FullWidth = true
-        };
-
-        await DialogService.ShowAsync<LogDetailDialog>("日志详情", parameters, options);
+            builder.Add(x => x.Log, log);
+            builder.Add(x => x.Size, ModalSize.ExtraLarge);
+        });
     }
 
     /// <summary>
     /// 获取日志级别的颜色
     /// </summary>
-    private Color GetLevelColor(string? level)
+    private Blazorise.Color GetLevelColor(string? level)
     {
         return level switch
         {
-            "Verbose" => Color.Secondary,
-            "Debug" => Color.Info,
-            "Information" => Color.Primary,
-            "Warning" => Color.Warning,
-            "Error" => Color.Error,
-            "Fatal" => Color.Dark,
-            _ => Color.Secondary
+            "Verbose" => Blazorise.Color.Secondary,
+            "Debug" => Blazorise.Color.Info,
+            "Information" => Blazorise.Color.Primary,
+            "Warning" => Blazorise.Color.Warning,
+            "Error" => Blazorise.Color.Danger,
+            "Fatal" => Blazorise.Color.Dark,
+            _ => Blazorise.Color.Secondary
         };
     }
 

@@ -1,194 +1,214 @@
-@using MudBlazor
 @using Volo.Abp.AuditLogging
+@using Blazorise.DataGrid
 
-<MudDialog>
-	<TitleContent>
-		<MudText Typo="Typo.h6">审计日志详情</MudText>
-	</TitleContent>
-	<DialogContent>
-		<MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true">
-			<MudTabPanel Text="基本信息">
-				<MudGrid Spacing="3" Class="mt-2">
-					<MudItem xs="12" sm="6">
-						<MudText><strong>执行时间:</strong> @AuditLog.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
-						</MudText>
-					</MudItem>
-					<MudItem xs="12" sm="6">
-						<MudText><strong>执行时长:</strong> @AuditLog.ExecutionDuration ms</MudText>
-					</MudItem>
-					<MudItem xs="12" sm="6">
-						<MudText><strong>用户名:</strong> @(AuditLog.UserName ?? "-")</MudText>
-					</MudItem>
-					<MudItem xs="12" sm="6">
-						<MudText><strong>租户名称:</strong> @(AuditLog.TenantName ?? "-")</MudText>
-					</MudItem>
-					<MudItem xs="12" sm="6">
-						<MudText><strong>客户端IP:</strong> @(AuditLog.ClientIpAddress ?? "-")</MudText>
-					</MudItem>
-					<MudItem xs="12" sm="6">
-						<MudText><strong>客户端名称:</strong> @(AuditLog.ClientName ?? "-")</MudText>
-					</MudItem>
-					<MudItem xs="12" sm="6">
-						<MudText><strong>关联ID:</strong> @(AuditLog.CorrelationId ?? "-")</MudText>
-					</MudItem>
-					<MudItem xs="12" sm="6">
-						<MudText><strong>应用名称:</strong> @(AuditLog.ApplicationName ?? "-")</MudText>
-					</MudItem>
-				</MudGrid>
-			</MudTabPanel>
+<ModalContent>
+	<ModalHeader>
+		<ModalTitle>审计日志详情</ModalTitle>
+	</ModalHeader>
+	<ModalBody>
+		<Tabs>
+			<Tab Name="basic" Title="基本信息">
+				<Row Class="mt-2">
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>执行时间:</strong> @AuditLog.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss.fff")</Text>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>执行时长:</strong> @AuditLog.ExecutionDuration ms</Text>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>用户名:</strong> @(AuditLog.UserName ?? "-")</Text>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>租户名称:</strong> @(AuditLog.TenantName ?? "-")</Text>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>客户端IP:</strong> @(AuditLog.ClientIpAddress ?? "-")</Text>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>客户端名称:</strong> @(AuditLog.ClientName ?? "-")</Text>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>关联ID:</strong> @(AuditLog.CorrelationId ?? "-")</Text>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>应用名称:</strong> @(AuditLog.ApplicationName ?? "-")</Text>
+					</Column>
+				</Row>
+			</Tab>
 
-			<MudTabPanel Text="HTTP请求信息">
-				<MudGrid Spacing="3" Class="mt-2">
-					<MudItem xs="12" sm="6">
-						<MudText><strong>HTTP方法:</strong></MudText>
+			<Tab Name="http" Title="HTTP请求信息">
+				<Row Class="mt-2">
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>HTTP方法:</strong></Text>
 						@if (!string.IsNullOrEmpty(AuditLog.HttpMethod))
 						{
-							<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Secondary"
-								Class="ml-2">
-								@AuditLog.HttpMethod</MudChip>
+							<Badge Color="Color.Secondary" Pill="true" Class="ml-2">
+								@AuditLog.HttpMethod
+							</Badge>
 						}
 						else
 						{
-							<MudText Class="ml-2">-</MudText>
+							<span class="ml-2">-</span>
 						}
-					</MudItem>
-					<MudItem xs="12" sm="6">
-						<MudText><strong>HTTP状态码:</strong></MudText>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+						<Text><strong>HTTP状态码:</strong></Text>
 						@if (AuditLog.HttpStatusCode.HasValue)
 						{
-							<MudChip T="string" Size="@MudBlazor.Size.Small"
-								Color="@GetStatusCodeColor(AuditLog.HttpStatusCode.Value)" Class="ml-2">
-								@AuditLog.HttpStatusCode.Value</MudChip>
+							<Badge Color="@GetStatusCodeColor(AuditLog.HttpStatusCode.Value)" Pill="true" Class="ml-2">
+								@AuditLog.HttpStatusCode.Value
+							</Badge>
 						}
 						else
 						{
-							<MudText Class="ml-2">-</MudText>
+							<span class="ml-2">-</span>
 						}
-					</MudItem>
-					<MudItem xs="12">
-						<MudText><strong>URL:</strong></MudText>
-						<MudPaper Elevation="0" Class="pa-2 mt-1" Style="background-color: #f5f5f5;">
-							<MudText Style="word-wrap: break-word; margin: 0; font-family: monospace;">@(AuditLog.Url ??
-																"-")</MudText>
-						</MudPaper>
-					</MudItem>
-					<MudItem xs="12">
-						<MudText><strong>浏览器信息:</strong></MudText>
-						<MudPaper Elevation="0" Class="pa-2 mt-1" Style="background-color: #f5f5f5;">
-							<MudText Style="word-wrap: break-word; margin: 0;">@(AuditLog.BrowserInfo ?? "-")</MudText>
-						</MudPaper>
-					</MudItem>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12">
+						<Text><strong>URL:</strong></Text>
+						<Card>
+							<CardBody Style="background-color: #f5f5f5;">
+								<Text Style="word-wrap: break-word; margin: 0; font-family: monospace;">@(AuditLog.Url
+																		?? "-")</Text>
+							</CardBody>
+						</Card>
+					</Column>
+					<Column ColumnSize="ColumnSize.Is12">
+						<Text><strong>浏览器信息:</strong></Text>
+						<Card>
+							<CardBody Style="background-color: #f5f5f5;">
+								<Text Style="word-wrap: break-word; margin: 0;">@(AuditLog.BrowserInfo ?? "-")</Text>
+							</CardBody>
+						</Card>
+					</Column>
 					@if (!string.IsNullOrEmpty(AuditLog.Comments))
 					{
-						<MudItem xs="12">
-							<MudText><strong>备注:</strong></MudText>
-							<MudPaper Elevation="0" Class="pa-2 mt-1" Style="background-color: #f5f5f5;">
-								<MudText Style="word-wrap: break-word; margin: 0;">@AuditLog.Comments</MudText>
-							</MudPaper>
-						</MudItem>
+						<Column ColumnSize="ColumnSize.Is12">
+							<Text><strong>备注:</strong></Text>
+							<Card>
+								<CardBody Style="background-color: #f5f5f5;">
+									<Text Style="word-wrap: break-word; margin: 0;">@AuditLog.Comments</Text>
+								</CardBody>
+							</Card>
+						</Column>
 					}
-				</MudGrid>
-			</MudTabPanel>
+				</Row>
+			</Tab>
 
-			<MudTabPanel Text="异常信息">
+			<Tab Name="exception" Title="异常信息">
 				@if (!string.IsNullOrEmpty(AuditLog.Exceptions))
 				{
-					<MudPaper Elevation="0" Class="pa-3 mt-2"
-						Style="max-height: 500px; overflow-y: auto; font-family: monospace; font-size: 0.9em; background-color: #fff3cd;">
-						<MudText Style="white-space: pre-wrap; word-wrap: break-word; margin: 0; color: #856404;">
-							@AuditLog.Exceptions
-						</MudText>
-					</MudPaper>
+					<Card>
+						<CardBody
+							Style="max-height: 500px; overflow-y: auto; font-family: monospace; font-size: 0.9em; background-color: #fff3cd;">
+							<Text Style="white-space: pre-wrap; word-wrap: break-word; margin: 0; color: #856404;">
+								@AuditLog.Exceptions
+							</Text>
+						</CardBody>
+					</Card>
 				}
 				else
 				{
-					<MudAlert Severity="Severity.Info" Class="mt-2">
-						<MudIcon Icon="@Icons.Material.Filled.Info" Size="@MudBlazor.Size.Small" Class="mr-2" />
+					<Alert Color="Color.Info" Class="mt-2">
+						<Icon Name="IconName.Info" Size="IconSize.Small" Class="mr-2" />
 						无异常信息
-					</MudAlert>
+					</Alert>
 				}
-			</MudTabPanel>
+			</Tab>
 
-			<MudTabPanel Text="操作列表">
+			<Tab Name="actions" Title="操作列表">
 				@if (FilteredActions != null && FilteredActions.Any())
 				{
-					<MudDataGrid Items="@FilteredActions" Hover="true" Striped="true" Dense="true" ReadOnly="true"
-						FilterMode="@MudBlazor.DataGridFilterMode.Simple" NoDataContent="暂无操作数据" HideFooter="true"
-						Class="mt-2">
-						<Columns>
-							<TemplateColumn Title="系统标签" Sortable="false">
-								<CellTemplate>
-									@if (IsSystemOperation(context.Item.ServiceName))
+					<DataGrid TItem="Volo.Abp.AuditLogging.AuditLogAction" Data="@FilteredActions" Hoverable="true"
+						Striped="true" Responsive="true" ShowPager="false" Class="mt-2">
+						<EmptyTemplate>
+							<Text>暂无操作数据</Text>
+						</EmptyTemplate>
+						<DataGridColumns>
+							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction" Caption="系统标签" Sortable="false">
+								<DisplayTemplate>
+									@if (IsSystemOperation(context.ServiceName))
 									{
-										<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Dark"
-											Variant="Variant.Outlined">
-											<MudIcon Icon="@Icons.Material.Filled.Computer" Size="@MudBlazor.Size.Small"
-												Class="mr-1" />
+										<Badge Color="Color.Dark" Pill="true">
+											<Icon Name="IconName.Desktop" Size="IconSize.Small" Class="mr-1" />
 											系统
-										</MudChip>
+										</Badge>
 									}
 									else
 									{
-										<MudText>-</MudText>
+										<Text>-</Text>
 									}
-								</CellTemplate>
-							</TemplateColumn>
-							<PropertyColumn Property="@(x => x.ServiceName)" Title="服务名称" Sortable="true">
-								<CellTemplate>
-									<MudText Style="font-family: monospace; font-size: 0.9em;">@context.Item.ServiceName
-									</MudText>
-								</CellTemplate>
-							</PropertyColumn>
-							<PropertyColumn Property="@(x => x.MethodName)" Title="方法名称" Sortable="true">
-								<CellTemplate>
-									<MudText Style="font-family: monospace; font-size: 0.9em;">@context.Item.MethodName
-									</MudText>
-								</CellTemplate>
-							</PropertyColumn>
-							<PropertyColumn Property="@(x => x.ExecutionTime)" Title="执行时间" Format="yyyy-MM-dd HH:mm:ss.fff"
+								</DisplayTemplate>
+							</DataGridColumn>
+							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
+								Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.ServiceName)" Caption="服务名称"
+								Sortable="true">
+								<DisplayTemplate>
+									<Text Style="font-family: monospace; font-size: 0.9em;">@context.ServiceName</Text>
+								</DisplayTemplate>
+							</DataGridColumn>
+							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
+								Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.MethodName)" Caption="方法名称"
+								Sortable="true">
+								<DisplayTemplate>
+									<Text Style="font-family: monospace; font-size: 0.9em;">@context.MethodName</Text>
+								</DisplayTemplate>
+							</DataGridColumn>
+							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
+								Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.ExecutionTime)" Caption="执行时间"
+								Sortable="true" DisplayFormat="yyyy-MM-dd HH:mm:ss.fff" />
+							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
+								Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.ExecutionDuration)" Caption="执行时长(ms)"
 								Sortable="true" />
-							<PropertyColumn Property="@(x => x.ExecutionDuration)" Title="执行时长(ms)" Sortable="true" />
-							<TemplateColumn Title="参数" Sortable="false">
-								<CellTemplate>
-									@if (!string.IsNullOrEmpty(context.Item.Parameters))
+							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction" Caption="参数" Sortable="false">
+								<DisplayTemplate>
+									@if (!string.IsNullOrEmpty(context.Parameters))
 									{
-										<MudExpansionPanels Elevation="0" MultiExpansion="false">
-											<MudExpansionPanel Text="查看参数" Icon="@Icons.Material.Filled.Code">
-												<MudPaper Elevation="0" Class="pa-2"
-													Style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85em; background-color: #f5f5f5;">
-													<MudText Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">
-														@FormatJson(context.Item.Parameters)
-													</MudText>
-												</MudPaper>
-											</MudExpansionPanel>
-										</MudExpansionPanels>
+										<Collapse>
+											<CollapseHeader>
+												<Icon Name="IconName.Code" />
+												查看参数
+											</CollapseHeader>
+											<CollapseBody>
+												<Card>
+													<CardBody
+														Style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85em; background-color: #f5f5f5;">
+														<Text Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">
+															@FormatJson(context.Parameters)
+														</Text>
+													</CardBody>
+												</Card>
+											</CollapseBody>
+										</Collapse>
 									}
 									else
 									{
-										<MudText>-</MudText>
+										<Text>-</Text>
 									}
-								</CellTemplate>
-							</TemplateColumn>
-						</Columns>
-					</MudDataGrid>
+								</DisplayTemplate>
+							</DataGridColumn>
+						</DataGridColumns>
+					</DataGrid>
 				}
 				else
 				{
-					<MudAlert Severity="Severity.Info" Class="mt-2">
-						<MudIcon Icon="@Icons.Material.Filled.Info" Size="@MudBlazor.Size.Small" Class="mr-2" />
+					<Alert Color="Color.Info" Class="mt-2">
+						<Icon Name="IconName.Info" Size="IconSize.Small" Class="mr-2" />
 						无操作记录
-					</MudAlert>
+					</Alert>
 				}
-			</MudTabPanel>
-		</MudTabs>
-	</DialogContent>
-	<DialogActions>
-		<MudButton OnClick="Cancel">关闭</MudButton>
-	</DialogActions>
-</MudDialog>
+			</Tab>
+		</Tabs>
+	</ModalBody>
+	<ModalFooter>
+		<Button Color="Color.Secondary" Clicked="@Cancel">关闭</Button>
+	</ModalFooter>
+</ModalContent>
 
 @code {
-	[CascadingParameter] IMudDialogInstance? MudDialog { get; set; }
+	[CascadingParameter] protected ModalInstance ModalInstance { get; set; } = default!;
+
+	[Inject] protected IModalService ModalService { get; set; } = default!;
 
 	[Parameter]
 	public Volo.Abp.AuditLogging.AuditLog AuditLog { get; set; } = default!;
@@ -215,20 +235,20 @@
 		serviceName.Contains(keyword, StringComparison.OrdinalIgnoreCase));
 	}
 
-	private void Cancel()
+	private async Task Cancel()
 	{
-		MudDialog?.Cancel();
+		await ModalService.Hide(ModalInstance);
 	}
 
-	private MudBlazor.Color GetStatusCodeColor(int statusCode)
+	private Color GetStatusCodeColor(int statusCode)
 	{
 		return statusCode switch
 		{
-			>= 200 and < 300 => MudBlazor.Color.Success, // 2xx
-			>= 300 and < 400 => MudBlazor.Color.Info, // 3xx
-			>= 400 and < 500 => MudBlazor.Color.Warning, // 4xx
-			>= 500 => MudBlazor.Color.Error, // 5xx
-			_ => MudBlazor.Color.Default
+			>= 200 and < 300 => Color.Success, // 2xx
+			>= 300 and < 400 => Color.Info, // 3xx
+			>= 400 and < 500 => Color.Warning, // 4xx
+			>= 500 => Color.Danger, // 5xx
+			_ => Color.Default
 		};
 	}
 

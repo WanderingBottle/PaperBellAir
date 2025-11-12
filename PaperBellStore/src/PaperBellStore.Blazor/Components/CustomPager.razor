@@ -1,0 +1,114 @@
+@namespace PaperBellStore.Blazor.Components
+@typeparam T
+
+<Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center"
+	Style="flex-wrap: wrap; gap: 1rem; padding: 0.5rem 0;">
+	@* 左侧：每页行数选择 *@
+	<Column ColumnSize="ColumnSize.IsAuto">
+		<Row AlignItems="AlignItems.Center">
+			<Column ColumnSize="ColumnSize.IsAuto">
+				<Text Style="white-space: nowrap; font-size: 0.875rem;">每页行数:</Text>
+			</Column>
+			<Column ColumnSize="ColumnSize.IsAuto">
+				<Select TValue="int" SelectedValue="@CurrentPageSize" SelectedValueChanged="@OnPageSizeChanged"
+					Style="min-width: 70px; max-width: 80px;">
+					@foreach (var size in PageSizeOptions)
+					{
+						<SelectItem TValue="int" Value="@size">@size</SelectItem>
+					}
+				</Select>
+			</Column>
+		</Row>
+	</Column>
+
+	@* 中间：显示范围信息 *@
+	<Column ColumnSize="ColumnSize.IsAuto">
+		<Text Style="white-space: nowrap; font-size: 0.875rem;">@GetPaginationInfo()</Text>
+	</Column>
+
+	@* 右侧：分页导航按钮 *@
+	<Column ColumnSize="ColumnSize.IsAuto">
+		<Row AlignItems="AlignItems.Center">
+			<Column ColumnSize="ColumnSize.IsAuto">
+				<Button Icon="IconName.AngleDoubleLeft" Size="Size.Small" Clicked="GoToFirstPage"
+					Disabled="@(CurrentPage == 0 || IsLoading)" Style="min-width: 32px; width: 32px; height: 32px;" />
+			</Column>
+			<Column ColumnSize="ColumnSize.IsAuto">
+				<Button Icon="IconName.AngleLeft" Size="Size.Small" Clicked="GoToPreviousPage"
+					Disabled="@(CurrentPage == 0 || IsLoading)" Style="min-width: 32px; width: 32px; height: 32px;" />
+			</Column>
+			<Column ColumnSize="ColumnSize.IsAuto">
+				<Button Icon="IconName.AngleRight" Size="Size.Small" Clicked="GoToNextPage"
+					Disabled="@(CurrentPage >= TotalPages - 1 || IsLoading)"
+					Style="min-width: 32px; width: 32px; height: 32px;" />
+			</Column>
+			<Column ColumnSize="ColumnSize.IsAuto">
+				<Button Icon="IconName.AngleDoubleRight" Size="Size.Small" Clicked="GoToLastPage"
+					Disabled="@(CurrentPage >= TotalPages - 1 || IsLoading)"
+					Style="min-width: 32px; width: 32px; height: 32px;" />
+			</Column>
+		</Row>
+	</Column>
+</Row>
+
+@code {
+	[Parameter] public int CurrentPage { get; set; }
+	[Parameter] public int CurrentPageSize { get; set; } = 20;
+	[Parameter] public int TotalItems { get; set; }
+	[Parameter] public bool IsLoading { get; set; }
+	[Parameter] public EventCallback<int> PageChanged { get; set; }
+	[Parameter] public EventCallback<int> PageSizeChanged { get; set; }
+	[Parameter] public int[] PageSizeOptions { get; set; } = new[] { 10, 20, 50, 100 };
+
+	private int TotalPages => TotalItems > 0 ? (int)Math.Ceiling((double)TotalItems / CurrentPageSize) : 0;
+
+	private string GetPaginationInfo()
+	{
+		if (TotalItems == 0)
+		{
+			return "0-0 共 0 条";
+		}
+
+		var start = CurrentPage * CurrentPageSize + 1;
+		var end = Math.Min((CurrentPage + 1) * CurrentPageSize, TotalItems);
+		return $"{start}-{end} 共 {TotalItems} 条";
+	}
+
+	private async Task OnPageSizeChanged(int newPageSize)
+	{
+		CurrentPageSize = newPageSize;
+		await PageSizeChanged.InvokeAsync(newPageSize);
+	}
+
+	private async Task GoToFirstPage()
+	{
+		if (CurrentPage > 0)
+		{
+			await PageChanged.InvokeAsync(0);
+		}
+	}
+
+	private async Task GoToPreviousPage()
+	{
+		if (CurrentPage > 0)
+		{
+			await PageChanged.InvokeAsync(CurrentPage - 1);
+		}
+	}
+
+	private async Task GoToNextPage()
+	{
+		if (CurrentPage < TotalPages - 1)
+		{
+			await PageChanged.InvokeAsync(CurrentPage + 1);
+		}
+	}
+
+	private async Task GoToLastPage()
+	{
+		if (CurrentPage < TotalPages - 1)
+		{
+			await PageChanged.InvokeAsync(TotalPages - 1);
+		}
+	}
+}

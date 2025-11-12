@@ -8,7 +8,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-using MudBlazor;
+using Blazorise;
+using Blazorise.DataGrid;
 
 using PaperBellStore.Blazor.Menus;
 using PaperBellStore.EntityFrameworkCore;
@@ -32,7 +33,7 @@ public partial class AuditLog : IAsyncDisposable
     protected IUnitOfWorkManager UnitOfWorkManager { get; set; } = default!;
 
     [Inject]
-    protected IDialogService DialogService { get; set; } = default!;
+    protected IModalService ModalService { get; set; } = default!;
 
     protected override string BreadcrumbId => "audit-log-breadcrumb-container";
     protected override string CurrentPagePath => "/audit-log";
@@ -258,7 +259,7 @@ public partial class AuditLog : IAsyncDisposable
     /// <summary>
     /// 处理行点击事件
     /// </summary>
-    private async Task OnRowClick(DataGridRowClickEventArgs<AuditLogDto> args)
+    private async Task OnRowClick(DataGridRowMouseEventArgs<AuditLogDto> args)
     {
         await SelectAuditLog(args.Item);
     }
@@ -341,37 +342,28 @@ public partial class AuditLog : IAsyncDisposable
 
         await uow.CompleteAsync();
 
-        var parameters = new DialogParameters
+        await ModalService.Show<AuditLogDetailDialog>(builder =>
         {
-            ["AuditLog"] = fullAuditLog,
-            ["Actions"] = actions
-        };
-
-        var options = new DialogOptions
-        {
-            CloseOnEscapeKey = true,
-            MaxWidth = MaxWidth.ExtraLarge,
-            FullWidth = true
-        };
-
-        await DialogService.ShowAsync<AuditLogDetailDialog>("审计日志详情", parameters, options);
+            builder.Add(x => x.AuditLog, fullAuditLog);
+            builder.Add(x => x.Actions, actions);
+        });
     }
 
     /// <summary>
     /// 获取HTTP状态码的颜色
     /// </summary>
-    private Color GetStatusCodeColor(int? statusCode)
+    private Blazorise.Color GetStatusCodeColor(int? statusCode)
     {
         if (!statusCode.HasValue)
-            return Color.Default;
+            return Blazorise.Color.Default;
 
         return statusCode.Value switch
         {
-            >= 200 and < 300 => Color.Success,  // 2xx
-            >= 300 and < 400 => Color.Info,     // 3xx
-            >= 400 and < 500 => Color.Warning,  // 4xx
-            >= 500 => Color.Error,              // 5xx
-            _ => Color.Default
+            >= 200 and < 300 => Blazorise.Color.Success,  // 2xx
+            >= 300 and < 400 => Blazorise.Color.Info,     // 3xx
+            >= 400 and < 500 => Blazorise.Color.Warning,  // 4xx
+            >= 500 => Blazorise.Color.Danger,              // 5xx
+            _ => Blazorise.Color.Default
         };
     }
 

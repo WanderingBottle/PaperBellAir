@@ -1,103 +1,119 @@
-@using MudBlazor
 @using PaperBellStore.Data
 
-<MudDialog>
-    <TitleContent>
-        <MudText Typo="Typo.h6">日志详情</MudText>
-    </TitleContent>
-    <DialogContent>
-        <MudGrid Spacing="3">
-            <MudItem xs="12" sm="6">
-                <MudText><strong>时间:</strong> @Log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudText>
-                    <strong>级别:</strong>
-                    <MudChip T="string" Size="@MudBlazor.Size.Small" Color="@GetLevelColor(Log.Level)">@Log.Level
-                    </MudChip>
-                </MudText>
-            </MudItem>
-            <MudItem xs="12">
-                <MudText><strong>消息:</strong></MudText>
-                <MudPaper Elevation="0" Class="pa-3 mt-2" Style="max-height: 200px; overflow-y: auto;">
-                    <MudText>@Log.Message</MudText>
-                </MudPaper>
-            </MudItem>
-            @if (!string.IsNullOrEmpty(Log.Exception))
-            {
-                <MudItem xs="12">
-                    <MudText><strong>异常信息:</strong></MudText>
-                    <MudPaper Elevation="0" Class="pa-3 mt-2"
-                        Style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
-                        <MudText Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">@Log.Exception</MudText>
-                    </MudPaper>
-                </MudItem>
-            }
-            @if (Log.OccurrenceCount > 1)
-            {
-                <MudItem xs="12" sm="4">
-                    <MudText><strong>首次出现:</strong> @Log.FirstOccurrence?.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudText><strong>最后出现:</strong> @Log.LastOccurrence?.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudText>
-                        <strong>出现次数:</strong>
-                        <MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Warning">
-                            @Log.OccurrenceCount 次</MudChip>
-                    </MudText>
-                </MudItem>
-            }
-            @if (!string.IsNullOrEmpty(Log.Properties))
-            {
-                <MudItem xs="12">
-                    <MudText><strong>属性 (JSON):</strong></MudText>
-                    <MudPaper Elevation="0" Class="pa-3 mt-2"
-                        Style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
-                        <MudText Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">@Log.Properties</MudText>
-                    </MudPaper>
-                </MudItem>
-            }
-            @if (!string.IsNullOrEmpty(Log.LogEvent))
-            {
-                <MudItem xs="12">
-                    <MudText><strong>日志事件 (JSON):</strong></MudText>
-                    <MudPaper Elevation="0" Class="pa-3 mt-2"
-                        Style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9em;">
-                        <MudText Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">@Log.LogEvent</MudText>
-                    </MudPaper>
-                </MudItem>
-            }
-        </MudGrid>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel">关闭</MudButton>
-    </DialogActions>
-</MudDialog>
+<ModalContent Size="@Size" Class="log-detail-modal" Style="max-width: 60vw; width: 56vw;">
+	<ModalHeader>
+		<ModalTitle>日志详情</ModalTitle>
+	</ModalHeader>
+	<ModalBody Style="overflow-x: hidden !important; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important;">
+		<Row>
+			<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+				<Text><strong>时间:</strong> @Log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</Text>
+			</Column>
+			<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+				<Text><strong>级别:</strong></Text>
+				<Badge Color="@GetLevelColor(Log.Level)">@Log.Level</Badge>
+			</Column>
+			<Column ColumnSize="ColumnSize.Is12" Style="max-width: 100%; overflow: hidden;">
+				<Text><strong>消息:</strong></Text>
+				<Card Style="max-width: 100% !important; overflow: hidden !important;">
+					<CardBody Style="max-height: 200px; overflow-y: auto !important; overflow-x: hidden !important; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important; box-sizing: border-box !important;">
+						<div Style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-all !important; overflow-wrap: break-word !important; max-width: 100% !important;">
+							@Log.Message
+						</div>
+					</CardBody>
+				</Card>
+			</Column>
+			@if(!string.IsNullOrEmpty(Log.Exception))
+			{
+				<Column ColumnSize="ColumnSize.Is12" Style="max-width: 100%; overflow: hidden;">
+					<Text><strong>异常信息:</strong></Text>
+					<Card Style="max-width: 100% !important; overflow: hidden !important;">
+						<CardBody Style="max-height: 200px; overflow-y: auto !important; overflow-x: hidden !important; font-family: monospace; font-size: 0.9em; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important; box-sizing: border-box !important;">
+							<div Style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-all !important; overflow-wrap: break-word !important; margin: 0; max-width: 100% !important;">
+								@Log.Exception
+							</div>
+						</CardBody>
+					</Card>
+				</Column>
+			}
+			@if(Log.OccurrenceCount>1)
+			{
+				<Column ColumnSize="ColumnSize.Is12.OnMobile.Is4.OnDesktop">
+					<Text><strong>首次出现:</strong> @Log.FirstOccurrence?.ToString("yyyy-MM-dd HH:mm:ss")</Text>
+				</Column>
+				<Column ColumnSize="ColumnSize.Is12.OnMobile.Is4.OnDesktop">
+					<Text><strong>最后出现:</strong> @Log.LastOccurrence?.ToString("yyyy-MM-dd HH:mm:ss")</Text>
+				</Column>
+				<Column ColumnSize="ColumnSize.Is12.OnMobile.Is4.OnDesktop">
+					<Text><strong>出现次数:</strong></Text>
+					<Badge Color="Color.Warning" Pill="true">
+						@Log.OccurrenceCount 次
+					</Badge>
+				</Column>
+			}
+			@if(!string.IsNullOrEmpty(Log.Properties))
+			{
+				<Column ColumnSize="ColumnSize.Is12" Style="max-width: 100%; overflow: hidden;">
+					<Text><strong>属性 (JSON):</strong></Text>
+					<Card Style="max-width: 100% !important; overflow: hidden !important;">
+						<CardBody Style="max-height: 200px; overflow-y: auto !important; overflow-x: hidden !important; font-family: monospace; font-size: 0.9em; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important; box-sizing: border-box !important;">
+							<div Style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-all !important; overflow-wrap: break-word !important; margin: 0; max-width: 100% !important;">
+								@Log.Properties
+							</div>
+						</CardBody>
+					</Card>
+				</Column>
+			}
+			@if(!string.IsNullOrEmpty(Log.LogEvent))
+			{
+				<Column ColumnSize="ColumnSize.Is12" Style="max-width: 100%; overflow: hidden;">
+					<Text><strong>日志事件 (JSON):</strong></Text>
+					<Card Style="max-width: 100% !important; overflow: hidden !important;">
+						<CardBody Style="max-height: 200px; overflow-y: auto !important; overflow-x: hidden !important; font-family: monospace; font-size: 0.9em; word-wrap: break-word !important; word-break: break-all !important; max-width: 100% !important; box-sizing: border-box !important;">
+							<div Style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-all !important; overflow-wrap: break-word !important; margin: 0; max-width: 100% !important;">
+								@Log.LogEvent
+							</div>
+						</CardBody>
+					</Card>
+				</Column>
+			}
+		</Row>
+	</ModalBody>
+	<ModalFooter>
+		<Button Color="Color.Secondary" Clicked="@Cancel">关闭</Button>
+	</ModalFooter>
+</ModalContent>
 
 @code {
-    [CascadingParameter] IMudDialogInstance? MudDialog { get; set; }
+	[CascadingParameter] protected ModalInstance ModalInstance { get; set; } = default!;
 
-    [Parameter]
-    public AppLog Log { get; set; } = default!;
+	[Inject] protected IModalService ModalService { get; set; } = default!;
 
-    private void Cancel()
-    {
-        MudDialog?.Cancel();
-    }
+	[Parameter]
+	public AppLog Log { get; set; } = default!;
 
-    private MudBlazor.Color GetLevelColor(string? level)
-    {
-        return level switch
-        {
-            "Verbose" => MudBlazor.Color.Secondary,
-            "Debug" => MudBlazor.Color.Info,
-            "Information" => MudBlazor.Color.Primary,
-            "Warning" => MudBlazor.Color.Warning,
-            "Error" => MudBlazor.Color.Error,
-            "Fatal" => MudBlazor.Color.Dark,
-            _ => MudBlazor.Color.Secondary
-        };
-    }
+	[Parameter]
+	public ModalSize Size { get; set; } = ModalSize.Default;
+
+	private async Task Cancel()
+	{
+		if(ModalInstance!=null&&ModalService!=null)
+		{
+			await ModalService.Hide(ModalInstance);
+		}
+	}
+
+	private Color GetLevelColor(string? level)
+	{
+		return level switch
+		{
+			"Verbose" => Color.Secondary,
+			"Debug" => Color.Info,
+			"Information" => Color.Primary,
+			"Warning" => Color.Warning,
+			"Error" => Color.Danger,
+			"Fatal" => Color.Dark,
+			_ => Color.Secondary
+		};
+	}
 }

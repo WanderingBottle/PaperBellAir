@@ -1,33 +1,100 @@
 #blazor-error-ui {
-  background: lightyellow;
-  bottom: 0;
-  box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-  display: none;
-  left: 0;
-  padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-  position: fixed;
-  width: 100%;
-  z-index: 1000;
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
 }
 
-#blazor-error-ui .dismiss {
-  cursor: pointer;
-  position: absolute;
-  right: 0.75rem;
-  top: 0.5rem;
-}
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
 
 :root {
-  --lpx-logo: url("/images/logo/leptonxlite/logo-light.png");
-  --lpx-logo-icon: url("/images/logo/leptonxlite/logo-light-thumbnail.png");
+    --lpx-logo: url("/images/logo/leptonxlite/logo-light.png");
+    --lpx-logo-icon: url("/images/logo/leptonxlite/logo-light-thumbnail.png");
 }
-:root .abp-account-layout .lpx-brand-logo {
-  --lpx-logo: url("/images/logo/leptonxlite/logo-dark.png");
-}
+
+    :root .abp-account-layout .lpx-brand-logo {
+        --lpx-logo: url("/images/logo/leptonxlite/logo-dark.png");
+    }
 
 /* 面包屑导航在顶栏的样式调整 */
 @media (max-width: 768px) {
-  .breadcrumb-top-bar {
-    left: 0 !important;
-  }
+    .breadcrumb-top-bar {
+        left: 0 !important;
+    }
+}
+
+/* 日志详情Modal样式 - 增加宽度 */
+/* 针对包含log-detail-modal类的Modal */
+.modal.show .modal-dialog:has(.log-detail-modal) {
+    max-width: 90vw !important;
+    width: 90vw !important;
+}
+
+/* 备用选择器（如果:has()不支持） */
+.modal.show .log-detail-modal ~ *,
+body .modal.show .modal-dialog:has(.log-detail-modal) {
+    max-width: 68vw !important;
+    width: 60vw !important;
+}
+
+/* 隐藏Modal右上角关闭按钮 */
+.log-detail-modal .modal-header .btn-close,
+.log-detail-modal .modal-header button[aria-label="Close"],
+.modal.show .log-detail-modal .modal-header .btn-close {
+    display: none !important;
+}
+
+/* 确保Modal内容不会溢出 */
+.log-detail-modal .modal-body {
+    overflow-x: hidden !important;
+    word-wrap: break-word !important;
+    word-break: break-all !important;
+    max-width: 100% !important;
+}
+
+    .log-detail-modal .modal-body * {
+        max-width: 100% !important;
+        overflow-wrap: break-word !important;
+        word-wrap: break-word !important;
+        box-sizing: border-box !important;
+    }
+
+/* 特别针对Card和CardBody */
+.log-detail-modal .card,
+.log-detail-modal .card-body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    word-wrap: break-word !important;
+    word-break: break-all !important;
+    box-sizing: border-box !important;
+}
+
+/* 针对Column元素 */
+.log-detail-modal .col-12,
+.log-detail-modal [class*="col-"] {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* 针对所有文本元素 */
+.log-detail-modal .modal-body p,
+.log-detail-modal .modal-body span,
+.log-detail-modal .modal-body div,
+.log-detail-modal .modal-body text {
+    max-width: 100% !important;
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+    word-break: break-all !important;
+    white-space: pre-wrap !important;
 }

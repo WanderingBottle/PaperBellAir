@@ -1,7 +1,9 @@
 @page "/running-log"
 @using PaperBellStore.Blazor.Services
-@using MudBlazor
+@using PaperBellStore.Blazor.Components
 @using PaperBellStore.Data
+@using System.Globalization
+@using Blazorise.DataGrid
 @inherits BreadcrumbComponentBase
 @implements IAsyncDisposable
 
@@ -9,140 +11,144 @@
 
 <PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-	<MudCard Elevation="3">
-		<MudCardContent>
-			@* 过滤和搜索区域 *@
-			<MudText Typo="Typo.h5" Class="mb-4">
-				<MudIcon Icon="@Icons.Material.Filled.Filter" Size="@MudBlazor.Size.Small" Class="mr-2" />
-				过滤和搜索
-			</MudText>
+<div class="mt-2" style="width: 100%; max-width: 100%; padding: 0 15px; overflow-x: hidden; box-sizing: border-box;">
+	@* 过滤和搜索区域 *@
+	<h5 class="mb-4">
+		<Icon Name="IconName.Filter" Size="IconSize.Small" Class="mr-2" />
+		过滤和搜索
+	</h5>
 
-			<MudGrid Spacing="3">
-				<MudItem xs="12" sm="6" md="3">
-					<MudSelect T="string" @bind-Value="selectedLevel" Label="日志级别" Variant="Variant.Outlined" Clearable>
-						<MudSelectItem T="string" Value="@((string?)null)">全部</MudSelectItem>
-						<MudSelectItem T="string" Value="@("Verbose")">Verbose</MudSelectItem>
-						<MudSelectItem T="string" Value="@("Debug")">Debug</MudSelectItem>
-						<MudSelectItem T="string" Value="@("Information")">Information</MudSelectItem>
-						<MudSelectItem T="string" Value="@("Warning")">Warning</MudSelectItem>
-						<MudSelectItem T="string" Value="@("Error")">Error</MudSelectItem>
-						<MudSelectItem T="string" Value="@("Fatal")">Fatal</MudSelectItem>
-					</MudSelect>
-				</MudItem>
-				<MudItem xs="12" sm="6" md="3">
-					<MudDatePicker @bind-Date="startDate" Label="开始时间" Variant="Variant.Outlined"
-						DateFormat="yyyy-MM-dd HH:mm" TimeEditable="true" />
-				</MudItem>
-				<MudItem xs="12" sm="6" md="3">
-					<MudDatePicker @bind-Date="endDate" Label="结束时间" Variant="Variant.Outlined"
-						DateFormat="yyyy-MM-dd HH:mm" TimeEditable="true" />
-				</MudItem>
-				<MudItem xs="12" sm="6" md="3">
-					<MudTextField @bind-Value="searchText" Label="搜索消息" Variant="Variant.Outlined"
-						Placeholder="搜索日志消息..." Adornment="Adornment.Start"
-						AdornmentIcon="@Icons.Material.Filled.Search" />
-				</MudItem>
-			</MudGrid>
+	<Row>
+		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+			<Field>
+				<FieldLabel>日志级别</FieldLabel>
+				<Select TValue="string" SelectedValue="selectedLevel"
+					SelectedValueChanged="@((string value) => selectedLevel = value)">
+					<SelectItem TValue="string" Value="@((string?)null)">全部</SelectItem>
+					<SelectItem TValue="string" Value="@("Verbose")">Verbose</SelectItem>
+					<SelectItem TValue="string" Value="@("Debug")">Debug</SelectItem>
+					<SelectItem TValue="string" Value="@("Information")">Information</SelectItem>
+					<SelectItem TValue="string" Value="@("Warning")">Warning</SelectItem>
+					<SelectItem TValue="string" Value="@("Error")">Error</SelectItem>
+					<SelectItem TValue="string" Value="@("Fatal")">Fatal</SelectItem>
+				</Select>
+			</Field>
+		</Column>
+		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+			<Field>
+				<FieldLabel>开始日期</FieldLabel>
+				<DateEdit @bind-Date="startDate" />
+			</Field>
+		</Column>
+		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+			<Field>
+				<FieldLabel>结束日期</FieldLabel>
+				<DateEdit @bind-Date="endDate" />
+			</Field>
+		</Column>
+		<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop">
+			<Field>
+				<FieldLabel>搜索消息</FieldLabel>
+				<TextEdit @bind-Text="searchText" Placeholder="搜索日志消息...">
+					<Addon AddonType="AddonType.End">
+						<Icon Name="IconName.Search" />
+					</Addon>
+				</TextEdit>
+			</Field>
+		</Column>
+	</Row>
 
-			<MudStack Row="true" Spacing="2" Class="mt-3">
-				<MudButton Variant="Variant.Outlined" Color="@MudBlazor.Color.Secondary"
-					StartIcon="@Icons.Material.Filled.Refresh" OnClick="ResetFilters">
-					重置过滤
-				</MudButton>
-				<MudButton Variant="Variant.Filled" Color="@MudBlazor.Color.Primary"
-					StartIcon="@Icons.Material.Filled.Search" OnClick="LoadLogs">
-					搜索
-				</MudButton>
-			</MudStack>
+	<Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mt-3">
+		<Column ColumnSize="ColumnSize.IsAuto">
+			<Row>
+				<Column ColumnSize="ColumnSize.IsAuto" Class="pr-2">
+					<Button Color="Color.Secondary" Clicked="ResetFilters">
+						<Icon Name="IconName.Sync" />
+						重置过滤
+					</Button>
+				</Column>
+				<Column ColumnSize="ColumnSize.IsAuto">
+					<Button Color="Color.Primary" Clicked="LoadLogs">
+						<Icon Name="IconName.Search" />
+						搜索
+					</Button>
+				</Column>
+			</Row>
+		</Column>
+		<Column ColumnSize="ColumnSize.IsAuto">
+			<Button Color="Color.Primary" Clicked="LoadLogs" Disabled="@(refreshCooldownSeconds > 0 || isLoading)">
+				<Icon Name="IconName.Sync" />
+				@GetRefreshButtonText()
+			</Button>
+		</Column>
+	</Row>
 
-			<MudDivider Class="my-4" />
+	<Divider Class="my-4" />
 
-			@* 日志列表区域 *@
-			<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="@MudBlazor.AlignItems.Center" Class="mb-3">
-				<MudText Typo="Typo.h5">
-					<MudIcon Icon="@Icons.Material.Filled.List" Size="@MudBlazor.Size.Small" Class="mr-2" />
-					日志列表
-					@if (totalCount > 0)
+	@* 日志列表区域 *@
+	<Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mb-3">
+		<Column ColumnSize="ColumnSize.IsAuto">
+			<h5>
+				<Icon Name="IconName.List" Size="IconSize.Small" Class="mr-2" />
+				日志列表
+				@if (totalCount > 0)
+				{
+					<Badge Color="Color.Primary" Pill="true" Class="ml-2">共 @totalCount 条</Badge>
+				}
+			</h5>
+		</Column>
+	</Row>
+
+	<DataGrid TItem="AppLog" @ref="dataGrid" Data="@logItems" ReadData="@OnReadData" TotalItems="@totalCount"
+		Hoverable="true" Striped="true" ShowPager="true" PageSize="20" Class="mt-3" Style="width: 100%; table-layout: fixed;">
+		<EmptyTemplate>
+			<Text>暂无数据</Text>
+		</EmptyTemplate>
+		<DataGridColumns>
+			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Timestamp)" Caption="时间" Sortable="true" Width="140px">
+				<DisplayTemplate>
+					<Text Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</Text>
+				</DisplayTemplate>
+			</DataGridColumn>
+			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Level)" Caption="级别" Sortable="true" Width="100px">
+				<DisplayTemplate>
+					<Badge Color="@GetLevelColor(context.Level)">
+						@context.Level
+					</Badge>
+				</DisplayTemplate>
+			</DataGridColumn>
+			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Message)" Caption="消息" Width="calc(100% - 520px)">
+				<DisplayTemplate>
+					<Tooltip Text="@context.Message">
+						<Text Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 100%;">
+							@context.Message
+						</Text>
+					</Tooltip>
+				</DisplayTemplate>
+			</DataGridColumn>
+			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.OccurrenceCount)" Caption="出现次数" Sortable="true"
+				Width="100px">
+				<DisplayTemplate>
+					@if (context.OccurrenceCount > 1)
 					{
-						<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Primary" Class="ml-2">共
-							@totalCount 条</MudChip>
+						<Badge Color="Color.Warning" Pill="true">
+							@context.OccurrenceCount 次
+						</Badge>
 					}
-				</MudText>
-				<MudButton Variant="Variant.Outlined" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Primary"
-					StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadLogs"
-					Disabled="@(refreshCooldownSeconds > 0 || isLoading)">
-					@GetRefreshButtonText()
-				</MudButton>
-			</MudStack>
-
-			@if (isLoading)
-			{
-				<MudProgressLinear Color="@MudBlazor.Color.Primary" Indeterminate="true" Class="my-2" />
-				<MudText Class="text-center py-4">加载中...</MudText>
-			}
-			else if (logs == null || !logs.Any())
-			{
-				<MudAlert Severity="Severity.Info" Class="mt-3">
-					<MudIcon Icon="@Icons.Material.Filled.Info" Size="@MudBlazor.Size.Small" Class="mr-2" />
-					暂无日志数据
-				</MudAlert>
-			}
-			else
-			{
-				<MudDataGrid Items="@logs" Hover="true" Striped="true" Dense="true" ReadOnly="true"
-					FilterMode="@MudBlazor.DataGridFilterMode.Simple" Class="mt-3" NoDataContent="暂无数据" Loading="@isLoading"
-					HideFooter="true">
-					<Columns>
-						<PropertyColumn Property="@(x => x.Timestamp)" Title="时间" Format="yyyy-MM-dd HH:mm:ss"
-							Sortable="true" />
-						<PropertyColumn Property="@(x => x.Level)" Title="级别" Sortable="true">
-							<CellTemplate>
-								<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@GetLevelColor(context.Item.Level)">
-									@context.Item.Level</MudChip>
-							</CellTemplate>
-						</PropertyColumn>
-						<PropertyColumn Property="@(x => x.Message)" Title="消息" Sortable="false">
-							<CellTemplate>
-								<MudTooltip Text="@context.Item.Message">
-									<MudText
-										Style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-										@context.Item.Message
-									</MudText>
-								</MudTooltip>
-							</CellTemplate>
-						</PropertyColumn>
-						<PropertyColumn Property="@(x => x.OccurrenceCount)" Title="出现次数" Sortable="true">
-							<CellTemplate>
-								@if (context.Item.OccurrenceCount > 1)
-								{
-									<MudChip T="string" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Warning">
-										@context.Item.OccurrenceCount 次</MudChip>
-								}
-								else
-								{
-									<MudText>-</MudText>
-								}
-							</CellTemplate>
-						</PropertyColumn>
-						<TemplateColumn Title="操作" Sortable="false">
-							<CellTemplate>
-								<MudButton Variant="Variant.Text" Size="@MudBlazor.Size.Small" Color="@MudBlazor.Color.Info"
-									StartIcon="@Icons.Material.Filled.Visibility"
-									OnClick="() => ShowLogDetail(context.Item)">
-									详情
-								</MudButton>
-							</CellTemplate>
-						</TemplateColumn>
-					</Columns>
-				</MudDataGrid>
-
-				@* 自定义分页（因为 MudDataGrid 的分页需要服务器端分页支持） *@
-				<MudStack Row="true" Justify="@MudBlazor.Justify.Center" Class="mt-4">
-					<MudPagination Count="@totalPages" Selected="@currentPage"
-						SelectedChanged="@((int page) => ChangePage(page))" BoundaryCount="2" MiddleCount="2" />
-				</MudStack>
-			}
-		</MudCardContent>
-	</MudCard>
-</MudContainer>
+					else
+					{
+						<Text>-</Text>
+					}
+				</DisplayTemplate>
+			</DataGridColumn>
+			<DataGridColumn TItem="AppLog" Caption="操作" Sortable="false" Width="120px">
+				<DisplayTemplate>
+					<Button Color="Color.Info" Size="Size.Small" Clicked="@(() => ShowLogDetail(context))">
+						<Icon Name="IconName.Eye" />
+						详情
+					</Button>
+				</DisplayTemplate>
+			</DataGridColumn>
+		</DataGridColumns>
+	</DataGrid>
+</div>
