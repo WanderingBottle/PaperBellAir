@@ -13,9 +13,9 @@
 
 <PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
 
-<div class="running-log-page">
+<div class="running-log-page mt-4">
 	@* 过滤和搜索区域 *@
-	<h5 class="mb-4">
+	<h5 class="mb-4 d-flex align-items-center">
 		<Icon Name="IconName.Filter" Size="IconSize.Small" Class="mr-2" />
 		过滤和搜索
 	</h5>
@@ -89,7 +89,7 @@
 	@* 日志列表区域 *@
 	<Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mb-3">
 		<Column ColumnSize="ColumnSize.IsAuto">
-			<h5>
+			<h5 class="d-flex align-items-center">
 				<Icon Name="IconName.List" Size="IconSize.Small" Class="mr-2" />
 				日志列表
 				@if (totalCount > 0)
@@ -100,32 +100,33 @@
 		</Column>
 	</Row>
 
-	<DataGrid TItem="AppLog" @ref="dataGrid" Data="@logItems" ReadData="@OnReadData" TotalItems="@totalCount"
-		Hoverable="true" Striped="true" ShowPager="true" PageSize="20" Class="running-log-grid">
+	<DataGrid TItem="AppLog" Data="@(logItems ?? new List<AppLog>())" RowClicked="@OnRowClick" Hoverable="true"
+		Striped="true" ShowPager="false" Class="running-log-grid">
 		<EmptyTemplate>
 			<Text>暂无数据</Text>
 		</EmptyTemplate>
 		<DataGridColumns>
-			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Timestamp)" Caption="时间" Sortable="true" Width="140px">
+			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Timestamp)" Caption="时间" Sortable="false"
+				Width="170px">
 				<DisplayTemplate>
-					<Text Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</Text>
+					<Text>@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</Text>
 				</DisplayTemplate>
 			</DataGridColumn>
-			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Level)" Caption="级别" Sortable="true" Width="100px">
+			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Level)" Caption="级别" Sortable="false" Width="100px">
 				<DisplayTemplate>
 					<Badge Color="@GetLevelColor(context.Level)">
 						@context.Level
 					</Badge>
 				</DisplayTemplate>
 			</DataGridColumn>
-			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Message)" Caption="消息" Width="calc(100% - 520px)">
+			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Message)" Caption="消息" Width="calc(100% - 640px)">
 				<DisplayTemplate>
 					<Tooltip Text="@context.Message">
-						<div class="running-log-message">@GetShortMessage(context.Message)</div>
+						<div class="text-truncate">@GetShortMessage(context.Message)</div>
 					</Tooltip>
 				</DisplayTemplate>
 			</DataGridColumn>
-			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.OccurrenceCount)" Caption="出现次数" Sortable="true"
+			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.OccurrenceCount)" Caption="出现次数" Sortable="false"
 				Width="100px">
 				<DisplayTemplate>
 					@if (context.OccurrenceCount > 1)
@@ -150,4 +151,47 @@
 			</DataGridColumn>
 		</DataGridColumns>
 	</DataGrid>
+
+	@* 自定义分页 *@
+	@if (totalPages > 1)
+	{
+		<Pagination Class="mt-3">
+			<PaginationItem Disabled="@(currentPage == 1)">
+				<PaginationLink Clicked="@(() => ChangePage(currentPage - 1))">上一页</PaginationLink>
+			</PaginationItem>
+			@if (currentPage > 3 && totalPages > 7)
+			{
+				<PaginationItem>
+					<PaginationLink Clicked="@(() => ChangePage(1))">1</PaginationLink>
+				</PaginationItem>
+				@if (currentPage > 4)
+				{
+					<PaginationItem Disabled="true">
+						<PaginationLink>...</PaginationLink>
+					</PaginationItem>
+				}
+			}
+			@foreach (var pageNumber in GetPageNumbers())
+			{
+				<PaginationItem Active="@(pageNumber == currentPage)">
+					<PaginationLink Clicked="@(() => ChangePage(pageNumber))">@pageNumber</PaginationLink>
+				</PaginationItem>
+			}
+			@if (currentPage < totalPages - 2 && totalPages > 7)
+			{
+				@if (currentPage < totalPages - 3)
+				{
+					<PaginationItem Disabled="true">
+						<PaginationLink>...</PaginationLink>
+					</PaginationItem>
+				}
+				<PaginationItem>
+					<PaginationLink Clicked="@(() => ChangePage(totalPages))">@totalPages</PaginationLink>
+				</PaginationItem>
+			}
+			<PaginationItem Disabled="@(currentPage == totalPages)">
+				<PaginationLink Clicked="@(() => ChangePage(currentPage + 1))">下一页</PaginationLink>
+			</PaginationItem>
+		</Pagination>
+	}
 </div>

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.JSInterop;
 
 using Blazorise;
 using Blazorise.DataGrid;
@@ -42,14 +41,12 @@ public partial class RunningLog : IAsyncDisposable
                 PaperBellStoreMenus.RunningLog };
 
     // 日志列表
+    private List<AppLog>? logItems;
     private int totalCount = 0;
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalPages => (int)Math.Ceiling((double)totalCount / pageSize);
     private bool isLoading = false;
-    private List<AppLog>? logItems; // 存储当前页的数据
-    protected DataGrid<AppLog>? dataGrid; // DataGrid 组件引用
-
-    // 分页状态（用于自定义分页器）
-    private int currentPageIndex = 0;
-    private int currentPageSize = 20;
 
     // 刷新按钮倒计时
     private int refreshCooldownSeconds = 0;
@@ -75,89 +72,32 @@ public partial class RunningLog : IAsyncDisposable
         // 默认查询最近7天的日志
         endDate = DateTime.Now;
         startDate = DateTime.Now.AddDays(-7);
-        StartRefreshCooldown();
+        await LoadLogs();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // 先调用基类方法，让 BreadcrumbService 处理面包屑移动
         await base.OnAfterRenderAsync(firstRender);
-
-        // 如果需要额外的处理，可以在这里添加
-        // 注意：基类已经调用了 BreadcrumbService.MoveToTopBarAsync()
-
-        // 本地化分页器文本（每次渲染后都执行，因为分页器可能在数据加载后才显示）
-        await LocalizePager();
     }
 
     /// <summary>
-    /// 本地化分页器文本
+    /// 加载日志列表
     /// </summary>
-    private async Task LocalizePager()
+    private async Task LoadLogs()
     {
-        try
+        // 如果正在冷却中，直接返回
+        if (refreshCooldownSeconds > 0)
         {
-            await JSRuntime.InvokeVoidAsync("localizeDataGridPager");
+            return;
         }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "本地化分页器文本失败: {Message}", ex.Message);
-            // 如果 JS 函数不存在，使用 eval 方式
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("eval", @"
-                    (function() {
-                        function localizeText() {
-                            var pager = document.querySelector('.mud-data-grid-pager');
-                            if (!pager) return;
-                            
-                            // 替换 'Rows per page' 文本
-                            var allElements = pager.querySelectorAll('*');
-                            allElements.forEach(function(el) {
-                                var text = el.textContent || el.innerText || '';
-                                if (text.includes('Rows per page')) {
-                                    el.textContent = text.replace('Rows per page', '每页行数');
-                                }
-                                // 替换 '1-10 of 100' 格式为 '1-10 共 100 条'
-                                if (text.match(/\d+-\d+\s+of\s+\d+/)) {
-                                    el.textContent = text.replace(/(\d+)-(\d+)\s+of\s+(\d+)/, '$1-$2 共 $3 条');
-                                }
-                            });
-                        }
-                        localizeText();
-                        // 使用 MutationObserver 监听 DOM 变化
-                        var observer = new MutationObserver(localizeText);
-                        var pager = document.querySelector('.mud-data-grid-pager');
-                        if (pager) {
-                            observer.observe(pager, { childList: true, subtree: true, characterData: true });
-                        }
-                    })();
-                ");
-            }
-            catch (Exception ex2)
-            {
-                Logger.LogWarning(ex2, "使用 eval 方式本地化分页器文本也失败");
-            }
-        }
-    }
 
-    /// <summary>
-    /// 服务器端数据加载（用于 Blazorise DataGrid）
-    /// </summary>
-    private async Task OnReadData(DataGridReadDataEventArgs<AppLog> e)
-    {
+        // 启动冷却倒计时
+        StartRefreshCooldown();
+
         try
         {
             isLoading = true;
             StateHasChanged();
-
-            // 获取分页信息
-            var page = e.Page;
-            var pageSize = e.PageSize;
-
-            // 同步分页状态
-            currentPageIndex = page;
-            currentPageSize = pageSize;
 
             // 在 Unit of Work 范围内使用 DbContext
             using var uow = UnitOfWorkManager.Begin(requiresNew: true);
@@ -189,41 +129,12 @@ public partial class RunningLog : IAsyncDisposable
             // 获取总数
             totalCount = await query.CountAsync();
 
-            // 应用排序
-            if (e.Columns != null && e.Columns.Any(c => c.SortDirection != SortDirection.Default))
-            {
-                var sortColumn = e.Columns.FirstOrDefault(c => c.SortDirection != SortDirection.Default);
-                if (sortColumn != null)
-                {
-                    query = sortColumn.Field switch
-                    {
-                        nameof(AppLog.Timestamp) => sortColumn.SortDirection == SortDirection.Descending
-                            ? query.OrderByDescending(x => x.Timestamp)
-                            : query.OrderBy(x => x.Timestamp),
-                        nameof(AppLog.Level) => sortColumn.SortDirection == SortDirection.Descending
-                            ? query.OrderByDescending(x => x.Level)
-                            : query.OrderBy(x => x.Level),
-                        nameof(AppLog.OccurrenceCount) => sortColumn.SortDirection == SortDirection.Descending
-                            ? query.OrderByDescending(x => x.OccurrenceCount)
-                            : query.OrderBy(x => x.OccurrenceCount),
-                        _ => query.OrderByDescending(x => x.Timestamp) // 默认按时间倒序
-                    };
-                }
-                else
-                {
-                    // 默认按时间倒序
-                    query = query.OrderByDescending(x => x.Timestamp);
-                }
-            }
-            else
-            {
-                // 默认按时间倒序
-                query = query.OrderByDescending(x => x.Timestamp);
-            }
+            // 默认按时间倒序
+            query = query.OrderByDescending(x => x.Timestamp);
 
             // 分页查询
             var items = await query
-                .Skip(page * pageSize)
+                .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
@@ -242,31 +153,6 @@ public partial class RunningLog : IAsyncDisposable
         {
             isLoading = false;
             StateHasChanged();
-        }
-    }
-
-    /// <summary>
-    /// 加载日志列表（用于搜索按钮）
-    /// </summary>
-    private async Task LoadLogs()
-    {
-        // 如果正在冷却中，直接返回
-        if (refreshCooldownSeconds > 0)
-        {
-            return;
-        }
-
-        // 启动冷却倒计时
-        StartRefreshCooldown();
-
-        // 使用 Reload 方法刷新数据，保留分页状态
-        if (dataGrid != null)
-        {
-            await dataGrid.Reload();
-        }
-        else
-        {
-            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -342,31 +228,72 @@ public partial class RunningLog : IAsyncDisposable
         endDate = DateTime.Now;
         startDate = DateTime.Now.AddDays(-7);
         searchText = "";
+        currentPage = 1;
         await LoadLogs();
     }
 
     /// <summary>
-    /// 处理页码变化
+    /// 切换页码
     /// </summary>
-    private async Task OnPageChanged(int page)
+    private async Task ChangePage(int page)
     {
-        // DataGrid 会自动处理分页，我们只需要触发重新加载
-        if (dataGrid != null)
+        if (page >= 1 && page <= totalPages)
         {
-            await dataGrid.Reload();
+            currentPage = page;
+            await LoadLogs();
         }
     }
 
     /// <summary>
-    /// 处理每页大小变化
+    /// 获取要显示的页码列表（当前页附近的页码，排除已单独显示的第一页和最后一页）
     /// </summary>
-    private async Task OnPageSizeChanged(int pageSize)
+    private IEnumerable<int> GetPageNumbers()
     {
-        // DataGrid 会自动处理每页大小变化
-        if (dataGrid != null)
+        const int maxVisiblePages = 7; // 最多显示7个页码
+        var pages = new List<int>();
+
+        if (totalPages <= maxVisiblePages)
         {
-            await dataGrid.Reload();
+            // 如果总页数少于等于最大显示数，显示所有页码
+            for (var i = 1; i <= totalPages; i++)
+            {
+                pages.Add(i);
+            }
         }
+        else
+        {
+            // 计算起始页码：当前页前后各显示3页
+            var halfVisible = maxVisiblePages / 2;
+            var startPage = Math.Max(2, currentPage - halfVisible); // 从第2页开始，避免与单独显示的第1页重复
+            var endPage = Math.Min(totalPages - 1, startPage + maxVisiblePages - 1); // 到倒数第2页，避免与单独显示的最后页重复
+
+            // 如果结束页码接近总页数，调整起始页码
+            if (endPage == totalPages - 1)
+            {
+                startPage = Math.Max(2, totalPages - maxVisiblePages);
+            }
+
+            // 确保起始页码至少为2（因为第1页单独显示）
+            startPage = Math.Max(2, startPage);
+            // 确保结束页码最多为总页数-1（因为最后一页单独显示）
+            endPage = Math.Min(totalPages - 1, endPage);
+
+            for (var i = startPage; i <= endPage; i++)
+            {
+                pages.Add(i);
+            }
+        }
+
+        return pages;
+    }
+
+    /// <summary>
+    /// 处理行点击事件
+    /// </summary>
+    private async Task OnRowClick(DataGridRowMouseEventArgs<AppLog> args)
+    {
+        // 可以在这里添加行点击的处理逻辑，如果需要的话
+        await Task.CompletedTask;
     }
 
     /// <summary>

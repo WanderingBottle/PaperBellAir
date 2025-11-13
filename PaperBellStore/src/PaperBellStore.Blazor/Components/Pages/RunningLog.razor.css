@@ -1,5 +1,4 @@
 .running-log-page {
-  margin-top: 0.5rem;
   width: 100%;
   max-width: 100%;
   padding: 0 15px;
@@ -15,12 +14,4 @@
 .running-log-grid ::deep table {
   width: 100%;
   table-layout: fixed;
-}
-
-.running-log-message {
-  display: block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
