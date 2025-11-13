@@ -518,6 +518,7 @@ public class PaperBellStoreBlazorModule : AbpModule
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
         {
             DashboardTitle = "PaperBellStore 任务调度中心",
+            AppPath = "/hangfire-recurring-jobs",
             Authorization = new[] { new HangfireAuthorizationFilter() },
             StatsPollingInterval = 2000,  // 统计信息轮询间隔（毫秒）
             DisplayStorageConnectionString = false,  // 不显示连接字符串
