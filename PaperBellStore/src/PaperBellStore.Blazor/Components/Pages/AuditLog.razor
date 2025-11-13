@@ -65,7 +65,9 @@
             </Field>
         </Column>
         <Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnTablet.Is3.OnDesktop" Class="d-flex align-items-end">
-            <Checkbox TValue="bool" Checked="@onlyExceptions" CheckedChanged="OnOnlyExceptionsChanged">仅显示异常</Checkbox>
+            <Field>
+                <Check TValue="bool" Checked="@onlyExceptions" CheckedChanged="OnOnlyExceptionsChanged">仅显示异常</Check>
+            </Field>
         </Column>
     </Row>
 
