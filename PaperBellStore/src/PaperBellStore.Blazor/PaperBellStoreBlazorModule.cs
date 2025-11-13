@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using OpenIddict.Validation.AspNetCore;
@@ -59,8 +60,11 @@ using Hangfire.PostgreSql;
 using Hangfire.Dashboard;
 using PaperBellStore.Blazor.Filters;
 using PaperBellStore.Blazor.Middleware;
+using PaperBellStore.Blazor.Uow;
 using Volo.Abp.EventBus.RabbitMq;
 using Volo.Abp.EventBus.Distributed;
+using Volo.Abp.Uow;
+using Microsoft.AspNetCore.Http;
 using PaperBellStore.MessageQueue;
 // using PaperBellStore.Blazor.RecurringJobs; // SampleRecurringJob 已移除
 
@@ -172,6 +176,14 @@ public class PaperBellStoreBlazorModule : AbpModule
         }
         // 注册面包屑服务（每个组件实例一个）
         context.Services.AddScoped<Services.BreadcrumbService>();
+
+        // 确保 IHttpContextAccessor 已注册（Blazor Server 需要）
+        context.Services.AddHttpContextAccessor();
+
+        // 替换默认的 IUnitOfWorkTransactionBehaviourProvider 为安全版本
+        // 修复在 Blazor Server 模式下 HttpContext.Request 可能为 null 的问题
+        context.Services.Replace(
+            ServiceDescriptor.Transient<IUnitOfWorkTransactionBehaviourProvider, SafeAspNetCoreUnitOfWorkTransactionBehaviourProvider>());
 
         ConfigureAuthentication(context);
         ConfigureUrls(configuration);
