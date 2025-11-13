@@ -7,7 +7,7 @@
 @using PaperBellStore.Blazor.Services
 @inherits BreadcrumbComponentBase
 
-<PageTitle>周期性任务管理</PageTitle>
+<PageTitle>@L["RecurringJobs:Title"]</PageTitle>
 
 <PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
 
@@ -18,16 +18,16 @@
 				<CardHeader>
 					<CardTitle>
 						<Icon Name="IconName.Clock" />
-						周期性任务管理
+						@L["RecurringJobs:Title"]
 					</CardTitle>
 					<CardActions>
 						<Button Color="Color.Primary" Clicked="RefreshJobs" Disabled="@isLoading">
 							<Icon Name="IconName.Sync" />
-							刷新
+							@L["RecurringJobs:Refresh"]
 						</Button>
 						<Button Color="Color.Info" Clicked="NavigateToDashboard">
 							<Icon Name="IconName.Forward" />
-							打开 Hangfire Dashboard
+							@L["RecurringJobs:OpenDashboard"]
 						</Button>
 					</CardActions>
 				</CardHeader>
@@ -35,73 +35,99 @@
 					@if (!string.IsNullOrEmpty(lastError))
 					{
 						<Alert Color="Color.Danger">
-							<strong>加载失败：</strong> @lastError
+							<strong>@L["RecurringJobs:LoadFailedTitle"]</strong> @lastError
 						</Alert>
 					}
 					else
 					{
 						<Alert Color="Color.Light">
-							当前任务数：@lastCount
+							@L["RecurringJobs:CurrentTaskCount", lastCount]
 						</Alert>
 					}
 
 					<DataGrid TItem="RecurringJobDto" Data="@recurringJobs" Hoverable="true" Striped="true"
 						ShowPager="false" Class="recurring-job-grid">
 						<EmptyTemplate>
-							<Text>暂无任务</Text>
+							<Text>@L["RecurringJobs:NoJobs"]</Text>
 						</EmptyTemplate>
 						<DataGridColumns>
 							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.Id)"
-								Caption="任务 ID" />
-							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.Cron)" Caption="Cron"
-								Width="220px" />
+								Caption="@L["RecurringJobs:ColumnId"]" />
+							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.Cron)"
+								Caption="@L["RecurringJobs:ColumnCron"]" Width="220px" />
 							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.TimeZoneId)"
-								Caption="时区" Width="220px" />
+								Caption="@L["RecurringJobs:ColumnTimeZone"]" Width="220px" />
 							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.NextExecution)"
-								Caption="下次执行" Width="190px">
+								Caption="@L["RecurringJobs:ColumnNextExecution"]" Width="190px">
 								<DisplayTemplate>
 									<Text>@(context.NextExecution?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ??
 																				"-")</Text>
 								</DisplayTemplate>
 							</DataGridColumn>
 							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.LastExecution)"
-								Caption="最后执行" Width="190px">
+								Caption="@L["RecurringJobs:ColumnLastExecution"]" Width="190px">
 								<DisplayTemplate>
 									<Text>@(context.LastExecution?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ??
 																				"-")</Text>
-								</DisplayTemplate>
-							</DataGridColumn>
-							<DataGridColumn TItem="RecurringJobDto" Caption="状态" Width="110px">
-								<DisplayTemplate>
-									<Badge Color="@(context.IsPaused? Color.Warning: Color.Success)" Pill="true">
-										@(context.IsPaused ? "已暂停" : "运行中")
+																			</DisplayTemplate>
+																		</DataGridColumn>
+																		<DataGridColumn TItem="RecurringJobDto" Caption="@L["RecurringJobs:ColumnStatus"]"
+																			Width="110px">
+																			<DisplayTemplate>
+																				<Badge Color="@(context.IsPaused? Color.Warning: Color.Success)" Pill="true">
+										@(context.IsPaused ? L["RecurringJobs:StatusPaused"] :
+																				L["RecurringJobs:StatusRunning"])
 									</Badge>
 								</DisplayTemplate>
 							</DataGridColumn>
-							<DataGridColumn TItem="RecurringJobDto" Caption="操作" Width="160px">
+							<DataGridColumn TItem="RecurringJobDto" Caption="@L["RecurringJobs:ColumnActions"]"
+								Width="240px">
 								<DisplayTemplate>
-									@if (canEdit)
+									@if (canTrigger || canEdit || canDelete)
 									{
-										if (context.IsPaused)
-										{
-											<Button Color="Color.Success" Size="Size.Small" Disabled="@isLoading"
-												Clicked="@(() => ResumeJob(context.Id))">
-												<Icon Name="IconName.Play" />
-												恢复
-											</Button>
-										}
-										else
-										{
-											<Button Color="Color.Warning" Size="Size.Small" Disabled="@isLoading"
-												Clicked="@(() => PauseJob(context.Id))">
-												<Icon Name="IconName.Pause" />
-												暂停
-											</Button>
-										}
+										<Buttons Size="Size.Small">
+											@if (canTrigger)
+											{
+												<Button Color="Color.Primary" Disabled="@(isLoading || context.IsPaused)"
+													Clicked="@(async () => await TriggerJob(context.Id))">
+													<Icon Name="IconName.Bolt" />
+													@L["RecurringJobs:TriggerNow"]
+												</Button>
+											}
+
+											@if (canEdit)
+											{
+												if (context.IsPaused)
+												{
+													<Button Color="Color.Success" Disabled="@isLoading"
+														Clicked="@(async () => await ResumeJob(context.Id))">
+														<Icon Name="IconName.Play" />
+														@L["RecurringJobs:Resume"]
+													</Button>
+												}
+												else
+												{
+													<Button Color="Color.Warning" Disabled="@isLoading"
+														Clicked="@(async () => await PauseJob(context.Id))">
+														<Icon Name="IconName.Pause" />
+														@L["RecurringJobs:Pause"]
+													</Button>
+												}
+											}
+
+											@if (canDelete)
+											{
+												<Button Color="Color.Danger" Disabled="@isLoading"
+													Clicked="@(async () => await DeleteJob(context.Id))">
+													<Icon Name="IconName.Times" />
+													@L["RecurringJobs:Delete"]
+												</Button>
+											}
+										</Buttons>
 									}
 									else
 									{
-										<Text>-</Text>
+										<Text>@L["RecurringJobs:NoActions"]</Text>
 									}
 								</DisplayTemplate>
 							</DataGridColumn>

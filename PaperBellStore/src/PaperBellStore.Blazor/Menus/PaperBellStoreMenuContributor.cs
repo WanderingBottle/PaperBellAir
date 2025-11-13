@@ -39,51 +39,54 @@ public class PaperBellStoreMenuContributor : IMenuContributor
         var administration = context.Menu.GetAdministration();
         administration.Order = 6;
 
-        // 添加日志测试菜单
-        var logTestManagement = new ApplicationMenuItem(
+        var logManagement = new ApplicationMenuItem(
             PaperBellStoreMenus.RunningLogGroup,
             l["Menu:RunningLogGroup"],
             icon: "fas fa-file-alt",
             order: 2
         );
 
-        // 添加日志测试页面作为子菜单项
-        logTestManagement.AddItem(new ApplicationMenuItem(
+        logManagement.AddItem(new ApplicationMenuItem(
             PaperBellStoreMenus.RunningLog,
             l["Menu:RunningLog"],
             "/running-log",
             icon: "fas fa-bug"
         ));
 
-        // 添加审计日志页面作为子菜单项
-        logTestManagement.AddItem(new ApplicationMenuItem(
+        logManagement.AddItem(new ApplicationMenuItem(
             PaperBellStoreMenus.AuditLog,
             l["Menu:AuditLog"],
             "/audit-log",
             icon: "fas fa-shield-alt"
         ));
 
-        // 添加 Hangfire 周期性任务管理页面
-        logTestManagement.AddItem(new ApplicationMenuItem(
+        var taskSchedulingCenter = new ApplicationMenuItem(
+            PaperBellStoreMenus.TaskSchedulingCenterGroup,
+            l["Menu:TaskSchedulingCenterGroup"],
+            icon: "fas fa-tasks",
+            order: 3
+        );
+
+        taskSchedulingCenter.AddItem(new ApplicationMenuItem(
             PaperBellStoreMenus.HangfireRecurringJobs,
             l["Menu:HangfireRecurringJobs"],
             "/hangfire-recurring-jobs",
             icon: "fas fa-redo",
-            order: 3,
+            order: 1,
             requiredPermissionName: PaperBellStorePermissions.HangfireDashboardView
         ));
 
-        // 将日志测试菜单添加到Administration组下
-        administration.AddItem(logTestManagement);
-
-        // 添加 Hangfire Dashboard 菜单项
-        administration.AddItem(new ApplicationMenuItem(
+        taskSchedulingCenter.AddItem(new ApplicationMenuItem(
             PaperBellStoreMenus.HangfireDashboard,
             l["Menu:HangfireDashboard"],
             "/hangfire",
-            icon: "fas fa-tasks",
-            order: 4
+            icon: "fas fa-chart-line",
+            order: 2,
+            requiredPermissionName: PaperBellStorePermissions.HangfireDashboardView
         ));
+
+        context.Menu.Items.Insert(1, logManagement);
+        context.Menu.Items.Insert(2, taskSchedulingCenter);
 
         if (MultiTenancyConsts.IsEnabled)
         {

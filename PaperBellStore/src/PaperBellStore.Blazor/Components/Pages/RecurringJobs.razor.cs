@@ -33,13 +33,15 @@ public partial class RecurringJobs
     protected override string[] MenuItemPaths => new[]
     {
         PaperBellStoreMenus.Home,
-        PaperBellStoreMenus.RunningLogGroup,
+        PaperBellStoreMenus.TaskSchedulingCenterGroup,
         PaperBellStoreMenus.HangfireRecurringJobs
     };
 
     private List<RecurringJobDto> recurringJobs = new();
     private bool isLoading;
     private bool canEdit;
+    private bool canTrigger;
+    private bool canDelete;
     private string? lastError;
     private int lastCount;
 
@@ -47,6 +49,8 @@ public partial class RecurringJobs
     {
         await base.OnInitializedAsync();
         canEdit = await PermissionChecker.IsGrantedAsync(PaperBellStorePermissions.HangfireDashboardEdit);
+        canTrigger = await PermissionChecker.IsGrantedAsync(PaperBellStorePermissions.HangfireDashboardTrigger);
+        canDelete = await PermissionChecker.IsGrantedAsync(PaperBellStorePermissions.HangfireDashboardDelete);
         await LoadRecurringJobsAsync();
     }
 
@@ -109,10 +113,10 @@ public partial class RecurringJobs
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "加载周期性任务列表失败");
+            Logger.LogError(ex, L["RecurringJobs:LogLoadFailed"]);
             recurringJobs = new List<RecurringJobDto>();
             lastError = ex.Message;
-            await NotificationService.Error("加载任务列表失败：" + ex.Message);
+            await NotificationService.Error(L["RecurringJobs:LoadJobsFailed", ex.Message]);
         }
         finally
         {
@@ -131,17 +135,17 @@ public partial class RecurringJobs
             var result = await Task.Run(() => PauseJobInternal(jobId));
             if (result != null)
             {
-                await NotificationService.Warning($"暂停失败：{result}");
+                await NotificationService.Warning(L["RecurringJobs:PauseFailed", result]);
             }
             else
             {
-                await NotificationService.Success("任务已暂停");
+                await NotificationService.Success(L["RecurringJobs:PauseSuccess"]);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "暂停任务失败: {JobId}", jobId);
-            await NotificationService.Error("暂停任务失败：" + ex.Message);
+            Logger.LogError(ex, L["RecurringJobs:LogPauseFailed", jobId]);
+            await NotificationService.Error(L["RecurringJobs:PauseJobFailed", ex.Message]);
         }
         finally
         {
@@ -159,17 +163,73 @@ public partial class RecurringJobs
             var result = await Task.Run(() => ResumeJobInternal(jobId));
             if (result != null)
             {
-                await NotificationService.Warning($"恢复失败：{result}");
+                await NotificationService.Warning(L["RecurringJobs:ResumeFailed", result]);
             }
             else
             {
-                await NotificationService.Success("任务已恢复");
+                await NotificationService.Success(L["RecurringJobs:ResumeSuccess"]);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "恢复任务失败: {JobId}", jobId);
-            await NotificationService.Error("恢复任务失败：" + ex.Message);
+            Logger.LogError(ex, L["RecurringJobs:LogResumeFailed", jobId]);
+            await NotificationService.Error(L["RecurringJobs:ResumeJobFailed", ex.Message]);
+        }
+        finally
+        {
+            await LoadRecurringJobsAsync();
+        }
+    }
+
+    private async Task TriggerJob(string jobId)
+    {
+        try
+        {
+            isLoading = true;
+            await InvokeAsync(StateHasChanged);
+
+            var error = await Task.Run(() => TriggerJobInternal(jobId));
+            if (error != null)
+            {
+                await NotificationService.Warning(L["RecurringJobs:TriggerFailed", error]);
+            }
+            else
+            {
+                await NotificationService.Success(L["RecurringJobs:TriggerSuccess"]);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, L["RecurringJobs:LogTriggerFailed", jobId]);
+            await NotificationService.Error(L["RecurringJobs:TriggerJobFailed", ex.Message]);
+        }
+        finally
+        {
+            await LoadRecurringJobsAsync();
+        }
+    }
+
+    private async Task DeleteJob(string jobId)
+    {
+        try
+        {
+            isLoading = true;
+            await InvokeAsync(StateHasChanged);
+
+            var error = await Task.Run(() => DeleteJobInternal(jobId));
+            if (error != null)
+            {
+                await NotificationService.Warning(L["RecurringJobs:DeleteFailed", error]);
+            }
+            else
+            {
+                await NotificationService.Success(L["RecurringJobs:DeleteSuccess"]);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, L["RecurringJobs:LogDeleteFailed", jobId]);
+            await NotificationService.Error(L["RecurringJobs:DeleteJobFailed", ex.Message]);
         }
         finally
         {
@@ -188,25 +248,25 @@ public partial class RecurringJobs
     {
         if (string.IsNullOrWhiteSpace(jobId))
         {
-            return "JobId 不能为空";
+            return L["RecurringJobs:ErrorJobIdEmpty"];
         }
 
         using var connection = JobStorage.Current.GetConnection();
         var job = connection.GetRecurringJobs().FirstOrDefault(j => j.Id == jobId);
         if (job == null)
         {
-            return "任务不存在";
+            return L["RecurringJobs:ErrorJobNotFound"];
         }
 
         if (JobStateService.IsPaused(jobId))
         {
-            return "任务已经处于暂停状态";
+            return L["RecurringJobs:ErrorJobAlreadyPaused"];
         }
 
         var config = JobRecoveryService.GetCurrentJobConfig(jobId);
         if (config == null)
         {
-            return "无法获取任务配置信息";
+            return L["RecurringJobs:ErrorJobConfigMissing"];
         }
 
         config.PausedBy = CurrentUser?.UserName ?? "System";
@@ -221,27 +281,65 @@ public partial class RecurringJobs
     {
         if (string.IsNullOrWhiteSpace(jobId))
         {
-            return "JobId 不能为空";
+            return L["RecurringJobs:ErrorJobIdEmpty"];
         }
 
         if (!JobStateService.IsPaused(jobId))
         {
-            return "任务未处于暂停状态";
+            return L["RecurringJobs:ErrorJobNotPaused"];
         }
 
         var config = JobStateService.GetJobConfig(jobId);
         if (config == null)
         {
-            return "找不到任务配置信息";
+            return L["RecurringJobs:ErrorJobConfigNotFound"];
         }
 
         var success = JobRecoveryService.RecoverJob(config);
         if (!success)
         {
-            return "恢复任务失败，可能是任务类型不支持";
+            return L["RecurringJobs:ErrorJobRecoverFailed"];
         }
 
         JobStateService.RemoveJobConfig(jobId);
+        return null;
+    }
+
+    private string? TriggerJobInternal(string jobId)
+    {
+        if (string.IsNullOrWhiteSpace(jobId))
+        {
+            return L["RecurringJobs:ErrorJobIdEmpty"];
+        }
+
+        using var connection = JobStorage.Current.GetConnection();
+        var job = connection.GetRecurringJobs().FirstOrDefault(j => j.Id == jobId);
+        if (job == null)
+        {
+            return L["RecurringJobs:ErrorJobNotFound"];
+        }
+
+        RecurringJob.TriggerJob(jobId);
+        return null;
+    }
+
+    private string? DeleteJobInternal(string jobId)
+    {
+        if (string.IsNullOrWhiteSpace(jobId))
+        {
+            return L["RecurringJobs:ErrorJobIdEmpty"];
+        }
+
+        using var connection = JobStorage.Current.GetConnection();
+        var job = connection.GetRecurringJobs().FirstOrDefault(j => j.Id == jobId);
+        if (job == null)
+        {
+            return L["RecurringJobs:ErrorJobRemoved"];
+        }
+
+        RecurringJob.RemoveIfExists(jobId);
+        JobStateService.RemoveJobConfig(jobId);
+
         return null;
     }
 }

@@ -168,6 +168,101 @@ namespace PaperBellStore.Blazor.Controllers
         }
 
         /// <summary>
+        /// 立即执行一次任务
+        /// </summary>
+        [HttpPost("trigger/{jobId}")]
+        public IActionResult Trigger(string jobId)
+        {
+            if (!_permissionChecker.IsGrantedAsync(PaperBellStorePermissions.HangfireDashboardTrigger).Result)
+            {
+                return Forbid("没有立即执行任务的权限");
+            }
+
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                return BadRequest(new { Message = "JobId 不能为空" });
+            }
+
+            try
+            {
+                using var connection = JobStorage.Current.GetConnection();
+                var recurringJobs = connection.GetRecurringJobs();
+                var job = recurringJobs.FirstOrDefault(j => j.Id == jobId);
+
+                if (job == null)
+                {
+                    return NotFound(new { Message = "任务不存在", JobId = jobId });
+                }
+
+                RecurringJob.TriggerJob(jobId);
+
+                return Ok(new
+                {
+                    Message = "任务已触发执行",
+                    JobId = jobId,
+                    Timestamp = DateTime.Now
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Message = "触发任务执行失败",
+                    Error = ex.Message,
+                    JobId = jobId
+                });
+            }
+        }
+
+        /// <summary>
+        /// 删除周期性任务
+        /// </summary>
+        [HttpPost("delete/{jobId}")]
+        public IActionResult Delete(string jobId)
+        {
+            if (!_permissionChecker.IsGrantedAsync(PaperBellStorePermissions.HangfireDashboardDelete).Result)
+            {
+                return Forbid("没有删除任务的权限");
+            }
+
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                return BadRequest(new { Message = "JobId 不能为空" });
+            }
+
+            try
+            {
+                using var connection = JobStorage.Current.GetConnection();
+                var recurringJobs = connection.GetRecurringJobs();
+                var job = recurringJobs.FirstOrDefault(j => j.Id == jobId);
+
+                if (job == null)
+                {
+                    return NotFound(new { Message = "任务不存在", JobId = jobId });
+                }
+
+                RecurringJob.RemoveIfExists(jobId);
+                _stateService.RemoveJobConfig(jobId);
+
+                return Ok(new
+                {
+                    Message = "任务已删除",
+                    JobId = jobId,
+                    Timestamp = DateTime.Now
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Message = "删除任务失败",
+                    Error = ex.Message,
+                    JobId = jobId
+                });
+            }
+        }
+
+        /// <summary>
         /// 获取任务状态
         /// </summary>
         /// <param name="jobId">任务ID</param>
