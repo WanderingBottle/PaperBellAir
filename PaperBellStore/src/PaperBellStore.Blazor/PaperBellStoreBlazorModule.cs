@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
 using Microsoft.AspNetCore.Authentication;
@@ -60,7 +61,6 @@ using Hangfire.PostgreSql;
 using Hangfire.Dashboard;
 using PaperBellStore.Blazor.Filters;
 using PaperBellStore.Blazor.Middleware;
-using PaperBellStore.Blazor.Extensions;
 using PaperBellStore.Blazor.Uow;
 using Volo.Abp.EventBus.RabbitMq;
 using Volo.Abp.EventBus.Distributed;
@@ -494,6 +494,15 @@ public class PaperBellStoreBlazorModule : AbpModule
         app.UseDynamicClaims();
         app.UseAuthorization();
 
+        app.Map("/hangfire/recurring-jobs", branch =>
+        {
+            branch.Run(context =>
+            {
+                context.Response.Redirect("/hangfire-recurring-jobs", permanent: false);
+                return Task.CompletedTask;
+            });
+        });
+
         // 添加 Hangfire 操作授权中间件（在 Hangfire Dashboard 之前）
         app.UseMiddleware<HangfireOperationAuthorizationMiddleware>();
 
@@ -505,9 +514,6 @@ public class PaperBellStoreBlazorModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
 
-        // 配置 Hangfire Dashboard 扩展（提供自定义 JS/CSS 资源）
-        app.UseHangfireDashboardExtensions();
-
         // 配置 Hangfire Dashboard
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
         {
@@ -517,9 +523,6 @@ public class PaperBellStoreBlazorModule : AbpModule
             DisplayStorageConnectionString = false,  // 不显示连接字符串
             IsReadOnlyFunc = HangfireReadOnlyFilter.IsReadOnly  // 根据权限动态控制只读模式
         });
-
-        // 注入自定义脚本到 Dashboard（在 Dashboard 之后）
-        app.UseMiddleware<Middleware.HangfireDashboardInjectionMiddleware>();
 
         app.UseConfiguredEndpoints(builder =>
         {

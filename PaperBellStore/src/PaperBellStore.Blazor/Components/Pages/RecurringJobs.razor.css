@@ -1,0 +1,9 @@
+.recurring-job-grid .b-data-grid {
+  --b-data-grid-row-padding-y: 0.5rem;
+}
+
+.recurring-jobs-page .b-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

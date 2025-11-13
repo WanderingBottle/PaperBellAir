@@ -15,6 +15,7 @@ namespace PaperBellStore.Blazor.Services
     public class RecurringJobStateService : ITransientDependency
     {
         private const string StateSetKey = "recurring-job-states";
+        private const string PausedJobSetKey = "recurring-job-paused";
 
         /// <summary>
         /// 保存任务配置信息
@@ -51,6 +52,10 @@ namespace PaperBellStore.Blazor.Services
                 { "PausedAt", DateTime.UtcNow.ToString("O") },
                 { "PausedBy", config.PausedBy ?? "System" }
             });
+
+            using var transaction = connection.CreateWriteTransaction();
+            transaction.AddToSet(PausedJobSetKey, jobId);
+            transaction.Commit();
         }
 
         /// <summary>
@@ -108,13 +113,11 @@ namespace PaperBellStore.Blazor.Services
 
             using var connection = JobStorage.Current.GetConnection();
             var key = GetStateKey(jobId);
-            // 删除 hash 中的所有条目（Hangfire API）
-            var hash = connection.GetAllEntriesFromHash(key);
-            if (hash != null && hash.Count > 0)
-            {
-                // 通过设置空字典来清除 hash
-                connection.SetRangeInHash(key, new Dictionary<string, string>());
-            }
+
+            using var transaction = connection.CreateWriteTransaction();
+            transaction.RemoveHash(key);
+            transaction.RemoveFromSet(PausedJobSetKey, jobId);
+            transaction.Commit();
         }
 
         /// <summary>
@@ -142,16 +145,14 @@ namespace PaperBellStore.Blazor.Services
         /// <returns>已暂停的任务ID列表</returns>
         public List<string> GetPausedJobIds()
         {
-            var pausedJobs = new List<string>();
-
-            // 使用 IStorageConnection 获取所有周期性任务
             using var connection = JobStorage.Current.GetConnection();
+            var pausedJobs = connection.GetAllItemsFromSet(PausedJobSetKey)?.ToList() ?? new List<string>();
+
+            // 回退：扫描当前任务，确保集合里存在的任务未丢失
             var allRecurringJobs = connection.GetRecurringJobs();
             foreach (var job in allRecurringJobs)
             {
-                // 如果任务存在但 NextExecution 为 null，可能是已暂停
-                // 但更准确的方式是检查是否有保存的状态信息
-                if (IsPaused(job.Id))
+                if (IsPaused(job.Id) && !pausedJobs.Contains(job.Id))
                 {
                     pausedJobs.Add(job.Id);
                 }

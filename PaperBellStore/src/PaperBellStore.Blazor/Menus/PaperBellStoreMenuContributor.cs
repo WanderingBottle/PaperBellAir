@@ -63,6 +63,16 @@ public class PaperBellStoreMenuContributor : IMenuContributor
             icon: "fas fa-shield-alt"
         ));
 
+        // 添加 Hangfire 周期性任务管理页面
+        logTestManagement.AddItem(new ApplicationMenuItem(
+            PaperBellStoreMenus.HangfireRecurringJobs,
+            l["Menu:HangfireRecurringJobs"],
+            "/hangfire-recurring-jobs",
+            icon: "fas fa-redo",
+            order: 3,
+            requiredPermissionName: PaperBellStorePermissions.HangfireDashboardView
+        ));
+
         // 将日志测试菜单添加到Administration组下
         administration.AddItem(logTestManagement);
 

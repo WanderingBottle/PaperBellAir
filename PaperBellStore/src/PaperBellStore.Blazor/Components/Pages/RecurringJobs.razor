@@ -1,0 +1,114 @@
+@page "/hangfire-recurring-jobs"
+@using System.Net.Http.Json
+@using Blazorise
+@using Blazorise.Components
+@using Blazorise.DataGrid
+@using PaperBellStore.Blazor.Components
+@using PaperBellStore.Blazor.Services
+@inherits BreadcrumbComponentBase
+
+<PageTitle>周期性任务管理</PageTitle>
+
+<PageBreadcrumb BreadcrumbId="@BreadcrumbId" HomeMenu="@HomeMenu" ParentMenu="@ParentMenu" CurrentMenu="@CurrentMenu" />
+
+<div class="recurring-jobs-page mt-4">
+	<Row>
+		<Column>
+			<Card>
+				<CardHeader>
+					<CardTitle>
+						<Icon Name="IconName.Clock" />
+						周期性任务管理
+					</CardTitle>
+					<CardActions>
+						<Button Color="Color.Primary" Clicked="RefreshJobs" Disabled="@isLoading">
+							<Icon Name="IconName.Sync" />
+							刷新
+						</Button>
+						<Button Color="Color.Info" Clicked="NavigateToDashboard">
+							<Icon Name="IconName.Forward" />
+							打开 Hangfire Dashboard
+						</Button>
+					</CardActions>
+				</CardHeader>
+				<CardBody>
+					@if (!string.IsNullOrEmpty(lastError))
+					{
+						<Alert Color="Color.Danger">
+							<strong>加载失败：</strong> @lastError
+						</Alert>
+					}
+					else
+					{
+						<Alert Color="Color.Light">
+							当前任务数：@lastCount
+						</Alert>
+					}
+
+					<DataGrid TItem="RecurringJobDto" Data="@recurringJobs" Hoverable="true" Striped="true"
+						ShowPager="false" Class="recurring-job-grid">
+						<EmptyTemplate>
+							<Text>暂无任务</Text>
+						</EmptyTemplate>
+						<DataGridColumns>
+							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.Id)"
+								Caption="任务 ID" />
+							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.Cron)" Caption="Cron"
+								Width="220px" />
+							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.TimeZoneId)"
+								Caption="时区" Width="220px" />
+							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.NextExecution)"
+								Caption="下次执行" Width="190px">
+								<DisplayTemplate>
+									<Text>@(context.NextExecution?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ??
+																				"-")</Text>
+								</DisplayTemplate>
+							</DataGridColumn>
+							<DataGridColumn TItem="RecurringJobDto" Field="@nameof(RecurringJobDto.LastExecution)"
+								Caption="最后执行" Width="190px">
+								<DisplayTemplate>
+									<Text>@(context.LastExecution?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ??
+																				"-")</Text>
+								</DisplayTemplate>
+							</DataGridColumn>
+							<DataGridColumn TItem="RecurringJobDto" Caption="状态" Width="110px">
+								<DisplayTemplate>
+									<Badge Color="@(context.IsPaused? Color.Warning: Color.Success)" Pill="true">
+										@(context.IsPaused ? "已暂停" : "运行中")
+									</Badge>
+								</DisplayTemplate>
+							</DataGridColumn>
+							<DataGridColumn TItem="RecurringJobDto" Caption="操作" Width="160px">
+								<DisplayTemplate>
+									@if (canEdit)
+									{
+										if (context.IsPaused)
+										{
+											<Button Color="Color.Success" Size="Size.Small" Disabled="@isLoading"
+												Clicked="@(() => ResumeJob(context.Id))">
+												<Icon Name="IconName.Play" />
+												恢复
+											</Button>
+										}
+										else
+										{
+											<Button Color="Color.Warning" Size="Size.Small" Disabled="@isLoading"
+												Clicked="@(() => PauseJob(context.Id))">
+												<Icon Name="IconName.Pause" />
+												暂停
+											</Button>
+										}
+									}
+									else
+									{
+										<Text>-</Text>
+									}
+								</DisplayTemplate>
+							</DataGridColumn>
+						</DataGridColumns>
+					</DataGrid>
+				</CardBody>
+			</Card>
+		</Column>
+	</Row>
+</div>
