@@ -25,7 +25,7 @@
 			<Field>
 				<FieldLabel>日志级别</FieldLabel>
 				<Select TValue="string" SelectedValue="selectedLevel"
-					SelectedValueChanged="@((string value) => selectedLevel = value)">
+						SelectedValueChanged="@((string value) => selectedLevel = value)">
 					<SelectItem TValue="string" Value="@((string?)null)">全部</SelectItem>
 					<SelectItem TValue="string" Value="@("Verbose")">Verbose</SelectItem>
 					<SelectItem TValue="string" Value="@("Debug")">Debug</SelectItem>
@@ -77,7 +77,7 @@
 			</Row>
 		</Column>
 		<Column ColumnSize="ColumnSize.IsAuto">
-			<Button Color="Color.Primary" Clicked="LoadLogs" Disabled="@(refreshCooldownSeconds > 0 || isLoading)">
+			<Button Color="Color.Primary" Clicked="LoadLogs" Disabled="@(refreshCooldownSeconds>0||isLoading)">
 				<Icon Name="IconName.Sync" />
 				@GetRefreshButtonText()
 			</Button>
@@ -87,27 +87,29 @@
 	<Divider Class="my-4" />
 
 	@* 日志列表区域 *@
-	<Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mb-3">
+	@* <Row JustifyContent="JustifyContent.Between" AlignItems="AlignItems.Center" Class="mb-3">
 		<Column ColumnSize="ColumnSize.IsAuto">
 			<h5 class="d-flex align-items-center">
 				<Icon Name="IconName.List" Size="IconSize.Small" Class="mr-2" />
 				日志列表
-				@if (totalCount > 0)
+				@if(totalCount>0)
 				{
 					<Badge Color="Color.Primary" Pill="true" Class="ml-2">共 @totalCount 条</Badge>
 				}
 			</h5>
 		</Column>
-	</Row>
+	</Row> *@
 
-	<DataGrid TItem="AppLog" Data="@(logItems ?? new List<AppLog>())" RowClicked="@OnRowClick" Hoverable="true"
-		Striped="true" ShowPager="false" Class="running-log-grid">
+	<DataGrid TItem="AppLog" Data="@logItems" Hoverable="true" Striped="true" ShowPager="true" ShowPageSizes="true"
+			  PagerPosition="DataGridPagerPosition.Bottom"
+			  PagerOptions="new(){ ButtonSize=Size.Medium }"
+			  Class="running-log-grid">
 		<EmptyTemplate>
 			<Text>暂无数据</Text>
 		</EmptyTemplate>
 		<DataGridColumns>
 			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Timestamp)" Caption="时间" Sortable="false"
-				Width="170px">
+							Width="175px">
 				<DisplayTemplate>
 					<Text>@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</Text>
 				</DisplayTemplate>
@@ -119,7 +121,7 @@
 					</Badge>
 				</DisplayTemplate>
 			</DataGridColumn>
-			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Message)" Caption="消息" Width="calc(100% - 640px)">
+			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.Message)" Caption="消息" Width="calc(100% - 740px)">
 				<DisplayTemplate>
 					<Tooltip Text="@context.Message">
 						<div class="text-truncate">@GetShortMessage(context.Message)</div>
@@ -127,9 +129,9 @@
 				</DisplayTemplate>
 			</DataGridColumn>
 			<DataGridColumn TItem="AppLog" Field="@nameof(AppLog.OccurrenceCount)" Caption="出现次数" Sortable="false"
-				Width="100px">
+							Width="100px">
 				<DisplayTemplate>
-					@if (context.OccurrenceCount > 1)
+					@if(context.OccurrenceCount>1)
 					{
 						<Badge Color="Color.Warning" Pill="true">
 							@context.OccurrenceCount 次
@@ -150,48 +152,34 @@
 				</DisplayTemplate>
 			</DataGridColumn>
 		</DataGridColumns>
+		<PageButtonTemplate>
+			<Span TextColor="TextColor.Success">
+				@context.PageNumber
+			</Span>
+		</PageButtonTemplate>
+		<NextPageButtonTemplate><Icon Name="IconName.StepForward" TextColor="TextColor.Success" /></NextPageButtonTemplate>
+		<PreviousPageButtonTemplate><Icon Name="IconName.StepBackward" TextColor="TextColor.Success" /></PreviousPageButtonTemplate>
+		<LastPageButtonTemplate><Icon Name="IconName.Forward" TextColor="TextColor.Success" /></LastPageButtonTemplate>
+		<FirstPageButtonTemplate><Icon Name="IconName.Backward" TextColor="TextColor.Success" /></FirstPageButtonTemplate>
+		<TotalItemsTemplate><Badge Color="Color.Success">@context.TotalItems total items</Badge></TotalItemsTemplate>
+		<TotalItemsShortTemplate><Badge Color="Color.Success">@context.TotalItems</Badge></TotalItemsShortTemplate>
+		<ItemsPerPageTemplate></ItemsPerPageTemplate>
+		<PageSelectorTemplate>
+			<Select TextColor="TextColor.Success" @bind-SelectedValue="@context.CurrentPage" Size="Size.Small">
+				@for(int i = context.FirstVisiblePage; i<=context.LastVisiblePage; ++i)
+				{
+					var pageNumber = i;
+					<SelectItem Value="@pageNumber">@pageNumber</SelectItem>
+				}
+			</Select>
+		</PageSelectorTemplate>
+		<PageSizesTemplate>
+			<Select TextColor="TextColor.Success" @bind-SelectedValue="@context.CurrentPageSize" Size="Size.Small">
+				@foreach(var curPageSize in context.PageSizes)
+				{
+					<SelectItem Value="@curPageSize">@curPageSize</SelectItem>
+				}
+			</Select>
+		</PageSizesTemplate>
 	</DataGrid>
-
-	@* 自定义分页 *@
-	@if (totalPages > 1)
-	{
-		<Pagination Class="mt-3">
-			<PaginationItem Disabled="@(currentPage == 1)">
-				<PaginationLink Clicked="@(() => ChangePage(currentPage - 1))">上一页</PaginationLink>
-			</PaginationItem>
-			@if (currentPage > 3 && totalPages > 7)
-			{
-				<PaginationItem>
-					<PaginationLink Clicked="@(() => ChangePage(1))">1</PaginationLink>
-				</PaginationItem>
-				@if (currentPage > 4)
-				{
-					<PaginationItem Disabled="true">
-						<PaginationLink>...</PaginationLink>
-					</PaginationItem>
-				}
-			}
-			@foreach (var pageNumber in GetPageNumbers())
-			{
-				<PaginationItem Active="@(pageNumber == currentPage)">
-					<PaginationLink Clicked="@(() => ChangePage(pageNumber))">@pageNumber</PaginationLink>
-				</PaginationItem>
-			}
-			@if (currentPage < totalPages - 2 && totalPages > 7)
-			{
-				@if (currentPage < totalPages - 3)
-				{
-					<PaginationItem Disabled="true">
-						<PaginationLink>...</PaginationLink>
-					</PaginationItem>
-				}
-				<PaginationItem>
-					<PaginationLink Clicked="@(() => ChangePage(totalPages))">@totalPages</PaginationLink>
-				</PaginationItem>
-			}
-			<PaginationItem Disabled="@(currentPage == totalPages)">
-				<PaginationLink Clicked="@(() => ChangePage(currentPage + 1))">下一页</PaginationLink>
-			</PaginationItem>
-		</Pagination>
-	}
 </div>
