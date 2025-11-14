@@ -1,203 +1,213 @@
 @using Volo.Abp.AuditLogging
 @using Blazorise.DataGrid
+@using Blazorise
 
-<ModalContent>
+<ModalContent Class="audit-log-modal">
 	<ModalHeader>
 		<ModalTitle>审计日志详情</ModalTitle>
 	</ModalHeader>
 	<ModalBody>
-		<Tabs>
-			<Tab Name="basic" Title="基本信息">
-				<Row Class="mt-2">
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>执行时间:</strong> @AuditLog.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss.fff")</Text>
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>执行时长:</strong> @AuditLog.ExecutionDuration ms</Text>
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>用户名:</strong> @(AuditLog.UserName ?? "-")</Text>
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>租户名称:</strong> @(AuditLog.TenantName ?? "-")</Text>
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>客户端IP:</strong> @(AuditLog.ClientIpAddress ?? "-")</Text>
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>客户端名称:</strong> @(AuditLog.ClientName ?? "-")</Text>
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>关联ID:</strong> @(AuditLog.CorrelationId ?? "-")</Text>
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>应用名称:</strong> @(AuditLog.ApplicationName ?? "-")</Text>
-					</Column>
-				</Row>
-			</Tab>
+		<Tabs SelectedTab="basic">
+			<Items>
+				<Tab Name="basic">基本信息</Tab>
+				<Tab Name="http">HTTP请求信息</Tab>
+				<Tab Name="exception">异常信息</Tab>
+				<Tab Name="actions">操作列表</Tab>
+			</Items>
+			<Content>
+				<TabPanel Name="basic">
+					<Row Class="mt-2">
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>执行时间:</strong> @AuditLog.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss.fff")</Text>
+						</Column>
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>执行时长:</strong> @AuditLog.ExecutionDuration ms</Text>
+						</Column>
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>用户名:</strong> @(AuditLog.UserName??"-")</Text>
+						</Column>
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>租户名称:</strong> @(AuditLog.TenantName??"-")</Text>
+						</Column>
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>客户端IP:</strong> @(AuditLog.ClientIpAddress??"-")</Text>
+						</Column>
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>客户端名称:</strong> @(AuditLog.ClientName??"-")</Text>
+						</Column>
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>关联ID:</strong> @(AuditLog.CorrelationId??"-")</Text>
+						</Column>
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>应用名称:</strong> @(AuditLog.ApplicationName??"-")</Text>
+						</Column>
+					</Row>
 
-			<Tab Name="http" Title="HTTP请求信息">
-				<Row Class="mt-2">
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>HTTP方法:</strong></Text>
-						@if (!string.IsNullOrEmpty(AuditLog.HttpMethod))
-						{
-							<Badge Color="Color.Secondary" Pill="true" Class="ml-2">
-								@AuditLog.HttpMethod
-							</Badge>
-						}
-						else
-						{
-							<span class="ml-2">-</span>
-						}
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
-						<Text><strong>HTTP状态码:</strong></Text>
-						@if (AuditLog.HttpStatusCode.HasValue)
-						{
-							<Badge Color="@GetStatusCodeColor(AuditLog.HttpStatusCode.Value)" Pill="true" Class="ml-2">
-								@AuditLog.HttpStatusCode.Value
-							</Badge>
-						}
-						else
-						{
-							<span class="ml-2">-</span>
-						}
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12">
-						<Text><strong>URL:</strong></Text>
-						<Card>
-							<CardBody Style="background-color: #f5f5f5;">
-								<Text Style="word-wrap: break-word; margin: 0; font-family: monospace;">@(AuditLog.Url
-																		?? "-")</Text>
-							</CardBody>
-						</Card>
-					</Column>
-					<Column ColumnSize="ColumnSize.Is12">
-						<Text><strong>浏览器信息:</strong></Text>
-						<Card>
-							<CardBody Style="background-color: #f5f5f5;">
-								<Text Style="word-wrap: break-word; margin: 0;">@(AuditLog.BrowserInfo ?? "-")</Text>
-							</CardBody>
-						</Card>
-					</Column>
-					@if (!string.IsNullOrEmpty(AuditLog.Comments))
-					{
+				</TabPanel>
+				<TabPanel Name="http">
+					<Row Class="mt-2">
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>HTTP方法:</strong></Text>
+							@if(!string.IsNullOrEmpty(AuditLog.HttpMethod))
+							{
+								<Badge Color="Color.Secondary" Pill="true" Class="ml-2">
+									@AuditLog.HttpMethod
+								</Badge>
+							}
+							else
+							{
+								<span class="ml-2">-</span>
+							}
+						</Column>
+						<Column ColumnSize="ColumnSize.Is12.OnMobile.Is6.OnDesktop">
+							<Text><strong>HTTP状态码:</strong></Text>
+							@if(AuditLog.HttpStatusCode.HasValue)
+							{
+								<Badge Color="@GetStatusCodeColor(AuditLog.HttpStatusCode.Value)" Pill="true" Class="ml-2">
+									@AuditLog.HttpStatusCode.Value
+								</Badge>
+							}
+							else
+							{
+								<span class="ml-2">-</span>
+							}
+						</Column>
 						<Column ColumnSize="ColumnSize.Is12">
-							<Text><strong>备注:</strong></Text>
+							<Text><strong>URL:</strong></Text>
 							<Card>
 								<CardBody Style="background-color: #f5f5f5;">
-									<Text Style="word-wrap: break-word; margin: 0;">@AuditLog.Comments</Text>
+									<Text Style="word-wrap: break-word; margin: 0; font-family: monospace;">
+										@(AuditLog.Url
+																				??"-")
+									</Text>
 								</CardBody>
 							</Card>
 						</Column>
+						<Column ColumnSize="ColumnSize.Is12">
+							<Text><strong>浏览器信息:</strong></Text>
+							<Card>
+								<CardBody Style="background-color: #f5f5f5;">
+									<Text Style="word-wrap: break-word; margin: 0;">@(AuditLog.BrowserInfo??"-")</Text>
+								</CardBody>
+							</Card>
+						</Column>
+						@if(!string.IsNullOrEmpty(AuditLog.Comments))
+						{
+							<Column ColumnSize="ColumnSize.Is12">
+								<Text><strong>备注:</strong></Text>
+								<Card>
+									<CardBody Style="background-color: #f5f5f5;">
+										<Text Style="word-wrap: break-word; margin: 0;">@AuditLog.Comments</Text>
+									</CardBody>
+								</Card>
+							</Column>
+						}
+					</Row>
+
+				</TabPanel>
+				<TabPanel Name="exception">
+					@if(!string.IsNullOrEmpty(AuditLog.Exceptions))
+					{
+						<Card>
+							<CardBody Style="max-height: 500px; overflow-y: auto; font-family: monospace; font-size: 0.9em; background-color: #fff3cd;">
+								<Text Style="white-space: pre-wrap; word-wrap: break-word; margin: 0; color: #856404;">
+									@AuditLog.Exceptions
+								</Text>
+							</CardBody>
+						</Card>
 					}
-				</Row>
-			</Tab>
+					else
+					{
+						<Alert Color="Color.Info" Class="mt-2">
+							<Icon Name="IconName.Info" Size="IconSize.Small" Class="mr-2" />
+							无异常信息
+						</Alert>
+					}
 
-			<Tab Name="exception" Title="异常信息">
-				@if (!string.IsNullOrEmpty(AuditLog.Exceptions))
-				{
-					<Card>
-						<CardBody
-							Style="max-height: 500px; overflow-y: auto; font-family: monospace; font-size: 0.9em; background-color: #fff3cd;">
-							<Text Style="white-space: pre-wrap; word-wrap: break-word; margin: 0; color: #856404;">
-								@AuditLog.Exceptions
-							</Text>
-						</CardBody>
-					</Card>
-				}
-				else
-				{
-					<Alert Color="Color.Info" Class="mt-2">
-						<Icon Name="IconName.Info" Size="IconSize.Small" Class="mr-2" />
-						无异常信息
-					</Alert>
-				}
-			</Tab>
+				</TabPanel>
+				<TabPanel Name="actions">
+					@if(FilteredActions!=null&&FilteredActions.Any())
+					{
+						<DataGrid TItem="Volo.Abp.AuditLogging.AuditLogAction" Data="@FilteredActions" Hoverable="true"
+								  Striped="true" Responsive="true" ShowPager="false" Class="mt-2">
+							<EmptyTemplate>
+								<Text>暂无操作数据</Text>
+							</EmptyTemplate>
+							<DataGridColumns>
+								<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction" Caption="系统标签" Sortable="false">
+									<DisplayTemplate>
+										@if(IsSystemOperation(context.ServiceName))
+										{
+											<Badge Color="Color.Dark" Pill="true">
+												<Icon Name="IconName.Desktop" Size="IconSize.Small" Class="mr-1" />
+												系统
+											</Badge>
+										}
+										else
+										{
+											<Text>-</Text>
+										}
+									</DisplayTemplate>
+								</DataGridColumn>
+								<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
+												Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.ServiceName)" Caption="服务名称"
+												Sortable="true">
+									<DisplayTemplate>
+										<Text Style="font-family: monospace; font-size: 0.9em;">@context.ServiceName</Text>
+									</DisplayTemplate>
+								</DataGridColumn>
+								<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
+												Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.MethodName)" Caption="方法名称"
+												Sortable="true">
+									<DisplayTemplate>
+										<Text Style="font-family: monospace; font-size: 0.9em;">@context.MethodName</Text>
+									</DisplayTemplate>
+								</DataGridColumn>
+								<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
+												Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.ExecutionTime)" Caption="执行时间"
+												Sortable="true" DisplayFormat="yyyy-MM-dd HH:mm:ss.fff" />
+								<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
+												Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.ExecutionDuration)" Caption="执行时长(ms)"
+												Sortable="true" />
+								<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction" Caption="参数" Sortable="false">
+									<DisplayTemplate>
+										@if(!string.IsNullOrEmpty(context.Parameters))
+										{
+											<Collapse>
+												<CollapseHeader>
+													<Icon Name="IconName.Code" />
+													查看参数
+												</CollapseHeader>
+												<CollapseBody>
+													<Card>
+														<CardBody Style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85em; background-color: #f5f5f5;">
+															<Text Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">
+																@FormatJson(context.Parameters)
+															</Text>
+														</CardBody>
+													</Card>
+												</CollapseBody>
+											</Collapse>
+										}
+										else
+										{
+											<Text>-</Text>
+										}
+									</DisplayTemplate>
+								</DataGridColumn>
+							</DataGridColumns>
+						</DataGrid>
+					}
+					else
+					{
+						<Alert Color="Color.Info" Class="mt-2">
+							<Icon Name="IconName.Info" Size="IconSize.Small" Class="mr-2" />
+							无操作记录
+						</Alert>
+					}
 
-			<Tab Name="actions" Title="操作列表">
-				@if (FilteredActions != null && FilteredActions.Any())
-				{
-					<DataGrid TItem="Volo.Abp.AuditLogging.AuditLogAction" Data="@FilteredActions" Hoverable="true"
-						Striped="true" Responsive="true" ShowPager="false" Class="mt-2">
-						<EmptyTemplate>
-							<Text>暂无操作数据</Text>
-						</EmptyTemplate>
-						<DataGridColumns>
-							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction" Caption="系统标签" Sortable="false">
-								<DisplayTemplate>
-									@if (IsSystemOperation(context.ServiceName))
-									{
-										<Badge Color="Color.Dark" Pill="true">
-											<Icon Name="IconName.Desktop" Size="IconSize.Small" Class="mr-1" />
-											系统
-										</Badge>
-									}
-									else
-									{
-										<Text>-</Text>
-									}
-								</DisplayTemplate>
-							</DataGridColumn>
-							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
-								Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.ServiceName)" Caption="服务名称"
-								Sortable="true">
-								<DisplayTemplate>
-									<Text Style="font-family: monospace; font-size: 0.9em;">@context.ServiceName</Text>
-								</DisplayTemplate>
-							</DataGridColumn>
-							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
-								Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.MethodName)" Caption="方法名称"
-								Sortable="true">
-								<DisplayTemplate>
-									<Text Style="font-family: monospace; font-size: 0.9em;">@context.MethodName</Text>
-								</DisplayTemplate>
-							</DataGridColumn>
-							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
-								Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.ExecutionTime)" Caption="执行时间"
-								Sortable="true" DisplayFormat="yyyy-MM-dd HH:mm:ss.fff" />
-							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction"
-								Field="@nameof(Volo.Abp.AuditLogging.AuditLogAction.ExecutionDuration)" Caption="执行时长(ms)"
-								Sortable="true" />
-							<DataGridColumn TItem="Volo.Abp.AuditLogging.AuditLogAction" Caption="参数" Sortable="false">
-								<DisplayTemplate>
-									@if (!string.IsNullOrEmpty(context.Parameters))
-									{
-										<Collapse>
-											<CollapseHeader>
-												<Icon Name="IconName.Code" />
-												查看参数
-											</CollapseHeader>
-											<CollapseBody>
-												<Card>
-													<CardBody
-														Style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85em; background-color: #f5f5f5;">
-														<Text Style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">
-															@FormatJson(context.Parameters)
-														</Text>
-													</CardBody>
-												</Card>
-											</CollapseBody>
-										</Collapse>
-									}
-									else
-									{
-										<Text>-</Text>
-									}
-								</DisplayTemplate>
-							</DataGridColumn>
-						</DataGridColumns>
-					</DataGrid>
-				}
-				else
-				{
-					<Alert Color="Color.Info" Class="mt-2">
-						<Icon Name="IconName.Info" Size="IconSize.Small" Class="mr-2" />
-						无操作记录
-					</Alert>
-				}
-			</Tab>
+				</TabPanel>
+			</Content>
 		</Tabs>
 	</ModalBody>
 	<ModalFooter>
@@ -220,19 +230,19 @@
 	/// 过滤后的操作列表（排除 Volo.Abp 相关的操作）
 	/// </summary>
 	private List<Volo.Abp.AuditLogging.AuditLogAction>? FilteredActions =>
-	Actions?.Where(x => x.ServiceName == null || !x.ServiceName.Contains("Volo.Abp")).ToList();
+	Actions?.Where(x => x.ServiceName==null||!x.ServiceName.Contains("Volo.Abp")).ToList();
 
 	/// <summary>
 	/// 判断是否为系统操作
 	/// </summary>
 	private bool IsSystemOperation(string? serviceName)
 	{
-		if (string.IsNullOrEmpty(serviceName))
+		if(string.IsNullOrEmpty(serviceName))
 			return false;
 
-		var systemKeywords = new[] { "System", "Microsoft", "Internal", "Framework" };
+		var systemKeywords = new[] { "System" , "Microsoft" , "Internal" , "Framework" };
 		return systemKeywords.Any(keyword =>
-		serviceName.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+		serviceName.Contains(keyword , StringComparison.OrdinalIgnoreCase));
 	}
 
 	private async Task Cancel()
@@ -244,25 +254,25 @@
 	{
 		return statusCode switch
 		{
-			>= 200 and < 300 => Color.Success, // 2xx
-			>= 300 and < 400 => Color.Info, // 3xx
-			>= 400 and < 500 => Color.Warning, // 4xx
-			>= 500 => Color.Danger, // 5xx
+			>=200 and <300 => Color.Success, // 2xx
+			>=300 and <400 => Color.Info, // 3xx
+			>=400 and <500 => Color.Warning, // 4xx
+			>=500 => Color.Danger, // 5xx
 			_ => Color.Default
 		};
 	}
 
 	private string FormatJson(string? json)
 	{
-		if (string.IsNullOrEmpty(json))
+		if(string.IsNullOrEmpty(json))
 			return string.Empty;
 
 		try
 		{
 			var jsonObj = System.Text.Json.JsonSerializer.Deserialize<object>(json);
-			return System.Text.Json.JsonSerializer.Serialize(jsonObj, new System.Text.Json.JsonSerializerOptions
+			return System.Text.Json.JsonSerializer.Serialize(jsonObj , new System.Text.Json.JsonSerializerOptions
 			{
-				WriteIndented = true
+				WriteIndented=true
 			});
 		}
 		catch

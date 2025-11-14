@@ -1,0 +1,10 @@
+.audit-log-modal {
+  min-width: 720px;
+  max-width: 900px;
+  width: 80vw;
+}
+
+.audit-log-modal :deep(.modal-content) {
+  width: 100%;
+  border-radius: 16px;
+}
